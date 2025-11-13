@@ -2,6 +2,17 @@
 Automate Resource Creation on Azure
 */
 
+## Azure Provider source and version being used
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "=4.1.0"
+    }
+  }
+}
+
+
 # Resource group
 resource "azurerm_resource_group" "ample" {
   name     = "myTFResourceGroup"
