@@ -20,6 +20,7 @@ terraform {
 */
 provider "azurerm" {
 #  resource_provider_registrations = "none" 
+  subscription_id = "2b2f02f7-dde2-47db-974c-47d2182721ae"
   features {
     key_vault {
       purge_soft_delete_on_destroy    = true
