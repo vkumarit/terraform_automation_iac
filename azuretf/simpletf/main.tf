@@ -24,6 +24,7 @@ data "azuread_service_principal" "az-classic-app" {}
 
 provider "azurerm" {
 
+#  resource_provider_registrations = "none" 
   features {
     key_vault {
       purge_soft_delete_on_destroy    = true
