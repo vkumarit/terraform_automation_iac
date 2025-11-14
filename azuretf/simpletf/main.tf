@@ -58,15 +58,15 @@ resource "azurerm_virtual_network" "vnet1" {
 # public subnet (10.0.1.0/28) 
 resource "azurerm_subnet" "pubnet1" {
   name                 = "pub1-subnet"
-  resource_group_name  = azurerm_resource_group.name
-  virtual_network_name = azurerm_virtual_network.name
+  resource_group_name  = azurerm_resource_group.ample
+  virtual_network_name = azurerm_virtual_network.vnet1
   address_prefixes     = ["10.0.1.0/28"]
 }
 # private subnet (10.0.2.0/24) 
 resource "azurerm_subnet" "pvtnet" {
   name                 = "pvt1-subnet"
-  resource_group_name  = azurerm_resource_group.name
-  virtual_network_name = azurerm_virtual_network.name
+  resource_group_name  = azurerm_resource_group.ample
+  virtual_network_name = azurerm_virtual_network.vnet1
   address_prefixes     = ["10.0.2.0/24"]
 }
 
