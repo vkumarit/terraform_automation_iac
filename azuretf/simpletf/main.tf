@@ -50,8 +50,8 @@ resource "azurerm_resource_group" "ample" {
 resource "azurerm_virtual_network" "vnet1" {
   name                = "v1-network"
   address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.location
-  resource_group_name = azurerm_resource_group.name
+  location            = azurerm_resource_group.ample.location
+  resource_group_name = azurerm_resource_group.ample.name
 }
 
 # Subnets w/ network security group
