@@ -32,14 +32,18 @@ provider "azurerm" {
     }
   }
 
-# For terraform authentication use install azure cli or service principal #
-# Service principals
-/*
+ 
+# If Terraform runs inside Azure (VM, Container, DevOps pipeline),
+# no secrets needed at all, use Managed Identity as
+#  use_msi = true
+
+
+# For terraform authentication use install azure cli or service principal 
+# Service principals - provide datails in variable.tf file
   subscription_id = ""
   client_id = ""
   client_secret = ""
   tenant_id = ""
-*/
 
 #  resource_provider_registrations = "none" 
 /* 
