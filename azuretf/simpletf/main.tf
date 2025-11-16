@@ -1,6 +1,5 @@
-/*
-Automate Resource Creation on Azure
-*/
+
+## Automate Resource Creation on Azure ##
 
 ## Azure Provider source and version being used
 terraform {
@@ -19,12 +18,8 @@ provider "azuread" {
   # (Optional) specify tenant_id, otherwise it uses az login context
 }
 
-# retrieve service principal data
-data "azuread_service_principal" "az-classic-app" {}
-
 provider "azurerm" {
 
-#  resource_provider_registrations = "none" 
   features {
     key_vault {
       purge_soft_delete_on_destroy    = true
@@ -32,18 +27,23 @@ provider "azurerm" {
     }
   }
 
- 
-# If Terraform runs inside Azure (VM, Container, DevOps pipeline),
-# no secrets needed at all, use Managed Identity as
-#  use_msi = true
+/*  
+For production save service principal details in azure key vault and pull it using data block and use in provider block.
+# can put in secrets.tf
+data "azurerm_key_vault_secret" "client_id" {
+  name         = "client-id"
+  key_vault_id = var.key_vault_id
+}
 
-
-# For terraform authentication use install azure cli or service principal 
-# Service principals - provide datails in variable.tf file
-  subscription_id = ""
-  client_id = ""
-  client_secret = ""
-  tenant_id = ""
+# can put in provider.tf
+provider "azurerm" {
+  client_id       = data.azurerm_key_vault_secret.client_id.value
+  tenant_id       = data.azurerm_key_vault_secret.tenant_id.value
+  client_secret   = data.azurerm_key_vault_secret.client_secret.value
+  subscription_id = data.azurerm_key_vault_secret.subscription_id.value
+  features        = {}
+}
+*/
 
 #  resource_provider_registrations = "none" 
 /* 
@@ -163,7 +163,7 @@ resource "azurerm_linux_virtual_machine" "example" {
     sku       = "20_04-lts"
     version   = "latest"
   }
-
+  
   # Configure specific timeouts for the VM resource operations
   #timeouts {
     # Increase create timeout from default (often 30 mins) to 45 mins

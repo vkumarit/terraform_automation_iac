@@ -1,0 +1,69 @@
+Terraform 
+
+
+# Authentication
+
+## Azure from outside Azure (like EC2) ##
+For your first-time Terraform deployment on an EC2 instance 
+targeting Azure, the typical secure workflow is:
+
+> Create an App Registration (Service Principal) in Azure Portal
+  - Register an application in Azure AD.
+  - Note the Client ID, Tenant ID.
+  - Generate a Client Secret.
+  - Assign the Service Principal the necessary roles (e.g., Contributor) 
+    on your subscription or resource group.
+
+> Export the Service Principal credentials as environment variables on our EC2 instance, do bash
+  $ export ARM_CLIENT_ID="<client-id-from-app-registration>"
+  $ export ARM_CLIENT_SECRET="<client-secret-from-app-registration>"
+  $ export ARM_SUBSCRIPTION_ID="<our-subscription-id>"
+  $ export ARM_TENANT_ID="<tenant-id-from-app-registration>"
+  This enables Terraform to authenticate securely without embedding secrets in code.
+
+> Run Terraform init plan apply commands from our EC2 instance. 
+  Terraform will use these environment variables to authenticate 
+  and create our Azure resources.
+
+> After initial setup, switch to using Azure Key Vault and dynamic secret fetching
+  - Store credentials/secrets in Azure Key Vault.
+  - Use azurerm_key_vault_secret data source in Terraform to fetch secrets dynamically during future runs,     avoiding hardcoding or manually exporting secrets.
+
+## If Terraform runs inside Azure (VM, Container, DevOps pipeline), 
+   no secrets needed at all, use Managed Identity as
+* Add this block to provider.tf,
+  provider "azurerm" {
+  features = {}
+  use_msi  = true
+  }
+  and, 
+* Add below code to terraform which uses data block sourcing 
+
+  For production save service principal details in azure key vault and 
+  pull it using data block and use in provider block.
+  # can put data block in secrets.tf
+
+  data "azurerm_key_vault_secret" "client_id" {
+    name         = "client-id"
+    key_vault_id = var.key_vault_id
+  }
+
+  # can put provider block in provider.tf
+  provider "azurerm" {
+    client_id       = data.azurerm_key_vault_secret.client_id.value
+    tenant_id       = data.azurerm_key_vault_secret.tenant_id.value
+    client_secret   = data.azurerm_key_vault_secret.client_secret.value
+    subscription_id = data.azurerm_key_vault_secret.subscription_id.value
+    features        = {}
+  }
+
+
+
+
+
+
+
+
+
+
+
