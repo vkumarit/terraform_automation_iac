@@ -1,48 +1,187 @@
 Terraform 
+---------
 
+# Azure Authentication #
 
-# Authentication
+I. Using Service Principal secrets (tenant_id, subscription_id, client_id, client_secret)
 
-## Azure from outside Azure (like EC2) ##
-For your first-time Terraform deployment on an EC2 instance 
-targeting Azure, the typical secure workflow is:
+A) For first time/step, also when we exit the session with exported vars and
+   starting new session. The typical secure workflow is:
 
-> Create an App Registration (Service Principal) in Azure Portal
+> a) > Create an App Registration (Service Principal) in Azure Portal
   - Register an application in Azure AD.
   - Note the Client ID, Tenant ID.
   - Generate a Client Secret.
   - Assign the Service Principal the necessary roles (e.g., Contributor) 
     on your subscription or resource group.
+(SKIP IF APP REGISTRATION DONE)
+  b) For key vault access assign get access to this service principal when needed to fetch secrets from      key vault
 
-> Export the Service Principal credentials as environment variables on our EC2 instance, do bash
+## Azure authentication from outside Azure (like terraform on EC2) ##
+
+> b) > Export the Service Principal credentials as environment variables on our EC2 instance, do bash
   $ export ARM_CLIENT_ID="<client-id-from-app-registration>"
   $ export ARM_CLIENT_SECRET="<client-secret-from-app-registration>"
   $ export ARM_SUBSCRIPTION_ID="<our-subscription-id>"
   $ export ARM_TENANT_ID="<tenant-id-from-app-registration>"
   This enables Terraform to authenticate securely without embedding secrets in code.
+  Terraform will read the ARM_* env vars and authenticate, can use below provider block at minimum:
+	provider "azurerm" {
+	  features {}
+	}
+  Change the exported env vars as
+    1) To see all env vars,
+       $ env or printenv
+    2) filter by pattern
+       $ printenv | grep ARM_* 
+    3) To check single variable,
+       $ echo $ARM_CLIENT_ID
+    4) To reset a variable export it again as
+       $ export ARM_CLIENT_ID="new-client-id"
+    5) Remove from current shell,
+       $ unset ARM_CLIENT_SECRET
 
-> Run Terraform init plan apply commands from our EC2 instance. 
+  Also used in dev, test environment.
+or,
+> b) > Azure CLI Interactive or Service Principal Login:
+  - Run 'az login' (interactive or with SP credentials) on your EC2 instance before running Terraform.
+  - Terraform picks up the authentication context from the Azure CLI session.
+  Use Case: Manual runs or environments where you can run CLI commands. Can also be used subsequently   afterwards initial setup.
+
+> c) > Run terraform init plan apply commands EC2 instance. 
   Terraform will use these environment variables to authenticate 
-  and create our Azure resources.
+  and create our Azure resources including key vault.
 
-> After initial setup, switch to using Azure Key Vault and dynamic secret fetching
-  - Store credentials/secrets in Azure Key Vault.
-  - Use azurerm_key_vault_secret data source in Terraform to fetch secrets dynamically during future runs,     avoiding hardcoding or manually exporting secrets.
+## Azure authentication from inside Azure Resources(VM, Container, DevOps pipeline) ##
+ 
+> a) > Use 'Managed Identity' by adding below to provider.tf. No secrets need to be provided at all,
 
-## If Terraform runs inside Azure (VM, Container, DevOps pipeline), 
-   no secrets needed at all, use Managed Identity as
-* Add this block to provider.tf,
   provider "azurerm" {
   features = {}
   use_msi  = true
   }
-  and, 
-* Add below code to terraform which uses data block sourcing 
 
-  For production save service principal details in azure key vault and 
+> b) > Run terraform init plan apply commands from our Azure (VM, Container, DevOps pipeline)
+  Terraform will use these environment variables to authenticate 
+  and create our Azure resources including key vault.
+
+
+B) For subsequent use, after first step / Authentication is done, switch to using dynamic
+   secret fetching from vault
+  - Store credentials/secrets in Azure Key Vault or HashiCorp Vault (or other secret managers like of CI/CD         platforms as Jenkins).
+  - Use 'azurerm_key_vault_secret' data source in Terraform to fetch secrets dynamically during future runs,
+    avoiding hardcoding or manually exporting secrets.
+  - setup service principal access to key vault secrets with read (get) permissions, 
+    for strong access control or limited service principal with permission to read (get) those secrets.
+
+> a) > Go to Azure Dashboard > key vault and/or Add Secrets to Key Vault using azure cli as below:
+  az keyvault secret set --vault-name MyKeyVault --name "client-id" --value "<your-client-id>"
+  az keyvault secret set --vault-name MyKeyVault --name "client-secret" --value "<your-client-secret>"
+  az keyvault secret set --vault-name MyKeyVault --name "subscription-id" --value "<your-subscription-id>"
+  az keyvault secret set --vault-name MyKeyVault --name "tenant-id" --value "<your-tenant-id>"
+or,
+> a) > Use Azure Key Vault Access with Short-Lived Tokens
+
+  - Use a trusted service to generate short-lived access tokens or SAS tokens for Key Vault.
+  - Inject these tokens into your environment for each Terraform run.
+  Use Case: Highly secure, automated environments with strict secret rotation policies.
+  ?? How steps
+
+II. Azure AD Workload Identity Federation (OIDC)
+
+  - Federate your CI/CD platform (GitHub Actions, Jenkins, etc.) with Azure AD using OpenID Connect.
+  - The CI/CD pipeline presents an identity token to Azure AD, which is mapped to a federated credential.
+  - Terraform authenticates with Azure using this token, not secrets.
+  - use Azure federated credentials to assign RBAC to the identity group.
+  Use Case: Secure CI/CD pipelines, especially for GitHub Actions, Azure DevOps, or other cloud-native workflows.
+  ?? How to generate and use federated token? bootstrap initial run or subsequent usage? steps ?
+
+III. Use .tfvars file 
+  - In variable.tf, mark less-sensitive secret as 'sensitive = true' and keep these less-sensitive secrets
+    in .tfvars file 
+  - Don't add and push it to version control.
+  - Env - test/dev 
+  - Not suitable to keep secrets.
+
+IV. CI/CD Pipeline Secrets Storage - 
+  - Use the built-in secrets management features of CI/CD tools 
+  - such as GitHub Actions, Azure DevOps, or Jenkins
+  - store and encrypt secrets then inject them as environment variables into build and deployment jobs.
+  - Env - prod.
+  ?? How to configure CI/CD or automation agents to inject env vars securely??
+
+------------------------------------------------------------------------------------------------------------
+Recommended Production Pattern
+
+--
+Initial setup - Authenticate manually via CLI or env vars to create Key Vault and secrets.
+Store secrets securely - Upload SP secrets and other credentials to Key Vault.
+--
+
+---
+Automation setup - 
+Configure CI/CD or automation agents to inject env vars securely or use managed identities.
+---
+
+----
+Future runs - 
+Terraform authenticates using injected creds or managed identity, 
+fetches secrets dynamically from Key Vault, and applies infrastructure changes.
+----
+
+-------------------------------------------------------------------------------------------------------------
+## Rotate secrets regularly and enable alerting
+
+A) Rotation:
+	1) Manually: Periodically update the secret value in Key Vault (new SP secret/password, DB password, 		etc.). Each update creates a new secret version; update the downstream system (e.g., SP or DB) 		to use the new value.
+	2) Automated: Use: 
+		a) Event Grid + Azure Function / Logic App that listens for “SecretNearExpiry” events and 			rotates the secret (creates new value, writes to Key Vault, updates the dependent resource).
+		b) For keys, use key rotation policies configured on Key Vault keys.
+​
+B) Alerting:
+	1) Use Azure Monitor / Alerts on:
+		a) Key Vault logs (audit log, secret access, secret change events).
+		b) “SecretNearExpiry” events, unauthorized access attempts, or abnormal access patterns.
+	2) Route alerts to email, Teams, or incident tools.
+
+-------------------------------------------------------------------------------------------------------------
+## Additional Production Tips ##
+--------------------------------
+## Consider storing state remotely using Azure Storage with encryption and strict RBAC enabled. 
+  Handle Terraform state remotely using Azure Storage for better security and collaboration.
+
+## Try Keeping service principal or vault separate for dev/test/prod and differ schedules for secret rotation.  
+
+## Use of SP#1 initial authentication and SP#2 present in key vault for dynamic fetching for deployment
+   1) SP #1 “Bootstrap”:
+      a) RBAC: minimal rights, e.g., maybe only to run Key Vault data plane (via access policy) and
+      possibly very restricted infra actions.
+      b) Key Vault: get secret permission.
+   2) SP #2 “Deployment”: 
+      It is held in key vault with contributor/owner-type roles for resource management.
+   Terraform process:
+      a) Authenticates using SP #1 (via env vars, OIDC, etc.).
+      b) Uses data "azurerm_key_vault_secret" to read SP #2’s client_id/secret/tenant/subscription 
+         from Key Vault.
+      c) Provider block uses those values to impersonate SP #2 for resource operations.
+
+
+> Key Vault Access Policy: Ensure the Service Principal or Managed Identity used by Terraform always has get permission on the needed secrets in Key Vault.
+
+> Sensitive Outputs: Mark any outputs of secrets or IDs as sensitive = true in Terraform, or avoid outputting them altogether.
+
+> Terraform State Security: Store Terraform state remotely (e.g., in Azure Storage with access controls), and enable state file encryption.
+
+​> Secret Rotation: When rotating secrets, update both Key Vault and credentials used by automation/bots running Terraform.
+-------------------------------------------------------------------------------------------------------------
+
+--------------------------
+> Add below code to terraform which uses data block sourcing 
+
+ *For production save service principal details in azure key vault and 
   pull it using data block and use in provider block.
-  # can put data block in secrets.tf
 
+  # can put data block in secrets.tf
   data "azurerm_key_vault_secret" "client_id" {
     name         = "client-id"
     key_vault_id = var.key_vault_id
@@ -57,9 +196,44 @@ targeting Azure, the typical secure workflow is:
     features        = {}
   }
 
+###
+secrets.tf
 
+data "azurerm_key_vault" "kv" {
+  name                = "MyKeyVault"
+  resource_group_name = "MyResourceGroup"
+}
 
+data "azurerm_key_vault_secret" "client_id" {
+  name         = "client-id"
+  key_vault_id = data.azurerm_key_vault.kv.id
+}
 
+data "azurerm_key_vault_secret" "client_secret" {
+  name         = "client-secret"
+  key_vault_id = data.azurerm_key_vault.kv.id
+}
+
+data "azurerm_key_vault_secret" "subscription_id" {
+  name         = "subscription-id"
+  key_vault_id = data.azurerm_key_vault.kv.id
+}
+
+data "azurerm_key_vault_secret" "tenant_id" {
+  name         = "tenant-id"
+  key_vault_id = data.azurerm_key_vault.kv.id
+}
+
+provider.tf
+
+provider "azurerm" {
+  features        = {}
+  client_id       = data.azurerm_key_vault_secret.client_id.value
+  client_secret   = data.azurerm_key_vault_secret.client_secret.value
+  subscription_id = data.azurerm_key_vault_secret.subscription_id.value
+  tenant_id       = data.azurerm_key_vault_secret.tenant_id.value
+}
+--------------------------
 
 
 

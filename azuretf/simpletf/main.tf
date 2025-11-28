@@ -13,17 +13,12 @@ terraform {
 
 ## Configure the Microsoft Azure Provider
 
-# Use the azuread provider, not azurerm as azurerm cannot fetch Service Principals.
-provider "azuread" {
-  # (Optional) specify tenant_id, otherwise it uses az login context
-}
-
 provider "azurerm" {
 
   features {
-    key_vault {
-      purge_soft_delete_on_destroy    = true
-      recover_soft_deleted_key_vaults = true
+  #  key_vault {
+  #    purge_soft_delete_on_destroy    = true
+  #    recover_soft_deleted_key_vaults = true
     }
   }
 
@@ -74,7 +69,7 @@ resource "azurerm_resource_group" "ample" {
   #  delete = "45m"  # Override the default delete timeout (useful if the RG contains many resources)
   #}
 }
-
+/*
 # VNET w/ cidr 10.0.0.0/16
 resource "azurerm_virtual_network" "vnet1" {
   name                = "v1-network"
@@ -98,11 +93,9 @@ resource "azurerm_subnet" "pvtnet" {
   virtual_network_name = azurerm_virtual_network.vnet1
   address_prefixes     = ["10.0.2.0/24"]
 }
-
+*/
 # Key Vault
-
-data "azurerm_client_config" "current" {}
-
+/*
 resource "azurerm_key_vault" "amplekv" {
   name                        = "amplekeyvault"
   location                    = azurerm_resource_group.ample.location
@@ -131,7 +124,7 @@ resource "azurerm_key_vault" "amplekv" {
     ]
   }
 }
-
+*/
 # Storage account
 
 # Enable encyption to storage account
