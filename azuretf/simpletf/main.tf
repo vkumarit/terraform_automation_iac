@@ -1,7 +1,7 @@
 
 ## Automate Resource Creation on Azure ##
 
-## Azure Provider source and version being used
+## Azure Provider source and version
 terraform {
   required_providers {
     azurerm = {
@@ -11,16 +11,21 @@ terraform {
   }
 }
 
-## Configure the Microsoft Azure Provider
+###               PHASE-I               ###
+# Create Core Resources - Resource Group, Storage Account, Storage Container.
+# using azcli or env vars for SP terraform azure authentication on ec2.
+# Perform init plan apply.
 
+## Configure the Microsoft Azure Provider
 provider "azurerm" {
 
   features {
   #  key_vault {
   #    purge_soft_delete_on_destroy    = true
   #    recover_soft_deleted_key_vaults = true
-    }
+  #  }
   }
+}
 
 /*  
 For production save service principal details in azure key vault and pull it using data block and use in provider block.
@@ -39,7 +44,6 @@ provider "azurerm" {
   features        = {}
 }
 */
-
 #  resource_provider_registrations = "none" 
 /* 
   This is only required when the User, Service Principal, 
@@ -47,10 +51,8 @@ provider "azurerm" {
   register Azure Resource Providers.
 */
 
-}
-
-# Resource group
-resource "azurerm_resource_group" "ample" {
+# Resource Group
+resource "azurerm_resource_group" "mytfstate" {
   name     = "myTFResourceGroup"
   location = "Australia East"
 
@@ -69,6 +71,42 @@ resource "azurerm_resource_group" "ample" {
   #  delete = "45m"  # Override the default delete timeout (useful if the RG contains many resources)
   #}
 }
+
+# Storage Account
+resource "azurerm_storage_account" "mytfstate" {
+  name                     = "tfstatestg01"
+  resource_group_name      = azurerm_resource_group.mytfstate.name
+  location                 = azurerm_resource_group.mytfstate.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  allow_nested_items_to_be_public = false
+}
+
+# Storage Container
+resource "azurerm_storage_container" "mytfstate" {
+  name                  = "mytfstate"
+  storage_account_name  = azurerm_storage_account.mytfstate.name
+  container_access_type = "private"
+}
+
+###               PHASE-II               ###
+# Move terraform statefile to Storage Container.
+# After core resource creation configure backened.tf file.
+# Perform init after configuring.
+/*
+# backened.tf 
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "rg-tfstate"
+    storage_account_name = "<storage_account_name>"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+    use_azuread_auth     = true
+    use_cli              = true
+  }
+}
+*/
+
 /*
 # VNET w/ cidr 10.0.0.0/16
 resource "azurerm_virtual_network" "vnet1" {
@@ -94,6 +132,7 @@ resource "azurerm_subnet" "pvtnet" {
   address_prefixes     = ["10.0.2.0/24"]
 }
 */
+
 # Key Vault
 /*
 resource "azurerm_key_vault" "amplekv" {
@@ -125,7 +164,7 @@ resource "azurerm_key_vault" "amplekv" {
   }
 }
 */
-# Storage account
+
 
 # Enable encyption to storage account
 

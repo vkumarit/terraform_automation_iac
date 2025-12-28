@@ -315,13 +315,18 @@ Recommended Production Pattern
 
 --
 Initial setup - 
-Authenticate manually via azure CLI or env vars to create Key Vault and secrets separate for dev/test/prod.
+Authenticate manually via azure CLI or env vars 
+Create resources such as resource group, storage account, container (and Key)
 
-Store secrets securely - Upload SP secrets and other credentials to Key Vault using CLI, 
-Key Vault Access Policy - Service Principal or Managed Identity with 'get' permission to access secrets.
 --
 ---
 Automation setup - 
+
+configure the backend.tf to push statefile to Azure Container and yaml file for Azure DevOps pipeline configuration for automation.
+
+create Key Vault and secrets separate for dev/test/prod.
+Store secrets securely - Upload SP secrets and other credentials to Key Vault using CLI, 
+Key Vault Access Policy - Service Principal or Managed Identity with 'get' permission to access secrets.
 
 Configure CI/CD or automation agents to inject env vars securely or use managed identities.
 ---
