@@ -26,28 +26,18 @@ provider "azurerm" {
   #  }
   }
   
-  # use this when logging in to azure using cli as an User to authenticate to azure.
+  # use this when logged in to azure using cli as an User to authenticate to azure.
+  # Not required under automation/SP/pipeline condition.
   #use_cli = true
-  subscription_id = "2b2f02f7-dde2-47db-974c-47d2182721ae"
+  
+  # Add key value as below required by version <= 4.1.0 for azure authentication.
+  #subscription_id = "2b2f02f7-dde2-47db-974c-47d2182721ae"
+  
+  # ELSE export subscription id to env vars, so terraform can use it for authentication.
+  # $ export ARM_SUBSCRIPTION_ID="<our-subscription-id>"
 }
 
-/*  
-For production save service principal details in azure key vault and pull it using data block and use in provider block.
-# can put in secrets.tf
-data "azurerm_key_vault_secret" "client_id" {
-  name         = "client-id"
-  key_vault_id = var.key_vault_id
-}
 
-# can put in provider.tf
-provider "azurerm" {
-  client_id       = data.azurerm_key_vault_secret.client_id.value
-  tenant_id       = data.azurerm_key_vault_secret.tenant_id.value
-  client_secret   = data.azurerm_key_vault_secret.client_secret.value
-  subscription_id = data.azurerm_key_vault_secret.subscription_id.value
-  features        = {}
-}
-*/
 #  resource_provider_registrations = "none" 
 /* 
   This is only required when the User, Service Principal, 
@@ -92,6 +82,8 @@ resource "azurerm_storage_container" "mytfstate" {
   storage_account_name  = azurerm_storage_account.mytfstate.name
   container_access_type = "private"
 }
+
+
 
 ###               PHASE-II               ###
 # Move terraform statefile to Storage Container.
@@ -169,6 +161,23 @@ resource "azurerm_key_vault" "amplekv" {
 }
 */
 
+/*  
+For production save service principal details in azure key vault and pull it using data block and use in provider block.
+# can put in secrets.tf
+data "azurerm_key_vault_secret" "client_id" {
+  name         = "client-id"
+  key_vault_id = var.key_vault_id
+}
+
+# can put in provider.tf
+provider "azurerm" {
+  client_id       = data.azurerm_key_vault_secret.client_id.value
+  tenant_id       = data.azurerm_key_vault_secret.tenant_id.value
+  client_secret   = data.azurerm_key_vault_secret.client_secret.value
+  subscription_id = data.azurerm_key_vault_secret.subscription_id.value
+  features        = {}
+}
+*/
 
 # Enable encyption to storage account
 
