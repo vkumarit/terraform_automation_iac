@@ -26,7 +26,9 @@ provider "azurerm" {
   #  }
   }
   
-  use_cli = true
+  # use this when logging in to azure using cli as an User to authenticate to azure.
+  #use_cli = true
+  subscription_id = "2b2f02f7-dde2-47db-974c-47d2182721ae"
 }
 
 /*  
