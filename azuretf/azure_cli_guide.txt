@@ -1,0 +1,5 @@
+
+
+Login to azure using Azure CLI:
+$ az login --service-principal --username <-subscription id-> --password <-p. a. token-> --tenant <-tenant id->
+
