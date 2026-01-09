@@ -26,24 +26,28 @@ provider "azurerm" {
   #  }
   }
   
-  # use this when logged in to azure using cli as an User to authenticate to azure.
+  ## use this when local/bootstrap, logged in to azure using cli as an User, to authenticate to azure.
   # Not required under automation/SP/pipeline condition.
   #use_cli = true
   
-  # Add key value as below required by version <= 4.1.0 for azure authentication.
+  ## Add key value as below required by version <= 4.1.0 for azure authentication.
   #subscription_id = "2b2f02f7-dde2-47db-974c-47d2182721ae"
+  /* 
+  ELSE,
+  export subscription id to env vars, so terraform can use it for authentication.
+  $ export ARM_SUBSCRIPTION_ID="<our-subscription-id>" 
+  */
   
-  # ELSE export subscription id to env vars, so terraform can use it for authentication.
-  # $ export ARM_SUBSCRIPTION_ID="<our-subscription-id>"
-}
-
-
-#  resource_provider_registrations = "none" 
-/* 
+  #  resource_provider_registrations = "none" 
+  /* 
   This is only required when the User, Service Principal, 
   or Identity running Terraform lacks the permissions to 
   register Azure Resource Providers.
-*/
+  */
+}
+
+
+
 
 # Resource Group
 resource "azurerm_resource_group" "mytfstate" {
