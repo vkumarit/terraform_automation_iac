@@ -13,12 +13,11 @@ terraform {
 
 ###               PHASE-I               ###
 # Create Core Resources - Resource Group, Storage Account, Storage Container.
-# using azcli or env vars for SP terraform azure authentication on ec2.
+# using azcli and/or env vars for SP terraform azure authentication on ec2.
 # Perform init plan apply.
 
 ## Configure the Microsoft Azure Provider
 provider "azurerm" {
-
   features {
   #  key_vault {
   #    purge_soft_delete_on_destroy    = true
