@@ -24,26 +24,39 @@ provider "azurerm" {
   #    purge_soft_delete_on_destroy    = true
   #    recover_soft_deleted_key_vaults = true
   #  }
-  }
-  
-  ## use this when local/bootstrap, logged in to azure using cli as an User, to authenticate to azure.
-  # Not required under automation/SP/pipeline condition.
-  #use_cli = true
-  
-  ## Add key value as below required by version <= 4.1.0 for azure authentication.
-  #subscription_id = "2b2f02f7-dde2-47db-974c-47d2182721ae"
-  /* 
-  ELSE,
-  export subscription id to env vars, so terraform can use it for authentication.
-  $ export ARM_SUBSCRIPTION_ID="<our-subscription-id>" 
-  */
   
   #  resource_provider_registrations = "none" 
   /* 
-  This is only required when the User, Service Principal, 
-  or Identity running Terraform lacks the permissions to 
-  register Azure Resource Providers.
+  This is only required when the User, Service Principal, or Identity running Terraform lacks
+  the permissions to register Azure Resource Providers. 
   */
+  }
+  
+  ## A) use this when local/bootstrap, logged in to azure using cli as an User, to authenticate to azure.
+  # Not required under automation/SP/pipeline condition.
+  #use_cli = true
+  
+  ## B) Add key value as below required by version <= 4.1.0 for azure authentication.
+  #subscription_id = "2b2f02f7-dde2-47db-974c-47d2182721ae"
+  /* 
+  OR,
+  Export subscription_id to ENV VARS, so 
+  i) Terraform can auto-read it for authentication as
+     $ export ARM_SUBSCRIPTION_ID="<our-subscription-id>" 
+  ii) Else, Explicitly reference as a variable
+     variable "subscription_id" {
+       description = "Azure subscription ID"
+       type        = string
+       default     = null  # Falls back to env var
+     }
+
+     provider "azurerm" {
+       features         {}
+       subscription_id  = var.subscription_id
+     }
+   
+  */
+    
 }
 
 
