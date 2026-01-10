@@ -113,9 +113,9 @@ or,
   - Terraform picks up the authentication context from the Azure CLI session.
   Use Case: Manual runs or environments where you can run CLI commands. Can also be used subsequently   afterwards initial setup.
 
-> c) > Run terraform init plan apply commands EC2 instance. 
-  Terraform will use these environment variables to authenticate 
-  and create our Azure resources including key vault.
+> c) > Run terraform init, plan -out ('-out' so terraform guarantee to act exactly as was shown in plan phase),
+       and apply commands EC2 instance. Terraform will use these environment variables (or az login context)
+       to authenticate and create our Azure resources including key vault.
 
 or,
      > Use .tfvars file 
