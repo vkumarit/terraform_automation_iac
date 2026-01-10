@@ -71,7 +71,7 @@ resource "azurerm_resource_group" "mytfstate" {
 
 # Storage Account
 resource "azurerm_storage_account" "mytfstate" {
-  name                     = "tfstatestg01"
+  name                     = "tfstatestorage01"
   resource_group_name      = azurerm_resource_group.mytfstate.name
   location                 = azurerm_resource_group.mytfstate.location
   account_tier             = "Standard"
