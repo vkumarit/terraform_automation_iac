@@ -17,6 +17,7 @@ A) For first time/step, also when we exit the session with exported vars and
   - Assign the Service Principal the necessary roles (e.g., Contributor) 
     on your subscription or resource group.
   - generate Personam Access Token from azure organization to setup agent on vm.
+  
   b) > Create Service Principal using Azure AD CLI
   - Log into Azure (Cloud Shell or local machine) and do:
     $ az ad sp create-for-rbac --name "terraform-ec2-sp" --role Contributor \
@@ -69,20 +70,43 @@ or,
 
   - Verify the subscription used by terraform.
     $ az account show
-  - Configure Terraform to use AzureRM provider
     
-    terraform {
-      required_providers {
-        azurerm = {
-          source  = "hashicorp/azurerm"
-          version = "~> 4.0"
+  - Terraform >=4 requires subscription_id for azure authentication, so
+    i) Export subscription id to env vars,
+       $ export ARM_SUBSCRIPTION_ID="<our-subscription-id>"
+  -    Configure Terraform to use AzureRM provider
+       terraform {
+         required_providers {
+           azurerm = {
+             source  = "hashicorp/azurerm"
+             version = "~> 4.0"
+          }
+         }
        }
-      }
-    }
+    
+       provider "azurerm" {
+         features {}
+       }
+    
+    ii) Hardcode subscription id as below without exporting to env vars,
+       provider "azurerm" {
+         features         {}
+         subscription_id  = "<-subscription_id->"
+       }
+    
+    iii) Else, after exporting id to env vars, explicitly reference as a variable
+       variable "subscription_id" {
+          description = "Azure subscription ID"
+          type        = string
+          default     = null  # Falls back to env var
+       }
 
-    provider "azurerm" {
-      features {}
-    }
+       provider "azurerm" {
+         features         {}
+         subscription_id  = var.subscription_id
+       }
+
+    
 
     When the Azure CLI is logged in with a user? or service principal, AzureRM can automatically use the SP     credentials.
 

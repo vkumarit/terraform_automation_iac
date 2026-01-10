@@ -36,31 +36,18 @@ provider "azurerm" {
   # Not required under automation/SP/pipeline condition.
   #use_cli = true
   
-  ## B) Add key value as below required by version <= 4.1.0 for azure authentication.
-  #subscription_id = "2b2f02f7-dde2-47db-974c-47d2182721ae"
+  ## B) Add key value as below required by version >= 4.1.0 for azure authentication.
+  #subscription_id = "2b2f02f7-xxxx-47db-xxxx-47d2182721ae"
   /* 
   OR,
-  Export subscription_id to ENV VARS, so 
-  i) Terraform can auto-read it for authentication as
-     $ export ARM_SUBSCRIPTION_ID="<our-subscription-id>" 
-  ii) Else, Explicitly reference as a variable
-     variable "subscription_id" {
-       description = "Azure subscription ID"
-       type        = string
-       default     = null  # Falls back to env var
-     }
-
-     provider "azurerm" {
-       features         {}
-       subscription_id  = var.subscription_id
-     }
-   
+  ## Export subscription_id to env vars, it will be auto-read by terraform for authentication,
+  $ export ARM_SUBSCRIPTION_ID="<our-subscription-id>" 
+  AND, 
+  if needed, after exporting id explicitly reference as a variable and call it in provider block,
+  #subscription_id  = var.subscription_id   
   */
     
 }
-
-
-
 
 # Resource Group
 resource "azurerm_resource_group" "mytfstate" {
