@@ -79,6 +79,8 @@ resource "azurerm_storage_account" "mytfstate" {
   allow_nested_items_to_be_public = false
 }
 
+# How to solve the problem of atorage account name already taken?
+
 # Storage Container
 resource "azurerm_storage_container" "mytfstate" {
   name                  = "mytfstate"
