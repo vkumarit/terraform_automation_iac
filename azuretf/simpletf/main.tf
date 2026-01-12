@@ -70,16 +70,45 @@ resource "azurerm_resource_group" "mytfstate" {
 }
 
 # Storage Account
-resource "azurerm_storage_account" "mytfstate" {
-  name                     = "tfstatestorage01"
-  resource_group_name      = azurerm_resource_group.mytfstate.name
-  location                 = azurerm_resource_group.mytfstate.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  allow_nested_items_to_be_public = false
+
+# How to solve the problem of storage account name already taken?
+# Avoiding name already taken error by using data block and random_string resource block with conditions #
+
+# Data source to check preferred name locally under subscription/resource group
+data "azurerm_storage_account" "preferred" {   # use of preferred word - Checks desired fixed name
+  count = 1
+  name  = "tfstatestorage01"
+  # Assumes same RG as resource below; adjust if different
+  resource_group_name = "myTFResourceGroup"
 }
 
-# How to solve the problem of atorage account name already taken?
+# Random suffix as fallback for dynamic naming
+resource "random_string" "suffix" {
+  length  = 2
+  special = false
+  upper   = false
+  keepers = {
+    # Recreate storage account only if preferred name becomes available and 
+    # random-named storage account is deleted before recreating preferred name storage account.
+    preferred_exists = length(data.azurerm_storage_account.preferred)
+  }
+  #The random_string.keepers prevents unnecessary recreation.
+}
+
+# preferred-name if exists (use it), else random
+resource "azurerm_storage_account" "mytfstate" {
+  count = length(data.azurerm_storage_account.preferred) > 0 ? 1 : 1  # Always 1 instance
+  name  = length(data.azurerm_storage_account.preferred) > 0 ? "prod-myapp-tfstate-01" : "prod-myapp-tfstate-${random_string.suffix.result}"
+  resource_group_name  = "myTFResourceGroup"
+  location             = azurerm_resource_group.mytfstate.location  # Use RG data/variable
+  account_tier         = "Standard"
+  account_replication_type = "LRS"
+  allow_nested_items_to_be_public = false
+  depends_on = [data.azurerm_storage_account.preferred]  # Ensures data source completes first
+  # Add other config (sku, tags, network_rules, etc.)
+}
+
+
 
 # Storage Container
 resource "azurerm_storage_container" "mytfstate" {
