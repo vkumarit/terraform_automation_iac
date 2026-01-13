@@ -100,15 +100,11 @@ resource "random_string" "suffix" {
   */
 }
 
-# Storage account with local fallback logic
-locals {
-  storage_account_name = length(data.azurerm_storage_account.preferred) > 0 ? 
-    "prodmyapptfstate01" : "prodmyapptfstate${random_string.suffix.result}"
-}
 
 # preferred-name if exists (use it), else random
 resource "azurerm_storage_account" "mytfstate" {
-  name  = locals.storage_account_name
+  count = 1
+  name  = length(data.azurerm_storage_account.preferred) > 0 ? data.azurerm_storage_account.preferred[0].name : "prodmyapptfstate${random_string.suffix.result}"
   resource_group_name  = azurerm_resource_group.mytfstate.name
   location             = azurerm_resource_group.mytfstate.location  # Use RG data/variable
   account_tier         = "Standard"
