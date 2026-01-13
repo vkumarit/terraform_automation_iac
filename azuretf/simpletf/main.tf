@@ -116,8 +116,7 @@ resource "azurerm_storage_account" "mytfstate" {
 # Storage Container
 resource "azurerm_storage_container" "mytfstate" {
   name                  = "mytfstate"
-  storage_account_name  = azurerm_storage_account.mytfstate[0].name  # Add [0] for first storage ac. in index
-  #storage_account_name = azurerm_storage_account.mytfstate.name
+  storage_account_name = azurerm_storage_account.mytfstate.name
   container_access_type = "private"
   
   depends_on = [azurerm_storage_account.mytfstate]  # ensures storage account creates first
