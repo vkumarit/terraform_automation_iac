@@ -76,14 +76,13 @@ resource "azurerm_resource_group" "mytfstate" {
 
 # Data source to check preferred name locally under subscription/resource group
 data "azurerm_storage_account" "preferred" {   # use of preferred word - Checks desired fixed name
-  count = 1                          
+  count = length(azurerm_resource_group.mytfstate) > 0 ? 1 : 0  # Only run AFTER RG exists
+  #count = 1                          
   # Always create 1 storage account instance (only index [0] exists).
   # count will create storage account instances based on number value assigned.
   name  = "prodmyapptfstate01"
   # Assumes same RG as resource below; adjust if different
   resource_group_name = azurerm_resource_group.mytfstate.name  # Reference RG
-  
-  depends_on = [resource.azurerm_resource_group.mytfstate]
 }
 
 # Random suffix as fallback for dynamic naming
