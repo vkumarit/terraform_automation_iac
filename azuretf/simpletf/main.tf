@@ -82,6 +82,8 @@ data "azurerm_storage_account" "preferred" {   # use of preferred word - Checks 
   name  = "prodmyapptfstate01"
   # Assumes same RG as resource below; adjust if different
   resource_group_name = azurerm_resource_group.mytfstate.name  # Reference RG
+  
+  depends_on = [resource.azurerm_resource_group.mytfstate]
 }
 
 # Random suffix as fallback for dynamic naming
