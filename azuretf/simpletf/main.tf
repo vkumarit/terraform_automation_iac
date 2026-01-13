@@ -49,6 +49,7 @@ provider "azurerm" {
 }
 
 # Resource Group
+
 resource "azurerm_resource_group" "mytfstate" {
   name     = "myTFResourceGroup"
   location = "Australia East"
@@ -71,50 +72,46 @@ resource "azurerm_resource_group" "mytfstate" {
 
 # Storage Account
 
-# How to solve the problem of storage account name already taken?
-# Avoiding name already taken error by using data block and random_string resource block with conditions #
-
-# Data source to check preferred name locally under subscription/resource group
-data "azurerm_storage_account" "preferred" {   # use of preferred word - Checks desired fixed name
-  count = 1                          
-  # Always create 1 storage account instance (only index [0] exists).
-  # count will create storage account instances based on number value assigned.
-  name  = "prodmyapptfstate01"
-  # Assumes same RG as resource below; adjust if different
-  resource_group_name = azurerm_resource_group.mytfstate.name  # Reference RG
+# Can manually check available name using az cli, then enter here.
+resource "azurerm_storage_account" "mytfstate" {
+  name                = "prodmyapptfstate01"
+  resource_group_name = azurerm_resource_group.mytfstate.name
+  location            = azurerm_resource_group.mytfstate.location
+  account_tier        = "Standard"
+  account_replication_type = "LRS"
+  allow_nested_items_to_be_public = false
 }
 
-# Random suffix as fallback for dynamic naming
+/*
+# How to solve the problem of storage account name already taken?
+# Avoiding name already taken error by using random_string resource block with conditions #
 resource "random_string" "suffix" {
   length  = 4
   special = false
   upper   = false
-  
-  /*
   keepers = {
     # Recreate storage account only if preferred name becomes available and 
     # random-named storage account is deleted before recreating preferred name storage account.
     preferred_exists = length(data.azurerm_storage_account.preferred)
   }
   #The random_string.keepers prevents unnecessary recreation.
-  */
+  
 }
 
-
-# preferred-name if exists (use it), else random
+# random-naming of storage account
 resource "azurerm_storage_account" "mytfstate" {
-  count = 1
-  name  = length(data.azurerm_storage_account.preferred) > 0 ? data.azurerm_storage_account.preferred[0].name : "prodmyapptfstate${random_string.suffix.result}"
+  name                 = "prodmyapptfstate${random_string.suffix.result}"
   resource_group_name  = azurerm_resource_group.mytfstate.name
   location             = azurerm_resource_group.mytfstate.location  # Use RG data/variable
   account_tier         = "Standard"
   account_replication_type = "LRS"
   allow_nested_items_to_be_public = false
-  
   depends_on = [azurerm_resource_group.mytfstate]  # Ensure RG exists first
   
   # Add other config (sku, tags, network_rules, etc.)
 }
+*/
+
 
 # Storage Container
 resource "azurerm_storage_container" "mytfstate" {
