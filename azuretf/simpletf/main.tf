@@ -76,8 +76,7 @@ resource "azurerm_resource_group" "mytfstate" {
 
 # Data source to check preferred name locally under subscription/resource group
 data "azurerm_storage_account" "preferred" {   # use of preferred word - Checks desired fixed name
-  count = length(azurerm_resource_group.mytfstate) > 0 ? 1 : 0  # Only run AFTER RG exists
-  #count = 1                          
+  count = 1                          
   # Always create 1 storage account instance (only index [0] exists).
   # count will create storage account instances based on number value assigned.
   name  = "prodmyapptfstate01"
@@ -87,38 +86,45 @@ data "azurerm_storage_account" "preferred" {   # use of preferred word - Checks 
 
 # Random suffix as fallback for dynamic naming
 resource "random_string" "suffix" {
-  length  = 2
+  length  = 4
   special = false
   upper   = false
+  
+  /*
   keepers = {
     # Recreate storage account only if preferred name becomes available and 
     # random-named storage account is deleted before recreating preferred name storage account.
     preferred_exists = length(data.azurerm_storage_account.preferred)
   }
   #The random_string.keepers prevents unnecessary recreation.
+  */
+}
+
+# Storage account with local fallback logic
+locals {
+  storage_account_name = length(data.azurerm_storage_account.preferred) > 0 ? 
+    "prodmyapptfstate01" : "prodmyapptfstate${random_string.suffix.result}"
 }
 
 # preferred-name if exists (use it), else random
 resource "azurerm_storage_account" "mytfstate" {
-  count = length(data.azurerm_storage_account.preferred) > 0 ? 1 : 1  # Always 1 storage account instance
-  name  = length(data.azurerm_storage_account.preferred) > 0 ? "prodmyapptfstate01" : "prod-myapp-tfstate-${random_string.suffix.result}"
-  resource_group_name  = "myTFResourceGroup"
+  name  = locals.storage_account_name
+  resource_group_name  = azurerm_resource_group.mytfstate.name
   location             = azurerm_resource_group.mytfstate.location  # Use RG data/variable
   account_tier         = "Standard"
   account_replication_type = "LRS"
   allow_nested_items_to_be_public = false
   
-  depends_on = [data.azurerm_storage_account.preferred]  # Ensures data source completes first
+  depends_on = [azurerm_resource_group.mytfstate]  # Ensure RG exists first
   
   # Add other config (sku, tags, network_rules, etc.)
 }
 
-
-
 # Storage Container
 resource "azurerm_storage_container" "mytfstate" {
   name                  = "mytfstate"
-  storage_account_name  = azurerm_storage_account.mytfstate[0].name  # Add [0] for first storage ac. in index
+  #storage_account_name  = azurerm_storage_account.mytfstate[0].name  # Add [0] for first storage ac. in index
+  storage_account_name = azurerm_storage_account.mytfstate.name
   container_access_type = "private"
   
   depends_on = [azurerm_storage_account.mytfstate]  # ensures storage account creates first
