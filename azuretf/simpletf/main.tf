@@ -79,7 +79,7 @@ data "azurerm_storage_account" "preferred" {   # use of preferred word - Checks 
   count = 1                          
   # Always create 1 storage account instance (only index [0] exists).
   # count will create storage account instances based on number value assigned.
-  name  = "prod-myapp-tfstate-01"
+  name  = "prodmyapptfstate01"
   # Assumes same RG as resource below; adjust if different
   resource_group_name = azurerm_resource_group.mytfstate.name  # Reference RG
 }
@@ -100,7 +100,7 @@ resource "random_string" "suffix" {
 # preferred-name if exists (use it), else random
 resource "azurerm_storage_account" "mytfstate" {
   count = length(data.azurerm_storage_account.preferred) > 0 ? 1 : 1  # Always 1 storage account instance
-  name  = length(data.azurerm_storage_account.preferred) > 0 ? "prod-myapp-tfstate-01" : "prod-myapp-tfstate-${random_string.suffix.result}"
+  name  = length(data.azurerm_storage_account.preferred) > 0 ? "prodmyapptfstate01" : "prod-myapp-tfstate-${random_string.suffix.result}"
   resource_group_name  = "myTFResourceGroup"
   location             = azurerm_resource_group.mytfstate.location  # Use RG data/variable
   account_tier         = "Standard"
