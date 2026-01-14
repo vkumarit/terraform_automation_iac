@@ -71,10 +71,12 @@ or,
   - Verify the subscription used by terraform.
     $ az account show
     
-  - Terraform >=4 requires subscription_id for azure authentication, so
+  - Configure Terraform to use AzureRM provider
+  
+    Terraform >=4 requires subscription_id for azure authentication, so
     i) Export subscription id to env vars,
-       $ export ARM_SUBSCRIPTION_ID="<our-subscription-id>"
-  -    Configure Terraform to use AzureRM provider
+       $ export ARM_SUBSCRIPTION_ID="<our-subscription-id>" 
+       
        terraform {
          required_providers {
            azurerm = {
@@ -143,7 +145,7 @@ or, if
 
 B) For subsequent use, after first step / Authentication is done, switch to using dynamic
    secret fetching from vault
-  - Store credentials/secrets in Azure Key Vault or HashiCorp Vault (or other secret managers like of CI/CD         platforms as Jenkins).
+  - Store credentials/secrets in Azure Key Vault or HashiCorp Vault (or other secret managers like of CI/CD platforms as Jenkins).
   - Use 'azurerm_key_vault_secret' data source in Terraform to fetch secrets dynamically during future runs,
     avoiding hardcoding or manually exporting secrets.
   - setup service principal access to key vault secrets with read (get) permissions, 
@@ -332,14 +334,30 @@ V. CI/CD Pipeline Secrets Storage
                    to authenticate. 
                      (Alternatively, we add variable to env var option under task)
 
---------------------------
+-------------------------------------------------------------------------------------------------------------
+Terraform Commands:
+-------------------
+(Part of Bootstrap plan- manually create resources at azure then shift to azure devops cicd pipeline)
+
+>> After changing data, resource blocks' code etc to refresh statefile free from errors
+# Clean state
+rm -rf .terraform .terraform.lock.hcl terraform.tfstate*
+
+# Fresh start
+terraform init > validate > plan > apply 
+
+>> After adding the backened block to move statefile to created storage account, use
+#initialize the remote backend
+$ terraform init -upgrade
+
+-------------------------------------------------------------------------------------------------------------
 Recommended Production Pattern
 
 (Need az cli on ec2, resources such as resource group, storage account, container (and Key) and configure the backend.tf and yaml file for Azure DevOps pipeline configuration for automation.)
 
 --
 Initial setup - 
-Authenticate manually via azure CLI or env vars 
+Authenticate manually via azure CLI or env vars (export subscription_id for terraform)
 Create resources such as resource group, storage account, container (and Key)
 
 --
@@ -362,11 +380,11 @@ fetches secrets dynamically from Key Vault, and applies infrastructure changes.
 Terraform State Security: Store Terraform state remotely (e.g., in Azure Storage with access controls), and enable state file encryption.
 
 Sensitive Outputs: Mark any outputs of secrets or IDs as 'sensitive = true' in Terraform, or avoid outputting them altogether.
---------------------------
+--------------------------------------------------------------------------------------------------------------
 ## Rotate secrets regularly and enable alerting
 
 A) Rotation:
-	1) Manually: Periodically update the secret value in Key Vault (new SP secret/password, DB password, 		etc.). Each update creates a new secret version; update the downstream system (e.g., SP or DB) 		to use the new value.
+	1) Manually: Periodically update the secret value in Key Vault (new SP secret/password, DB password, 		etc.). Each update creates a new secret version; update the downstream system (e.g., SP or DB) to use the new value.
 	2) Automated: Use: 
 		a) Event Grid + Azure Function / Logic App that listens for “SecretNearExpiry” events and 			rotates the secret (creates new value, writes to Key Vault, updates the dependent resource).
 		b) For keys, use key rotation policies configured on Key Vault keys.

@@ -17,6 +17,7 @@ terraform {
 # Perform init plan apply.
 
 ## Configure the Microsoft Azure Provider
+
 provider "azurerm" {
   features {
   #  key_vault {
@@ -48,7 +49,7 @@ provider "azurerm" {
     
 }
 
-# Resource Group
+## Resource Group
 
 resource "azurerm_resource_group" "mytfstate" {
   name     = "myTFResourceGroup"
@@ -70,7 +71,7 @@ resource "azurerm_resource_group" "mytfstate" {
   #}
 }
 
-# Storage Account
+## Storage Account
 
 # Can manually check available name using az cli, then enter here.
 resource "azurerm_storage_account" "mytfstate" {
@@ -95,7 +96,6 @@ resource "random_string" "suffix" {
     preferred_exists = length(data.azurerm_storage_account.preferred)
   }
   #The random_string.keepers prevents unnecessary recreation.
-  
 }
 
 # random-naming of storage account
@@ -112,8 +112,7 @@ resource "azurerm_storage_account" "mytfstate" {
 }
 */
 
-
-# Storage Container
+## Storage Container
 resource "azurerm_storage_container" "mytfstate" {
   name                  = "mytfstate"
   storage_account_name = azurerm_storage_account.mytfstate.name
@@ -128,20 +127,19 @@ resource "azurerm_storage_container" "mytfstate" {
 ###               PHASE-II               ###
 # Move terraform statefile to Storage Container.
 # After core resource creation configure backened.tf file.
-# Perform init after configuring.
-/*
+# Perform init -upgrade after configuring.
+
 # backened.tf 
 terraform {
   backend "azurerm" {
-    resource_group_name  = "rg-tfstate"
-    storage_account_name = "<storage_account_name>"
-    container_name       = "tfstate"
-    key                  = "terraform.tfstate"
-    use_azuread_auth     = true
+    resource_group_name  = azurerm_resource_group.mytfstate.name
+    storage_account_name = azurerm_storage_account.mytfstate.name
+    container_name       = azurerm_storage_container.mytfstate.name
+    key                  = "terraform.tfstate"       # folder name/directory inside container
+    #use_azuread_auth     = true
     use_cli              = true
   }
 }
-*/
 
 /*
 # VNET w/ cidr 10.0.0.0/16
