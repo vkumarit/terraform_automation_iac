@@ -46,7 +46,6 @@ provider "azurerm" {
   if needed, after exporting id explicitly reference as a variable and call it in provider block,
   #subscription_id  = var.subscription_id   
   */
-    
 }
 
 ## Resource Group
@@ -125,8 +124,7 @@ resource "azurerm_storage_container" "mytfstate" {
 
 
 ###               PHASE-II               ###
-# Move terraform statefile to Storage Container.
-# After core resource creation configure backened.tf file.
+# After core resource creation configure backened.tf file. Move terraform statefile to Storage Container. 
 # Perform init -upgrade after configuring.
 
 # backened.tf 
@@ -136,36 +134,10 @@ terraform {
     storage_account_name = "prodmyapptfstate01"
     container_name       = "mytfstate"
     key                  = "terraform.tfstate"       # folder name/directory inside container
-    #use_azuread_auth     = true
+    #use_azuread_auth     = true   # When using entra id for authentication
     use_cli              = true
   }
 }
-
-/*
-# VNET w/ cidr 10.0.0.0/16
-resource "azurerm_virtual_network" "vnet1" {
-  name                = "v1-network"
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.ample.location
-  resource_group_name = azurerm_resource_group.ample.name
-}
-
-# Subnets w/ network security group
-# public subnet (10.0.1.0/28) 
-resource "azurerm_subnet" "pubnet1" {
-  name                 = "pub1-subnet"
-  resource_group_name  = azurerm_resource_group.ample
-  virtual_network_name = azurerm_virtual_network.vnet1
-  address_prefixes     = ["10.0.1.0/28"]
-}
-# private subnet (10.0.2.0/24) 
-resource "azurerm_subnet" "pvtnet" {
-  name                 = "pvt1-subnet"
-  resource_group_name  = azurerm_resource_group.ample
-  virtual_network_name = azurerm_virtual_network.vnet1
-  address_prefixes     = ["10.0.2.0/24"]
-}
-*/
 
 # Key Vault
 /*
@@ -196,6 +168,32 @@ resource "azurerm_key_vault" "amplekv" {
       "Get",
     ]
   }
+}
+*/
+
+/*
+# VNET w/ cidr 10.0.0.0/16
+resource "azurerm_virtual_network" "vnet1" {
+  name                = "v1-network"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.ample.location
+  resource_group_name = azurerm_resource_group.ample.name
+}
+
+# Subnets w/ network security group
+# public subnet (10.0.1.0/28) 
+resource "azurerm_subnet" "pubnet1" {
+  name                 = "pub1-subnet"
+  resource_group_name  = azurerm_resource_group.ample
+  virtual_network_name = azurerm_virtual_network.vnet1
+  address_prefixes     = ["10.0.1.0/28"]
+}
+# private subnet (10.0.2.0/24) 
+resource "azurerm_subnet" "pvtnet" {
+  name                 = "pvt1-subnet"
+  resource_group_name  = azurerm_resource_group.ample
+  virtual_network_name = azurerm_virtual_network.vnet1
+  address_prefixes     = ["10.0.2.0/24"]
 }
 */
 
