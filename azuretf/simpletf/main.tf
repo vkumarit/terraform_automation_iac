@@ -132,9 +132,9 @@ resource "azurerm_storage_container" "mytfstate" {
 # backened.tf 
 terraform {
   backend "azurerm" {
-    resource_group_name  = azurerm_resource_group.mytfstate.name
-    storage_account_name = azurerm_storage_account.mytfstate.name
-    container_name       = azurerm_storage_container.mytfstate.name
+    resource_group_name  = "myTFResourceGroup"
+    storage_account_name = "prodmyapptfstate01"
+    container_name       = "mytfstate"
     key                  = "terraform.tfstate"       # folder name/directory inside container
     #use_azuread_auth     = true
     use_cli              = true
