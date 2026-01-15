@@ -129,7 +129,7 @@ resource "azurerm_storage_container" "prodmyapp" {
 
 # After core resource creation configure backened.tf file. Move terraform statefile to Storage Container. 
 # Perform init -upgrade after configuring.
-/*
+
 # backened.tf 
 terraform {
   backend "azurerm" {
@@ -177,7 +177,7 @@ resource "azurerm_key_vault" "prodmyapp" {
     ]
   }
 }
-*/
+
 
 /*
 # VNET w/ cidr 10.0.0.0/16
