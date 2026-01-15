@@ -136,13 +136,18 @@ terraform {
     resource_group_name  = "myTFResourceGroup"
     storage_account_name = "prodmyapptfstate01"
     container_name       = "mytfstate"
-    key                  = "terraform.tfstate"       # folder name/directory inside container
-    #use_azuread_auth     = true   # When using entra id for authentication
-    use_cli              = true  #uses the logged-in az cli context for authentication
+    key                  = "terraform.tfstate"       # folder/file name/directory inside container
+    #use_azuread_auth     = true                      # When using entra id for authentication
+    use_cli              = true  # uses the logged-in az cli context for authentication
+    
+    # comment out use_cli when switching to pipeline
   }
 }
 
 # Key Vault
+
+#Fetch current Azure client configuration (tenant ID, object ID, etc.) from authenticated session via AZ CLI
+data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "prodmyapp" {
   name                        = "prodmyappkv"
