@@ -50,7 +50,7 @@ provider "azurerm" {
 
 ## Resource Group
 
-resource "azurerm_resource_group" "mytfstate" {
+resource "azurerm_resource_group" "prodmyapp" {
   name     = "myTFResourceGroup"
   location = "Australia East"
 
@@ -73,10 +73,10 @@ resource "azurerm_resource_group" "mytfstate" {
 ## Storage Account
 
 # Can manually check available name using az cli, then enter here.
-resource "azurerm_storage_account" "mytfstate" {
+resource "azurerm_storage_account" "prodmyapp" {
   name                = "prodmyapptfstate01"
-  resource_group_name = azurerm_resource_group.mytfstate.name
-  location            = azurerm_resource_group.mytfstate.location
+  resource_group_name = azurerm_resource_group.prodmyapp.name
+  location            = azurerm_resource_group.prodmyapp.location
   account_tier        = "Standard"
   account_replication_type = "LRS"
   allow_nested_items_to_be_public = false
@@ -112,18 +112,21 @@ resource "azurerm_storage_account" "mytfstate" {
 */
 
 ## Storage Container
-resource "azurerm_storage_container" "mytfstate" {
+
+resource "azurerm_storage_container" "prodmyapp" {
   name                  = "mytfstate"
-  storage_account_name = azurerm_storage_account.mytfstate.name
+  storage_account_name = azurerm_storage_account.prodmyapp.name
   container_access_type = "private"
   
-  depends_on = [azurerm_storage_account.mytfstate]  # ensures storage account creates first
+  depends_on = [azurerm_storage_account.prodmyapp]  # ensures storage account creates first
 }
 
 
 
 
 ###               PHASE-II               ###
+# State Migration & Creation of Key vault to store SP secrets
+
 # After core resource creation configure backened.tf file. Move terraform statefile to Storage Container. 
 # Perform init -upgrade after configuring.
 
@@ -135,16 +138,16 @@ terraform {
     container_name       = "mytfstate"
     key                  = "terraform.tfstate"       # folder name/directory inside container
     #use_azuread_auth     = true   # When using entra id for authentication
-    use_cli              = true
+    use_cli              = true  #uses the logged-in az cli context for authentication
   }
 }
 
 # Key Vault
-/*
-resource "azurerm_key_vault" "amplekv" {
-  name                        = "amplekeyvault"
-  location                    = azurerm_resource_group.ample.location
-  resource_group_name         = azurerm_resource_group.ample.name
+
+resource "azurerm_key_vault" "prodmyapp" {
+  name                        = "prodmyappkv"
+  location                    = azurerm_resource_group.prodmyapp.location
+  resource_group_name         = azurerm_resource_group.prodmyapp.name
   enabled_for_disk_encryption = true
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   soft_delete_retention_days  = 7
@@ -169,7 +172,7 @@ resource "azurerm_key_vault" "amplekv" {
     ]
   }
 }
-*/
+
 
 /*
 # VNET w/ cidr 10.0.0.0/16

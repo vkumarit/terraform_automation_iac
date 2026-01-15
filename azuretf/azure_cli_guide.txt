@@ -3,5 +3,8 @@
 Login to azure using Azure CLI:
 $ az login --service-principal --username <-subscription id-> --password <-p. a. token-> --tenant <-tenant id->
 
-Use command to find available names for storage account
+Use command to find available names for storage account:
 $ az storage account check-name --name <-name->
+
+Create Service Principal(SPN):
+$ az ad sp create-for-rbac --name "tf-bootstrap-sp" --role Contributor --scopes /subscriptions/{your-sub-id} --sdk-auth

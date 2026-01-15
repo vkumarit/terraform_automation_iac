@@ -341,14 +341,21 @@ Terraform Commands:
 
 >> After changing data, resource blocks' code etc to refresh statefile free from errors
 # Clean state
-rm -rf .terraform .terraform.lock.hcl terraform.tfstate*
+$ rm -rf .terraform .terraform.lock.hcl terraform.tfstate*
 
 # Fresh start
-terraform init > validate > plan > apply 
+$ terraform init > validate > plan > apply 
 
 >> After adding the backened block to move statefile to created storage account, use
-#initialize the remote backend
+# initialize the remote backend
 $ terraform init -upgrade
+# plan show no changes (verify)
+$ terraform plan
+# show list of resources on statefile
+$ terraform state list
+# unlock statefile (if needed)
+$ terraform force-unlock
+
 
 -------------------------------------------------------------------------------------------------------------
 Recommended Production Pattern
