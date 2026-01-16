@@ -346,6 +346,11 @@ $ rm -rf .terraform .terraform.lock.hcl terraform.tfstate*
 # Fresh start
 $ terraform init > validate > plan > apply 
 
+# Always better 
+$ terraform plan -out=plan.tfplan
+$ terraform apply plan.tfplan
+
+
 >> After adding the backened block to move statefile to created storage account, use
 # initialize the remote backend
 $ terraform init -upgrade
@@ -356,6 +361,51 @@ $ terraform state list
 # unlock statefile (if needed)
 $ terraform force-unlock
 
+----Start-Error-handling----
+If change the name in block after resource type, like changing 'mytfstate' to 'prodmyapp' as
+resource "azurerm_storage_account" "prodmyapp" {...} and it destroyed existing resources before recreating them, causing a DNS lookup failure for the storage account and backend state access issues.
+
+Errors - Failed to save state, Failed to persist state to backend, Error releasing the state lock, A resource (RG) with the ID already exists needs to be imported into the State - "Error releasing the state lock 
+Error message: failed to retrieve lock info: executing request: Head 
+"https://prodmyapptfstate01.blob.core.windows.net/mytfstate/terraform.tfstate": dial tcp: lookup prodmyapptfstate01.blob.core.windows.net on 172.31.0.2:53: no such host".
+
+> Follow Steps - 
+#Force unlock the state lock if get below like error
+$ terraform force-unlock <lock-id-from-error>
+Example error case - "Error: Error acquiring the state lock State locked to player 12345678-abcd-1234-efgh-1234567890ab at rg_name/myaccount/mytfstate/terraform.tfstate"
+
+Else skip to next step,
+
+#In our case, lock is broken due to storage account deletion, so force-unlock won't work. Terraform already saved recovery state locally, we initialize it manually to backend later after recreation, verify recovery statefile exists,
+$ ls -la errored.tfstate
+
+#Recreate infrastructure manually
+$ az group create --name myTFResourceGroup --location "Australia East"
+az storage account create --name prodmyapptfstate01 --resource-group myTFResourceGroup \
+  --location "Australia East" --sku Standard_LRS --kind StorageV2
+az storage container create --name mytfstate --account-name prodmyapptfstate01
+
+#Initialize terraform
+$ terraform init -upgrade
+
+#Import all existing resources into state
+- Import Resource Group
+$ terraform import azurerm_resource_group.prodmyapp /subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup
+- Import Storage Account  
+$ terraform import azurerm_storage_account.prodmyapp /subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyapptfstate01
+- Import Storage Container
+$ terraform import azurerm_storage_container.prodmyapp https://prodmyapptfstate01.blob.core.windows.net/mytfstate
+
+#Clean up any remaining old state entries with mytfstate listed
+$ terraform state list
+then, remove
+$ terraform state rm azurerm_resource_group.mytfstate
+$ terraform state rm azurerm_storage_account.mytfstate
+$ terraform state rm azurerm_storage_container.mytfstate
+
+#Validate and proceed
+$ terraform plan
+----End-Error-handling----
 
 -------------------------------------------------------------------------------------------------------------
 Recommended Production Pattern
