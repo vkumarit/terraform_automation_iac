@@ -18,9 +18,6 @@ terraform {
 
 ## Configure the Microsoft Azure Provider
 
-#Get current authenticated principal details automatically from authenticated session via AZ CLI
-data "azurerm_client_config" "current" {}        #in secrets.tf
-
 provider "azurerm" {
   features {
   #  key_vault {
@@ -40,7 +37,7 @@ provider "azurerm" {
   #use_cli = true
   
   ## B) Add key value as below required by version >= 4.1.0 for azure authentication.
-  subscription_id = data.azurerm_client_config.current.subscription_id
+  #subscription_id = "2b2f02f7-xxxx-47db-xxxx-47d2182721ae"
   /* 
   OR,
   ## Export subscription_id to env vars, it will be auto-read by terraform for authentication,
@@ -147,6 +144,10 @@ terraform {
   }
 }
 
+#Get current authenticated principal details automatically from authenticated session via AZ CLI
+#data source needs the provider to be configured first, place it in secrets.tf or main.tf after provider block
+data "azurerm_client_config" "current" {}        
+
 # Key Vault
 
 resource "azurerm_key_vault" "prodmyapp" {
@@ -197,7 +198,6 @@ resource "azurerm_key_vault_secret" "sp_client_id" {
 # Store current Client Secret 
 variable "arm_client_secret" {
   type      = string
-  default   = ""         # empty field allows env var to populate
   sensitive = true
   description = "ARM_CLIENT_SECRET from environment variable"
 }
