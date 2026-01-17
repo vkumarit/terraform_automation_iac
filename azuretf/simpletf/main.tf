@@ -178,6 +178,9 @@ resource "azurerm_key_vault" "prodmyapp" {
   }
 }
 
+# Move Secrets to Key Vault
+
+
 
 /*
 # VNET w/ cidr 10.0.0.0/16

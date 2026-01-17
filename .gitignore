@@ -1,4 +1,10 @@
-azuretf/simpletf/.terraform.lock.hcl
-azuretf/simpletf/.terraform/
-azuretf/simpletf/terraform.tfstate.backup
-azuretf/simpletf/terraform.tfstate
+
+# Excluded files
+*.terraform.*
+*.tfstate.*
+*.tfstate
+*.tfplan
+
+# Terraform working directory
+*.terraform/
+

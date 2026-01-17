@@ -346,7 +346,7 @@ $ rm -rf .terraform .terraform.lock.hcl terraform.tfstate*
 # Fresh start
 $ terraform init > validate > plan > apply 
 
-# Always better 
+# Always better to output plan and use it to apply (sticking to plan) -
 $ terraform plan -out=plan.tfplan
 $ terraform apply plan.tfplan
 
@@ -363,7 +363,7 @@ $ terraform force-unlock
 
 ----Start-Error-handling----
 If change the name in block after resource type, like changing 'mytfstate' to 'prodmyapp' as
-resource "azurerm_storage_account" "prodmyapp" {...} and it destroyed existing resources before recreating them, causing a DNS lookup failure for the storage account and backend state access issues.
+``` resource "azurerm_storage_account" "prodmyapp" {...} ``` and it destroyed existing resources before recreating them, causing a DNS lookup failure for the storage account and backend state access issues.
 
 Errors - Failed to save state, Failed to persist state to backend, Error releasing the state lock, A resource (RG) with the ID already exists needs to be imported into the State - "Error releasing the state lock 
 Error message: failed to retrieve lock info: executing request: Head 
@@ -372,9 +372,9 @@ Error message: failed to retrieve lock info: executing request: Head
 > Follow Steps - 
 #Force unlock the state lock if get below like error
 $ terraform force-unlock <lock-id-from-error>
-Example error case - "Error: Error acquiring the state lock State locked to player 12345678-abcd-1234-efgh-1234567890ab at rg_name/myaccount/mytfstate/terraform.tfstate"
+Example error case (contains lock id) - "Error: Error acquiring the state lock State locked to player 12345678-abcd-1234-efgh-1234567890ab at rg_name/myaccount/mytfstate/terraform.tfstate"
 
-Else skip to next step,
+Skip to next step,
 
 #In our case, lock is broken due to storage account deletion, so force-unlock won't work. Terraform already saved recovery state locally, we initialize it manually to backend later after recreation, verify recovery statefile exists,
 $ ls -la errored.tfstate
@@ -398,6 +398,9 @@ $ terraform import azurerm_storage_container.prodmyapp https://prodmyapptfstate0
 
 #Clean up any remaining old state entries with mytfstate listed
 $ terraform state list
+azurerm_resource_group.mytfstate
+azurerm_storage_account.mytfstate
+azurerm_storage_container.mytfstate
 then, remove
 $ terraform state rm azurerm_resource_group.mytfstate
 $ terraform state rm azurerm_storage_account.mytfstate
@@ -414,17 +417,18 @@ Recommended Production Pattern
 
 --
 Initial setup - 
-Authenticate manually via azure CLI or env vars (export subscription_id for terraform)
-Create resources such as resource group, storage account, container (and Key)
+Authenticate manually via logging-in to azure CLI and/or env vars (atleast export subscription_id for
+terraform) on EC2 instance. or export all SP secrets to env vars.
+Create resources such as resource group, storage account, container (and Key).
 
 --
 ---
 Automation setup - 
 
-configure the backend.tf to push statefile to Azure Container and yaml file for Azure DevOps pipeline configuration for automation.
+Configure the backend.tf and push statefile to Azure Container. Create Key Vault separate for dev/test/prod.
+Store secrets securely - Upload SP secrets and other credentials to Key Vault using CLI or terraform when
+uploading SP secrets available from az cli context using data block ``` data "azurerm_client_config" "current" {} ```.
 
-create Key Vault and secrets separate for dev/test/prod.
-Store secrets securely - Upload SP secrets and other credentials to Key Vault using CLI, 
 Key Vault Access Policy - Service Principal or Managed Identity with 'get' permission to access secrets.
 
 Configure CI/CD or automation agents to inject env vars securely or use managed identities.
