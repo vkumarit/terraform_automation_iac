@@ -342,11 +342,15 @@ Terraform Commands:
 >> After changing data, resource blocks' code etc to refresh statefile free from errors
 # Clean state
 $ rm -rf .terraform .terraform.lock.hcl terraform.tfstate*
+and also,
+# Remove local files after moving backened to azure storage remote
+$ rm -f errored.tfstate plan.tfplan terraform.tfstate terraform.tfstate.backup
+
 
 # Fresh start
 $ terraform init > validate > plan > apply 
 
-# Always better to output plan and use it to apply (sticking to plan) -
+# Always better to preview and lock the exact plan
 $ terraform plan -out=plan.tfplan
 $ terraform apply plan.tfplan
 
@@ -361,6 +365,12 @@ $ terraform state list
 # unlock statefile (if needed)
 $ terraform force-unlock
 
+# Check remote state (will receive a json from remote)
+$ terraform state pull
+# Confirm backened
+$ terraform providers
+
+
 ----Start-Error-handling----
 If change the name in block after resource type, like changing 'mytfstate' to 'prodmyapp' as
 ``` resource "azurerm_storage_account" "prodmyapp" {...} ``` and it destroyed existing resources before recreating them, causing a DNS lookup failure for the storage account and backend state access issues.
@@ -370,12 +380,15 @@ Error message: failed to retrieve lock info: executing request: Head
 "https://prodmyapptfstate01.blob.core.windows.net/mytfstate/terraform.tfstate": dial tcp: lookup prodmyapptfstate01.blob.core.windows.net on 172.31.0.2:53: no such host".
 
 > Follow Steps - 
+
+Summary of recovery sequence - force-unlock > import RG > state rm old entries > init -upgrade > validate and continue.
 #Force unlock the state lock if get below like error
 $ terraform force-unlock <lock-id-from-error>
 Example error case (contains lock id) - "Error: Error acquiring the state lock State locked to player 12345678-abcd-1234-efgh-1234567890ab at rg_name/myaccount/mytfstate/terraform.tfstate"
 
 Skip to next step,
 
+Summary of recovery sequence - Recreate RG, storage account + container > Initialize backend > Import existing resources (RG, SA, SC) > Validate and continue.
 #In our case, lock is broken due to storage account deletion, so force-unlock won't work. Terraform already saved recovery state locally, we initialize it manually to backend later after recreation, verify recovery statefile exists,
 $ ls -la errored.tfstate
 
@@ -417,7 +430,7 @@ Recommended Production Pattern
 
 --
 Initial setup - 
-Authenticate manually via logging-in to azure CLI and/or env vars (atleast export subscription_id for
+Authenticate manually via logging-in to azure CLI and/or env vars (need to export subscription_id for
 terraform) on EC2 instance. or export all SP secrets to env vars.
 Create resources such as resource group, storage account, container (and Key).
 
@@ -425,11 +438,13 @@ Create resources such as resource group, storage account, container (and Key).
 ---
 Automation setup - 
 
-Configure the backend.tf and push statefile to Azure Container. Create Key Vault separate for dev/test/prod.
-Store secrets securely - Upload SP secrets and other credentials to Key Vault using CLI or terraform when
-uploading SP secrets available from az cli context using data block ``` data "azurerm_client_config" "current" {} ```.
-
+Configure the backend.tf and push statefile to Azure Container. 
+Create Key Vault separate for dev/test/prod.
+Store secrets securely - Upload SP secrets and other credentials to Key Vault using CLI or terraform. When
+uploading SP secrets using terraform available from az cli context use data block ``` data "azurerm_client_config" "current" {} ```. 
 Key Vault Access Policy - Service Principal or Managed Identity with 'get' permission to access secrets.
+Export client secret to env vars, as 'data.azurerm_client_config.current' cannot fetch it, and to use from env use 'var.arm_client_id' as value to key 'value'.
+
 
 Configure CI/CD or automation agents to inject env vars securely or use managed identities.
 ---
