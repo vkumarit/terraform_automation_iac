@@ -195,6 +195,12 @@ resource "azurerm_key_vault_secret" "sp_client_id" {
 }
 
 # Store current Client Secret 
+variable "arm_client_secret" {
+  type      = string
+  sensitive = true
+  description = "ARM_CLIENT_SECRET from environment variable"
+}
+
 resource "azurerm_key_vault_secret" "sp_client_secret" {
   name         = "sp-client-secret"
   value        = var.arm_client_secret          # var when exported ARM_CLIENT_SECRET to EC2/VM env vars
