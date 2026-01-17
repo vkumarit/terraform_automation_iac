@@ -199,6 +199,7 @@ resource "azurerm_key_vault_secret" "sp_client_id" {
 variable "arm_client_secret" {
   type      = string
   sensitive = true
+  default   = ""              # empty string allows env var to populate
   description = "ARM_CLIENT_SECRET from environment variable"
 }
 
