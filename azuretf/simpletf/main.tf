@@ -166,15 +166,18 @@ resource "azurerm_key_vault" "prodmyapp" {
     object_id = data.azurerm_client_config.current.object_id
 
     key_permissions = [
-      "Get",     # Read secrets
-      "List",    # List secrets  
-      "Set",     # CREATE secrets (REQUIRED)
-      "Delete"   # Optional: clean up
+      "Get",     # Only read keys
+      "List",    # List keys  
     ]
 
     secret_permissions = [
-      "Get",
-    ]
+      "Get",           # Read secrets
+      "List",          # List secrets
+      "Set",           # CREATE/UPDATE secrets (REQUIRED)
+      "Delete",        # Delete secrets
+      "Purge",         # Required with purge_protection_enabled = false
+      "Recover"        # Recover soft-deleted secrets
+    ]  
 
     storage_permissions = [
       "Get",
