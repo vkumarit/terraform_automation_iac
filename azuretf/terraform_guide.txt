@@ -438,15 +438,28 @@ Create resources such as resource group, storage account, container (and Key).
 ---
 Automation setup - 
 
-Configure the backend.tf and push statefile to Azure Container. 
-Create Key Vault separate for dev/test/prod.
-Store secrets securely - Upload SP secrets and other credentials to Key Vault using CLI or terraform. When
+-Configure the backend.tf and push statefile to Azure Container. 
+-Create Key Vault separate for dev/test/prod.
+-Store secrets securely - Upload SP secrets and other credentials to Key Vault using CLI or terraform. When
 uploading SP secrets using terraform available from az cli context use data block ``` data "azurerm_client_config" "current" {} ```. 
-Key Vault Access Policy - Service Principal or Managed Identity with 'get' permission to access secrets.
-Export client secret to env vars, as 'data.azurerm_client_config.current' cannot fetch it, and to use from env use 'var.arm_client_id' as value to key 'value'.
-
+-Key Vault Access Policy - 
+key permissions - Service Principal or Managed Identity with 'get' permission to access secrets. 
+secret permissions - Get, List, Set, Delete, Purge, Recover.
+-Export client secret to env vars, as 'data.azurerm_client_config.current' cannot fetch it, and to use from env use 'var.arm_client_id' as value to key 'value' and declare variable block with empty string as value for default.
 
 Configure CI/CD or automation agents to inject env vars securely or use managed identities.
+
+-Remove use_cli from backened
+-Use data blocks to pull data from key vault for SP secrets to provider block
+
+-From dashboard setup, add Service Principal as a Variable Group with Key Vault integration : 
+Azure DevOps > Project > Pipelines > Library > Variable Groups > + Variable Group > 
+Add variable group name & description > Enable toggle button to link an Azure key vault and map selective vault secrets to this variable group > Select Azure subscription (service connection az-classic-conn) > Select
+Key vault name 'prodmyappkv' > Variables > + Add > Select secrets > Save
+
+-For YAML pipeline, commit yaml file azure-pipelines.yml to github repo
+
+For classic pipeline,
 ---
 ----
 Future runs - 
