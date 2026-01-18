@@ -1,0 +1,71 @@
+trigger:
+- main
+
+pool:
+  name: 'YourEC2AgentPool'  # Replace with your agent pool name
+  demands:
+  - Agent.Name -equals Your-EC2-Agent-Name  # Optional: specific agent
+
+variables:
+- group: tf-secrets-kv  # Your Key Vault variable group
+
+stages:
+- stage: Plan
+  jobs:
+  - job: TerraformPlan
+    steps:
+    - task: TerraformInstaller@0
+      inputs:
+        terraformVersion: '1.5.0'
+    
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: 'your-azure-service-connection'  # Create via az devops login
+        backendAzureRmResourceGroupName: 'myTFResourceGroup'
+        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
+        backendAzureRmContainerName: 'mytfstate'
+        backendAzureRmKey: 'terraform.tfstate'
+        env:
+          ARM_CLIENT_ID: $(sp-client-id)
+          ARM_CLIENT_SECRET: $(sp-client-secret)
+          ARM_TENANT_ID: $(sp-tenant-id)
+          ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+    
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        commandOptions: '-out=tfplan'
+        environmentServiceNameAzureRM: 'your-azure-service-connection'
+
+- stage: Apply
+  dependsOn: Plan
+  condition: succeeded()
+  jobs:
+  - job: TerraformApply
+    steps:
+    - task: TerraformInstaller@0
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: 'your-azure-service-connection'
+        backendAzureRmResourceGroupName: 'myTFResourceGroup'
+        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
+        backendAzureRmContainerName: 'mytfstate'
+        backendAzureRmKey: 'terraform.tfstate'
+        env:
+          ARM_CLIENT_ID: $(sp-client-id)
+          ARM_CLIENT_SECRET: $(sp-client-secret)
+          ARM_TENANT_ID: $(sp-tenant-id)
+          ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+    
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        commandOptions: 'tfplan'
+        environmentServiceNameAzureRM: 'your-azure-service-connection'
+
