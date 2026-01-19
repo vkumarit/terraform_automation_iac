@@ -25,6 +25,7 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'init'
+        workingDirectory: 'azuretf/simpletf' # since files in terraform_automation_IaC/azuretf/simpletf/
         backendServiceArm: '$(serviceConnection)'
         backendAzureRmResourceGroupName: 'myTFResourceGroup'
         backendAzureRmStorageAccountName: 'prodmyapptfstate01'
@@ -36,6 +37,7 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'plan'
+        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
         environmentServiceNameAzureRM: '$(serviceConnection)'
         commandOptions: '-out=tfplan'
 
@@ -51,6 +53,7 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'init'
+        workingDirectory: 'azuretf/simpletf'  # since files in terraform_automation_IaC/azuretf/simpletf/
         backendServiceArm: '$(serviceConnection)'
         backendAzureRmResourceGroupName: 'myTFResourceGroup'
         backendAzureRmStorageAccountName: 'prodmyapptfstate01'
@@ -62,5 +65,6 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'apply'
+        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
         environmentServiceNameAzureRM: '$(serviceConnection)'
         commandOptions: 'tfplan'
