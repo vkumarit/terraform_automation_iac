@@ -16,6 +16,34 @@ terraform {
 # using azcli and/or env vars for SP terraform azure authentication on ec2.
 # Perform init plan apply.
 
+# data blocks to pull SP secrets from key vault for pipeline/automation after creation of resource group,
+# storage account, storage container, configuring and moving statefile to container, creation of keyvault,
+# moving secrets to keyvault, data blocks should be kept in secrets.tf
+data "azurerm_key_vault" "prodmyapp" {
+  name                = "prodmyappkv"
+  resource_group_name = "myTFResourceGroup"
+}
+
+data "azurerm_key_vault_secret" "sp_client_id" {
+  name         = "sp-client-id"
+  key_vault_id = data.azurerm_key_vault.prodmyapp.id
+}
+
+data "azurerm_key_vault_secret" "sp_client_secret" {
+  name         = "sp-client-secret"
+  key_vault_id = data.azurerm_key_vault.prodmyapp.id
+}
+
+data "azurerm_key_vault_secret" "sp_tenant_id" {
+  name         = "sp-tenant-id"
+  key_vault_id = data.azurerm_key_vault.prodmyapp.id
+}
+
+data "azurerm_key_vault_secret" "sp_subscription_id" {
+  name         = "sp-subscription-id"
+  key_vault_id = data.azurerm_key_vault.prodmyapp.id
+}
+
 ## Configure the Microsoft Azure Provider
 
 provider "azurerm" {
@@ -46,6 +74,13 @@ provider "azurerm" {
   if needed, after exporting id explicitly reference as a variable and call it in provider block,
   #subscription_id  = var.subscription_id   
   */
+  
+  # Moving to pipeline, pulling SP secrets from key_vault using data blocks, (not required in beginning)
+  client_id       = data.azurerm_key_vault_secret.sp_client_id.value
+  client_secret   = data.azurerm_key_vault_secret.sp_client_secret.value
+  tenant_id       = data.azurerm_key_vault_secret.sp_tenant_id.value
+  subscription_id = data.azurerm_key_vault_secret.sp_subscription_id.value
+  
 }
 
 ## Resource Group
@@ -138,9 +173,8 @@ terraform {
     container_name       = "mytfstate"
     key                  = "terraform.tfstate"       # folder/file name/directory inside container
     #use_azuread_auth     = true                      # When using entra id for authentication
-    use_cli              = true  # uses the logged-in az cli context for authentication
-    
-    # comment out use_cli when switching to pipeline
+    #use_cli              = true  
+    # use_cli uses logged-in az cli context for authentication, comment out when switching to pipeline
   }
 }
 

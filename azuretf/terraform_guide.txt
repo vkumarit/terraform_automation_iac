@@ -447,6 +447,16 @@ Export client secret to env vars, as 'data.azurerm_client_config.current' cannot
 
 
 Configure CI/CD or automation agents to inject env vars securely or use managed identities.
+
+-remove use_cli from backened
+-Use data blocks to pull SP secrets from key vault, to be used in provider block for authentication
+-From Azure DevOps dashboard, add Service Principal as a Variable Group with Key Vault integration: 
+Azure DevOps Project > Pipeline > Library > Variable Groups > + Variable Group > Add Name & Description to Variable Group > Enable toggle switch button to link an Azure key vault and map selective vault secrets to this variable group > Select Azure subscription 'az-classic-conn' > Select Key vault name 'prodmyappkv' >
+Variables > + Add > Select all secrets needed > Save. 
+
+For YAML Pipeline, ?
+
+For Classic Pipeline ?
 ---
 ----
 Future runs - 
