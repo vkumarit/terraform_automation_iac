@@ -8,3 +8,6 @@ $ az storage account check-name --name <-name->
 
 Create Service Principal(SPN):
 $ az ad sp create-for-rbac --name "tf-bootstrap-sp" --role Contributor --scopes /subscriptions/{your-sub-id} --sdk-auth
+
+Create service connection:
+az devops ?

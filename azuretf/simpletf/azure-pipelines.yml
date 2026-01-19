@@ -2,70 +2,65 @@ trigger:
 - main
 
 pool:
-  name: 'YourEC2AgentPool'  # Replace with your agent pool name
-  demands:
-  - Agent.Name -equals Your-EC2-Agent-Name  # Optional: specific agent
+  name: 'az-classic-pool'  # EC2 self-hosted agent pool
 
 variables:
-- group: tf-secrets-kv  # Your Key Vault variable group
+  serviceConnection: 'az-classic-conn'  # Azure RM service connection
+  storageAccountRg: 'myTFResourceGroup'
+  storageAccountName: 'prodmyapptfstate01'
+  containerName: 'mytfstate'
+  key: 'terraform.tfstate'
+  resourceGroup: 'myTFResourceGroup'
 
 stages:
 - stage: Plan
   jobs:
-  - job: TerraformPlan
+  - job: Plan
     steps:
     - task: TerraformInstaller@0
       inputs:
-        terraformVersion: '1.5.0'
-    
-    - task: TerraformTaskV4@4
+        terraformVersion: '1.14.3'  # Match version
+
+    - task: TerraformTaskV4@4  # Or V2/V3 based on marketplace
       inputs:
         provider: 'azurerm'
         command: 'init'
-        backendServiceArm: 'your-azure-service-connection'  # Create via az devops login
-        backendAzureRmResourceGroupName: 'myTFResourceGroup'
-        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
-        backendAzureRmContainerName: 'mytfstate'
-        backendAzureRmKey: 'terraform.tfstate'
-        env:
-          ARM_CLIENT_ID: $(sp-client-id)
-          ARM_CLIENT_SECRET: $(sp-client-secret)
-          ARM_TENANT_ID: $(sp-tenant-id)
-          ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-    
+        backendServiceArm: '$(serviceConnection)'
+        backendAzureRmResourceGroup: '$(storageAccountRg)'
+        backendAzureRmStorageAccount: '$(storageAccountName)'
+        backendAzureRmContainerName: '$(containerName)'
+        backendAzureRmKey: '$(key)'
+        environmentServiceNameAzureRM: '$(serviceConnection)'
+
     - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
         command: 'plan'
+        environmentServiceNameAzureRM: '$(serviceConnection)'
         commandOptions: '-out=tfplan'
-        environmentServiceNameAzureRM: 'your-azure-service-connection'
 
 - stage: Apply
   dependsOn: Plan
   condition: succeeded()
   jobs:
-  - job: TerraformApply
+  - job: Apply
     steps:
-    - task: TerraformInstaller@0
+    - task: TerraformInstaller@0  # Reinstall for consistency
+
     - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
         command: 'init'
-        backendServiceArm: 'your-azure-service-connection'
-        backendAzureRmResourceGroupName: 'myTFResourceGroup'
-        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
-        backendAzureRmContainerName: 'mytfstate'
-        backendAzureRmKey: 'terraform.tfstate'
-        env:
-          ARM_CLIENT_ID: $(sp-client-id)
-          ARM_CLIENT_SECRET: $(sp-client-secret)
-          ARM_TENANT_ID: $(sp-tenant-id)
-          ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-    
+        backendServiceArm: '$(serviceConnection)'
+        backendAzureRmResourceGroup: '$(storageAccountRg)'
+        backendAzureRmStorageAccount: '$(storageAccountName)'
+        backendAzureRmContainerName: '$(containerName)'
+        backendAzureRmKey: '$(key)'
+        environmentServiceNameAzureRM: '$(serviceConnection)'
+
     - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
         command: 'apply'
+        environmentServiceNameAzureRM: '$(serviceConnection)'
         commandOptions: 'tfplan'
-        environmentServiceNameAzureRM: 'your-azure-service-connection'
-

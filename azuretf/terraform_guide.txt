@@ -454,7 +454,7 @@ Configure CI/CD or automation agents to inject env vars securely or use managed 
 Azure DevOps Project > Pipeline > Library > Variable Groups > + Variable Group > Add Name & Description to Variable Group > Enable toggle switch button to link an Azure key vault and map selective vault secrets to this variable group > Select Azure subscription 'az-classic-conn' > Select Key vault name 'prodmyappkv' >
 Variables > + Add > Select all secrets needed > Save. 
 
-For YAML Pipeline, ?
+For YAML Pipeline, create and use file azure-pipelines.yaml in same dir as of .tf files, push to github. Connect GitHub repo in DevOps Pipelines > New Pipeline > GitHub > Select Repository > Existing Azure Pipelines YAML file > Select YAML file.
 
 For Classic Pipeline ?
 ---
