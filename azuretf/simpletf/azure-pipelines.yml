@@ -6,8 +6,8 @@ pool:
 
 variables:
   serviceConnection: 'az-classic-conn'  # Azure RM service connection
-  storageAccountRg: 'myTFResourceGroup'
-  storageAccountName: 'prodmyapptfstate01'
+  #storageAccountRg: 'myTFResourceGroup'
+  #storageAccountName: 'prodmyapptfstate01'
   containerName: 'mytfstate'
   key: 'terraform.tfstate'
   resourceGroup: 'myTFResourceGroup'
@@ -26,8 +26,8 @@ stages:
         provider: 'azurerm'
         command: 'init'
         backendServiceArm: '$(serviceConnection)'
-        backendAzureRmResourceGroupName: '$(storageAccountRg)'
-        backendAzureRmStorageAccountName: '$(storageAccountName)'
+        backendAzureRmResourceGroupName: 'myTFResourceGroup'
+        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
         backendAzureRmContainerName: '$(containerName)'
         backendAzureRmKey: '$(key)'
         environmentServiceNameAzureRM: '$(serviceConnection)'
@@ -52,8 +52,8 @@ stages:
         provider: 'azurerm'
         command: 'init'
         backendServiceArm: '$(serviceConnection)'
-        backendAzureRmResourceGroupName: '$(storageAccountRg)'
-        backendAzureRmStorageAccountName: '$(storageAccountName)'
+        backendAzureRmResourceGroupName: 'myTFResourceGroup'
+        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
         backendAzureRmContainerName: '$(containerName)'
         backendAzureRmKey: '$(key)'
         environmentServiceNameAzureRM: '$(serviceConnection)'
