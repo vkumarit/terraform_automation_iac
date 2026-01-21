@@ -454,7 +454,7 @@ Configure CI/CD or automation agents to inject env vars securely or use managed 
 Azure DevOps Project > Pipeline > Library > Variable Groups > + Variable Group > Add Name & Description to Variable Group > Enable toggle switch button to link an Azure key vault and map selective vault secrets to this variable group > Select Azure subscription 'az-classic-conn' > Select Key vault name 'prodmyappkv' >
 Variables > + Add > Select all secrets needed > Save. 
 
-For YAML Pipeline, create and use file 'azure-pipelines.yaml' in same dir as of .tf files, push to github. Connect GitHub repo in DevOps Pipelines > New Pipeline > GitHub > Select Repository > Existing Azure Pipelines YAML file > Select YAML file.
+For YAML Pipeline, create and use file 'azure-pipelines.yaml' in same dir as of .tf files, push to github. Connect GitHub repo in DevOps Pipelines > New Pipeline > GitHub > Select Repository > Existing Azure Pipelines YAML file > Select YAML file. 
 
 For Classic Pipeline ?
 ---
@@ -483,67 +483,144 @@ B) Alerting:
 
 ​> Secret Rotation: When rotating secrets, update both Key Vault and credentials used by automation/bots running Terraform.
 -------------------------------------------------------------------------------------------------------------
-> Add below code to terraform which uses data block sourcing 
+*** Use artifact 'tfplan' method for production with approval gates ***
+## Approval Gates - (configure in azure-pipelines.yaml)
 
- *For production save service principal details in azure key vault and 
-  pull it using data block and use in provider block.
+Plan Stage → [APPROVAL GATE] → Apply Stage
+         ↓                    ↓
+   Creates tfplan          Deploys infrastructure
 
-  # can put data block in secrets.tf
-  data "azurerm_key_vault_secret" "client_id" {
-    name         = "client-id"
-    key_vault_id = var.key_vault_id
-  }
+Pipeline Flow - Plan Stage > [PAUSE: Manual Approval Required] > Apply Stage 
 
-  # can put provider block in provider.tf
-  provider "azurerm" {
-    client_id       = data.azurerm_key_vault_secret.client_id.value
-    tenant_id       = data.azurerm_key_vault_secret.tenant_id.value
-    client_secret   = data.azurerm_key_vault_secret.client_secret.value
-    subscription_id = data.azurerm_key_vault_secret.subscription_id.value
-    features        = {}
-  }
+Prevents: Accidental production deployments without review.
+Pipeline stops at the gate → person approves/rejects → pipeline continues/stops.
 
-###
-secrets.tf
+Methods to Add Approval Gates:
 
-data "azurerm_key_vault" "kv" {
-  name                = "MyKeyVault"
-  resource_group_name = "MyResourceGroup"
-}
+Method 1: Environments (Recommended for YAML) - 
+Goto Organization > Project > Pipelines > Environments > Create environment > Name 'prod' > Description 'Production environment for Terraform deployments' > Resource 'None'> Create > Approvals and checks > Approvals > Select Approver/Add email > Control options > Timeout > Create. 
 
-data "azurerm_key_vault_secret" "client_id" {
-  name         = "client-id"
-  key_vault_id = data.azurerm_key_vault.kv.id
-}
+*Pipeline runs > Plan completes & Pipeline pauses > Go to Environments > prod shows "Waiting for approval" > Click Approve > Apply runs
 
-data "azurerm_key_vault_secret" "client_secret" {
-  name         = "client-secret"
-  key_vault_id = data.azurerm_key_vault.kv.id
-}
+Add YAML Code under 'jobs:' as
 
-data "azurerm_key_vault_secret" "subscription_id" {
-  name         = "subscription-id"
-  key_vault_id = data.azurerm_key_vault.kv.id
-}
-
-data "azurerm_key_vault_secret" "tenant_id" {
-  name         = "tenant-id"
-  key_vault_id = data.azurerm_key_vault.kv.id
-}
-
-provider.tf
-
-provider "azurerm" {
-  features        = {}
-  client_id       = data.azurerm_key_vault_secret.client_id.value
-  client_secret   = data.azurerm_key_vault_secret.client_secret.value
-  subscription_id = data.azurerm_key_vault_secret.subscription_id.value
-  tenant_id       = data.azurerm_key_vault_secret.tenant_id.value
-}
---------------------------
+  # ✅ APPROVAL GATE via Environment
+  - deployment: ProductionDeployment
+    displayName: 'Deploy to Production'
+    environment: 'prod'  # Create this environment in Azure DevOps first
+    strategy:
+      runOnce:           # standard deployment pattern
+        deploy:
+          steps:
+          - task: TerraformInstaller@0  # Reinstall for consistency
+          
+          # DOWNLOAD plan artifact
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              buildType: 'current'
+              artifactName: 'tfplan'
+              targetPath: 'azuretf/simpletf/'
 
 
+Method 2: Manual Approval Check (No environments/dashboard usage needed)
+ Plan > Approval > Apply
 
+Pipeline Flow - 
+Plan completes > publishes tfplan artifact > Approval stage > **PAUSES** at "ManualValidation" > sends emails > I/team review plan >Click pipeline > "Approval stage" > click **Approve** or **Reject** buttons > if approved - Apply 
+
+Perfect for quick production gates without environment setup.
+
+Add YAML Code after stage plan as
+- stage: Approval
+  dependsOn: Plan
+  condition: succeeded()
+  jobs:
+  - job: ManualApproval
+    pool: server  # Uses Azure DevOps server (no agent needed)
+    steps:
+    - task: ManualValidation@0
+      timeoutInMinutes: 4320  # 3 days timeout (auto-rejects after timeout)
+      inputs:
+        notifyUsers: |           # List of email addresses (notifications sent)
+          you@company.com
+          team@company.com
+        instructions: |          # Custom message with plan details
+          **Review the Terraform Plan above carefully.**
+          
+          This will deploy:
+          - Resource Group: myTFResourceGroup (Australia East)
+          - Storage Account: prodmyapptfstate01  
+          - Storage Container: mytfstate
+          - Key Vault: prodmyappkv
+          
+          **Approve** to proceed with deployment.
+          **Reject** to stop pipeline.
+          
+          tfplan artifact available for download.
+        onTimeout: 'reject'      # stops pipeline if no approval
+
+- stage: Apply
+  dependsOn: Approval
+  condition: succeeded()
+  jobs:
+  - job: Apply
+    steps:
+    - task: TerraformInstaller@0  # Reinstall for consistency
+    
+    # DOWNLOAD plan artifact
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'current'
+        artifactName: 'tfplan'
+        targetPath: 'azuretf/simpletf/'
+
+    # Add, format and use/continue locs with tasks for init and apply mentioned at end of file.
+    
+*** Avoid artifact 'tfplan' method and Approval Gates for dev/test ***
+
+Plan → Apply (same workspace, no artifacts)
+
+Commit > Push > Watch it deploy end-to-end.
+Once tested successfully → add back approval gates for production safety.
+Ideal for verifying your bootstrap pipeline works before adding gates.
+
+stages:
+- stage: Deploy
+  jobs:
+  - job: Deploy
+    steps:
+    - task: TerraformInstaller@0
+      inputs:
+        terraformVersion: '1.14.3'  # Match version
+
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: 'azuretf/simpletf' # since files in terraform_automation_IaC/azuretf/simpletf/
+        backendServiceArm: '$(serviceConnection)'
+        backendAzureRmResourceGroupName: 'myTFResourceGroup'
+        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
+        backendAzureRmContainerName: '$(containerName)'
+        backendAzureRmKey: '$(key)'
+        environmentServiceNameAzureRM: '$(serviceConnection)'
+
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
+        environmentServiceNameAzureRM: '$(serviceConnection)'
+        commandOptions: '-detailed-exitcode -var="arm_client_secret=$(ARM_CLIENT_SECRET)"'  # Optional: pass secrets
+
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
+        environmentServiceNameAzureRM: '$(serviceConnection)'
+        commandOptions: '-auto-approve'
+--------------------------------------------------------------------------------------------------------------
 
 
 

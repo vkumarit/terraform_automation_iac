@@ -6,22 +6,22 @@ pool:
 
 variables:
   serviceConnection: 'az-classic-conn'  # Azure RM service connection
-  #storageAccountRg: 'myTFResourceGroup'
-  #storageAccountName: 'prodmyapptfstate01'
   containerName: 'mytfstate'
   key: 'terraform.tfstate'
   resourceGroup: 'myTFResourceGroup'
 
+############# Avoid Artifact 'tfplan' and Approval Gate - dev/test
+
 stages:
-- stage: Plan
+- stage: Deploy
   jobs:
-  - job: Plan
+  - job: Deploy
     steps:
     - task: TerraformInstaller@0
       inputs:
         terraformVersion: '1.14.3'  # Match version
 
-    - task: TerraformTaskV4@4  # Or V2/V3 based on marketplace
+    - task: TerraformTaskV4@4
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -39,27 +39,7 @@ stages:
         command: 'plan'
         workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
         environmentServiceNameAzureRM: '$(serviceConnection)'
-        commandOptions: '-out=tfplan'
-
-- stage: Apply
-  dependsOn: Plan
-  condition: succeeded()
-  jobs:
-  - job: Apply
-    steps:
-    - task: TerraformInstaller@0  # Reinstall for consistency
-
-    - task: TerraformTaskV4@4
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
-        workingDirectory: 'azuretf/simpletf'  # since files in terraform_automation_IaC/azuretf/simpletf/
-        backendServiceArm: '$(serviceConnection)'
-        backendAzureRmResourceGroupName: 'myTFResourceGroup'
-        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
-        backendAzureRmContainerName: '$(containerName)'
-        backendAzureRmKey: '$(key)'
-        environmentServiceNameAzureRM: '$(serviceConnection)'
+        commandOptions: '-detailed-exitcode -var="arm_client_secret=$(ARM_CLIENT_SECRET)"'  # Optional: pass secrets
 
     - task: TerraformTaskV4@4
       inputs:
@@ -67,4 +47,134 @@ stages:
         command: 'apply'
         workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
         environmentServiceNameAzureRM: '$(serviceConnection)'
-        commandOptions: 'tfplan'
+        commandOptions: '-auto-approve'
+
+############ Use Artifact 'tfplan' and Approval Gate
+#stages:
+#- stage: Plan
+#  jobs:
+#  - job: Plan
+#    steps:
+#    - task: TerraformInstaller@0
+#      inputs:
+#        terraformVersion: '1.14.3'  # Match version
+
+#    - task: TerraformTaskV4@4  # Or V2/V3 based on marketplace
+#      inputs:
+#        provider: 'azurerm'
+#        command: 'init'
+#        workingDirectory: 'azuretf/simpletf' # since files in terraform_automation_IaC/azuretf/simpletf/
+#        backendServiceArm: '$(serviceConnection)'
+#        backendAzureRmResourceGroupName: 'myTFResourceGroup'
+#        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
+#        backendAzureRmContainerName: '$(containerName)'
+#        backendAzureRmKey: '$(key)'
+#        environmentServiceNameAzureRM: '$(serviceConnection)'
+
+#    - task: TerraformTaskV4@4
+#      inputs:
+#        provider: 'azurerm'
+#        command: 'plan'
+#        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
+#        environmentServiceNameAzureRM: '$(serviceConnection)'
+#        commandOptions: '-out=tfplan'
+        
+    # PUBLISH plan as artifact
+#    - task: PublishPipelineArtifact@1
+#      inputs:
+#        targetPath: 'azuretf/simpletf/tfplan'
+#        artifact: 'tfplan'
+#        publishLocation: 'pipeline'
+
+####### Approval Gate - Method 1: Environments
+#- stage: Apply
+#  dependsOn: Plan
+#  condition: succeeded()
+#  jobs:
+  
+    # APPROVAL GATE via Environment
+#  - deployment: ProductionDeployment
+#    displayName: 'Deploy to Production'
+#    environment: 'prod'  # Create this environment in Azure DevOps first as it triggers approval gate
+#    strategy:
+#      runOnce:           # standard deployment pattern
+#        deploy:
+#          steps:
+#          - task: TerraformInstaller@0  # Reinstall for consistency
+          
+          # DOWNLOAD plan artifact
+#          - task: DownloadPipelineArtifact@2
+#            inputs:
+#              buildType: 'current'
+#              artifactName: 'tfplan'
+#              targetPath: 'azuretf/simpletf/'
+          
+          # Add, format and use/continue locs with tasks for init and apply mentioned at end of file.  
+                    
+####### Approval Gate - Method 2: Manual Approval Check (No environments needed)
+#- stage: Approval
+#  dependsOn: Plan
+#  condition: succeeded()
+#  jobs:
+#  - job: ManualApproval
+#    pool: server  # Uses Azure DevOps server (no agent needed)
+#    steps:
+#    - task: ManualValidation@0
+#      timeoutInMinutes: 4320  # 3 days timeout
+#      inputs:
+#        notifyUsers: |
+#          you@company.com
+#          team@company.com
+#        instructions: |
+#          **Review the Terraform Plan above carefully.**
+          
+#          This will deploy:
+#          - Resource Group: myTFResourceGroup (Australia East)
+#          - Storage Account: prodmyapptfstate01  
+#          - Storage Container: mytfstate
+#          - Key Vault: prodmyappkv
+          
+#          **Approve** to proceed with deployment.
+#          **Reject** to stop pipeline.
+          
+#          tfplan artifact available for download.
+#        onTimeout: 'reject'
+
+#- stage: Apply
+#  dependsOn: Approval
+#  condition: succeeded()
+#  jobs:
+#  - job: Apply
+#    steps:
+#    - task: TerraformInstaller@0  # Reinstall for consistency
+    
+    # DOWNLOAD plan artifact
+#    - task: DownloadPipelineArtifact@2
+#      inputs:
+#        buildType: 'current'
+#        artifactName: 'tfplan'
+#        targetPath: 'azuretf/simpletf/'
+
+    # Add, format and use/continue locs with tasks for init and apply mentioned at end of file.
+
+########
+  
+#          - task: TerraformTaskV4@4
+#            inputs:
+#              provider: 'azurerm'
+#              command: 'init'
+#              workingDirectory: 'azuretf/simpletf'  # since files in terraform_automation_IaC/azuretf/simpletf/
+#              backendServiceArm: '$(serviceConnection)'
+#              backendAzureRmResourceGroupName: 'myTFResourceGroup'
+#              backendAzureRmStorageAccountName: 'prodmyapptfstate01'
+#              backendAzureRmContainerName: '$(containerName)'
+#              backendAzureRmKey: '$(key)'
+#              environmentServiceNameAzureRM: '$(serviceConnection)'
+
+#          - task: TerraformTaskV4@4
+#            inputs:
+#              provider: 'azurerm'
+#              command: 'apply'
+#              workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
+#              environmentServiceNameAzureRM: '$(serviceConnection)'
+#              commandOptions: 'tfplan'
