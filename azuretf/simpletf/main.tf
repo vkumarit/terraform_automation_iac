@@ -276,7 +276,9 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
   
   rotation_policy {
     automatic {
-      enabled = false
+      enabled   = true
+      interval  = "P90D"
+      time_after_create = "P7D"
     }
   }
   
