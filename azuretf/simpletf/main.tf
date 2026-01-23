@@ -274,14 +274,6 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
     "wrapKey"
   ]
   
-  rotation_policy {
-    automatic {
-      enabled   = true
-      interval  = "P90D"
-      time_after_create = "P7D"
-    }
-  }
-  
   depends_on = [azurerm_key_vault.prodmyapp]
   
 }
