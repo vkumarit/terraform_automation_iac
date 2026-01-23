@@ -274,7 +274,7 @@ resource "azurerm_role_assignment" "prodmyapp_kv_access" {
 }
 
 #Create Storage Account (CMK): Link the identity and key.
-resource "azurerm_storage_account" "prodmyapp" {
+resource "azurerm_storage_account" "prodmyapp_cmk" {
   name                     = "prodmyappstorageaccountcmk01"
   location                 = azurerm_resource_group.prodmyapp.location
   resource_group_name      = azurerm_resource_group.prodmyapp.name
