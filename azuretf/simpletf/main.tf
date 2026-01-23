@@ -258,6 +258,14 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
   key_vault_id = azurerm_key_vault.prodmyapp.id
   key_type     = "RSA"
   key_size     = 2048
+  key_opts = [
+    "decrypt",
+    "encrypt",
+    "sign",
+    "unwrapKey",
+    "verify",
+    "wrapKey"
+  ]
 }
 
 # Create User-Assigned Identity: Grant access to Key Vault.
@@ -268,7 +276,7 @@ resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
 }
 
 resource "azurerm_role_assignment" "prodmyapp_kv_access" {
-  scope                = azurerm_key_vault.kv.id
+  scope                = azurerm_key_vault_key.prodmyapp_key.id
   role_definition_name = "Key Vault Crypto Officer" # Or similar role
   principal_id         = azurerm_user_assigned_identity.prodmyapp_sa_identity.id
 }
@@ -285,13 +293,18 @@ resource "azurerm_storage_account" "prodmyapp_cmk" {
     type         = "UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.prodmyapp_sa_identity.id]
   }
-
-  encryption {
-    key_type = "CustomerManaged"
-    key_vault_key_id = azurerm_key_vault_key.prodmyapp_key.id
+  
+  lifecycle {
+    ignore_changes = [
+      customer_managed_key
+    ]
   }
 }
 
+resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
+  storage_account_id = azurerm_storage_account.prodmyapp_cmk.id
+  key_vault_key_id   = azurerm_key_vault_key.prodmyapp_key.id
+}
 
 /*
 ## VNET w/ cidr 10.0.0.0/16
