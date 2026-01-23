@@ -276,10 +276,12 @@ resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
 }
 
 resource "azurerm_role_assignment" "prodmyapp_kv_access" {
-  scope                = azurerm_key_vault_key.prodmyapp_key.id
-  role_definition_name = "Key Vault Crypto Officer" # Or similar role
-  principal_id         = azurerm_user_assigned_identity.prodmyapp_sa_identity.id
+  scope                = azurerm_key_vault.prodmyapp.id
+  #role_definition_name = "Key Vault Crypto Officer" # Access to key only
+  role_definition_name = "Key Vault Crypto Service Encryption User"  # Access to key vault
+  principal_id         = azurerm_user_assigned_identity.prodmyapp_sa_identity.principal_id
 }
+
 
 #Create Storage Account (CMK): Link the identity and key.
 resource "azurerm_storage_account" "prodmyapp_cmk" {
@@ -303,7 +305,9 @@ resource "azurerm_storage_account" "prodmyapp_cmk" {
 
 resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
   storage_account_id = azurerm_storage_account.prodmyapp_cmk.id
-  key_vault_key_id   = azurerm_key_vault_key.prodmyapp_key.id
+  key_vault_id       = azurerm_key_vault.prodmyapp.id
+  key_name          = azurerm_key_vault_key.prodmyapp_key.name
+  key_version       = azurerm_key_vault_key.prodmyapp_key.version
 }
 
 /*
