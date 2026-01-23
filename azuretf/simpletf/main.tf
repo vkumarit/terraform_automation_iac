@@ -273,6 +273,15 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
     "verify",
     "wrapKey"
   ]
+  
+  rotation_policy {
+    automatic {
+      enabled = false
+    }
+  }
+  
+  depends_on = [azurerm_key_vault.prodmyapp]
+  
 }
 
 # Create User-Assigned Identity: Grant access to Key Vault.
