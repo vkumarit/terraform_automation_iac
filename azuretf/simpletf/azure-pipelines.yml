@@ -10,7 +10,7 @@ variables:
   key: 'terraform.tfstate'
   resourceGroup: 'myTFResourceGroup'
 
-############# Avoid Artifact 'tfplan' and Approval Gate - dev/test
+############# Avoid Artifact 'tfplan' and Approval Gate - works for dev/test using '-auto-approve'
 
 stages:
 - stage: Deploy

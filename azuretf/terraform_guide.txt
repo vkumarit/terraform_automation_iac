@@ -484,6 +484,7 @@ B) Alerting:
 ​> Secret Rotation: When rotating secrets, update both Key Vault and credentials used by automation/bots running Terraform.
 -------------------------------------------------------------------------------------------------------------
 *** Use artifact 'tfplan' method for production with approval gates ***
+
 ## Approval Gates - (configure in azure-pipelines.yaml)
 
 Plan Stage → [APPROVAL GATE] → Apply Stage
@@ -581,7 +582,7 @@ Add YAML Code after stage plan as
 Plan → Apply (same workspace, no artifacts)
 
 Commit > Push > Watch it deploy end-to-end.
-Once tested successfully → add back approval gates for production safety.
+Once tested successfully > add back approval gates for production safety.
 Ideal for verifying your bootstrap pipeline works before adding gates.
 
 stages:

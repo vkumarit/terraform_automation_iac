@@ -148,7 +148,7 @@ terraform {
 #data source needs the provider to be configured first, place it in secrets.tf or main.tf after provider block
 data "azurerm_client_config" "current" {}        
 
-# Key Vault
+## Key Vault
 
 resource "azurerm_key_vault" "prodmyapp" {
   name                        = "prodmyappkv"
@@ -241,9 +241,60 @@ resource "azurerm_key_vault_secret" "sp_subscription_id" {
   depends_on   = [azurerm_key_vault.prodmyapp]
 }
 
+###               PHASE-III               ###
+
+## User Enable encyption to storage account
+
+# After setting-up pipeline,
+# Create key, Storage Account, user_assigned_identity, role assignment, link them together and after
+# Grant storage the access to Key Vault using User-Assigned Identity and role definition,
+# Link storage account with Link the identity and key 
+# (Creating new storage account resource block to avoid confusion between phases and changes in phases)
+
+
+#Create Key
+resource "azurerm_key_vault_key" "prodmyapp_key" {
+  name         = "my-storage-cmk"
+  key_vault_id = azurerm_key_vault.prodmyapp.id
+  key_type     = "RSA"
+  key_size     = 2048
+}
+
+# Create User-Assigned Identity: Grant access to Key Vault.
+resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
+  name                = "my-storage-identity"
+  location            = azurerm_resource_group.prodmyapp.location
+  resource_group_name = azurerm_resource_group.prodmyapp.name
+}
+
+resource "azurerm_role_assignment" "prodmyapp_kv_access" {
+  scope                = azurerm_key_vault.kv.id
+  role_definition_name = "Key Vault Crypto Officer" # Or similar role
+  principal_id         = azurerm_user_assigned_identity.prodmyapp_sa_identity.id
+}
+
+#Create Storage Account (CMK): Link the identity and key.
+resource "azurerm_storage_account" "prodmyapp" {
+  name                     = "prodmyappstorageaccountcmk01"
+  location                 = azurerm_resource_group.prodmyapp.location
+  resource_group_name      = azurerm_resource_group.prodmyapp.name
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.prodmyapp_sa_identity.id]
+  }
+
+  encryption {
+    key_type = "CustomerManaged"
+    key_vault_key_id = azurerm_key_vault_key.prodmyapp_key.id
+  }
+}
+
 
 /*
-# VNET w/ cidr 10.0.0.0/16
+## VNET w/ cidr 10.0.0.0/16
 resource "azurerm_virtual_network" "vnet1" {
   name                = "v1-network"
   address_space       = ["10.0.0.0/16"]
@@ -251,7 +302,7 @@ resource "azurerm_virtual_network" "vnet1" {
   resource_group_name = azurerm_resource_group.ample.name
 }
 
-# Subnets w/ network security group
+## Subnets w/ network security group
 # public subnet (10.0.1.0/28) 
 resource "azurerm_subnet" "pubnet1" {
   name                 = "pub1-subnet"
@@ -266,27 +317,19 @@ resource "azurerm_subnet" "pvtnet" {
   virtual_network_name = azurerm_virtual_network.vnet1
   address_prefixes     = ["10.0.2.0/24"]
 }
+
+-----------------
+azurerm_resource_group: To contain your network resources.
+azurerm_virtual_network: Defines the VNet and its overall address space.
+azurerm_subnet: Creates individual subnets (public/private) within the VNet, specifying their address prefixes.
+azurerm_public_ip: For resources needing direct internet access (e.g., VMs in public subnet).
+azurerm_network_security_group: Applies firewall rules to control traffic.
+azurerm_network_interface: Attaches network settings (IP, NSG) to a VM.
+azurerm_network_interface_security_group_association: Links NSGs to network interfaces
+-----------------
 */
 
-/*  
-For production save service principal details in azure key vault and pull it using data block and use in provider block.
-# can put in secrets.tf
-data "azurerm_key_vault_secret" "client_id" {
-  name         = "client-id"
-  key_vault_id = var.key_vault_id
-}
 
-# can put in provider.tf
-provider "azurerm" {
-  client_id       = data.azurerm_key_vault_secret.client_id.value
-  tenant_id       = data.azurerm_key_vault_secret.tenant_id.value
-  client_secret   = data.azurerm_key_vault_secret.client_secret.value
-  subscription_id = data.azurerm_key_vault_secret.subscription_id.value
-  features        = {}
-}
-*/
-
-# Enable encyption to storage account
 
 # VMs - linux/windows each 
 #Linux VM
