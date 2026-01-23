@@ -166,10 +166,15 @@ resource "azurerm_key_vault" "prodmyapp" {
     object_id = data.azurerm_client_config.current.object_id
 
     key_permissions = [
-      "Get",     # read keys
-      "List",    # List keys  
-      "Create",  # create keys
-      "Delete"   # delete keys
+      "Get",                  # read keys
+      "List",                 # List keys  
+      "Create",               # create keys
+      "Delete"                # delete keys
+      "GetRotationPolicy",    # rotation policy read
+      "SetRotationPolicy",    # rotation policy management
+      "Update",
+      "Recover",
+      "Purge"
     ]
 
     secret_permissions = [
