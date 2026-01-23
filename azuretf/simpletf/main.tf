@@ -169,12 +169,12 @@ resource "azurerm_key_vault" "prodmyapp" {
       "Get",                  # read keys
       "List",                 # List keys  
       "Create",               # create keys
-      "Delete"                # delete keys
+      "Delete",               # delete keys
       "GetRotationPolicy",    # rotation policy read
       "SetRotationPolicy",    # rotation policy management
       "Update",
       "Recover",
-      "Purge"
+      "Purge",
     ]
 
     secret_permissions = [
