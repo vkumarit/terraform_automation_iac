@@ -39,7 +39,7 @@ stages:
         command: 'plan'
         workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
         environmentServiceNameAzureRM: '$(serviceConnection)'
-        commandOptions: '-detailed-exitcode -var="arm_client_secret=$(ARM_CLIENT_SECRET)"'  # Optional: pass secrets
+        commandOptions: ' -var="arm_client_secret=$(ARM_CLIENT_SECRET)"'  # Optional: pass secrets
 
     - task: TerraformTaskV4@4
       inputs:
