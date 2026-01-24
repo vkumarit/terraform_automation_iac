@@ -156,40 +156,14 @@ resource "azurerm_key_vault" "prodmyapp" {
   resource_group_name         = azurerm_resource_group.prodmyapp.name
   enabled_for_disk_encryption = true
   tenant_id                   = data.azurerm_client_config.current.tenant_id
+  
   soft_delete_retention_days  = 7
   purge_protection_enabled    = false
-
+  
+  enable_rbac_authorization = true         # enabled RBAC (not using access polices)
+  
   sku_name = "standard"
 
-  access_policy {
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = data.azurerm_client_config.current.object_id
-
-    key_permissions = [
-      "Get",                  # read keys
-      "List",                 # List keys  
-      "Create",               # create keys
-      "Delete",               # delete keys
-      "GetRotationPolicy",    # rotation policy read
-      "SetRotationPolicy",    # rotation policy management
-      "Update",
-      "Recover",
-      "Purge"
-    ]
-
-    secret_permissions = [
-      "Get",           # Read secrets
-      "List",          # List secrets
-      "Set",           # CREATE/UPDATE secrets (REQUIRED)
-      "Delete",        # Delete secrets
-      "Purge",         # Required with purge_protection_enabled = false
-      "Recover"        # Recover soft-deleted secrets
-    ]  
-
-    storage_permissions = [
-      "Get",
-    ]
-  }
 }
 
 # Move Secrets to Key Vault (secrets.tf)
@@ -258,24 +232,47 @@ resource "azurerm_key_vault_secret" "sp_subscription_id" {
 # Link storage account with Link the identity and key 
 # (Creating new storage account resource block to avoid confusion between phases and changes in phases)
 
+#RBAC for Terraform key vault created 'prodmyappkv'
+resource "azurerm_role_assignment" "tf_kv_admin" {
+  scope                = azurerm_key_vault.prodmyapp.id
+  role_definition_name = "Key Vault Administrator"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
 
-#Create Key
+#A small wait before key creation (prod pipelines only): (Wait for RBAC propagation)
+resource "time_sleep" "wait_for_kv_rbac" {
+  depends_on = [azurerm_role_assignment.tf_kv_admin]
+  create_duration = "60s"
+}
+
+
+# Create key with explicit rotation policy
 resource "azurerm_key_vault_key" "prodmyapp_key" {
   name         = "my-storage-cmk"
   key_vault_id = azurerm_key_vault.prodmyapp.id
   key_type     = "RSA"
   key_size     = 2048
+
   key_opts = [
-    "decrypt",
     "encrypt",
-    "sign",
-    "unwrapKey",
-    "verify",
-    "wrapKey"
+    "decrypt",
+    "wrapKey",
+    "unwrapKey"
   ]
-      
-  depends_on = [azurerm_key_vault.prodmyapp]
-  
+
+  rotation_policy {
+    expire_after         = "P90D"
+    notify_before_expiry = "P30D"
+
+    automatic {
+      time_before_expiry = "P30D"
+    }
+  }
+
+  depends_on = [
+    azurerm_key_vault.prodmyapp,
+    time_sleep.wait_for_kv_rbac
+  ]
 }
 
 # Create User-Assigned Identity: Grant access to Key Vault.
@@ -285,13 +282,11 @@ resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   resource_group_name = azurerm_resource_group.prodmyapp.name
 }
 
-resource "azurerm_role_assignment" "prodmyapp_kv_access" {
+resource "azurerm_role_assignment" "storage_kv_crypto" {
   scope                = azurerm_key_vault.prodmyapp.id
-  #role_definition_name = "Key Vault Crypto Officer" # Access to key only
-  role_definition_name = "Key Vault Crypto Service Encryption User"  # Access to key vault
+  role_definition_name = "Key Vault Crypto Service Encryption User"
   principal_id         = azurerm_user_assigned_identity.prodmyapp_sa_identity.principal_id
 }
-
 
 #Create Storage Account (CMK): Link the identity and key.
 resource "azurerm_storage_account" "prodmyapp_cmk" {
@@ -306,11 +301,11 @@ resource "azurerm_storage_account" "prodmyapp_cmk" {
     identity_ids = [azurerm_user_assigned_identity.prodmyapp_sa_identity.id]
   }
   
-  lifecycle {
-    ignore_changes = [
-      customer_managed_key
-    ]
-  }
+  #lifecycle {
+  #  ignore_changes = [
+  #    customer_managed_key
+  #  ]
+  #}
 }
 
 resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
@@ -318,6 +313,12 @@ resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
   key_vault_id       = azurerm_key_vault.prodmyapp.id
   key_name          = azurerm_key_vault_key.prodmyapp_key.name
   key_version       = azurerm_key_vault_key.prodmyapp_key.version
+
+  depends_on = [
+    azurerm_role_assignment.storage_kv_crypto,
+    azurerm_key_vault_key.prodmyapp_key
+  ]
+
 }
 
 /*
