@@ -282,6 +282,12 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
   #  }
   #}
   
+  rotation_policy {
+    automatic {
+      enabled = false
+    }
+  }
+  
   depends_on = [azurerm_key_vault.prodmyapp]
   
 }
