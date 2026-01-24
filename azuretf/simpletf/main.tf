@@ -174,7 +174,7 @@ resource "azurerm_key_vault" "prodmyapp" {
       "SetRotationPolicy",    # rotation policy management
       "Update",
       "Recover",
-      "Purge",
+      "Purge"
     ]
 
     secret_permissions = [
@@ -273,21 +273,7 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
     "verify",
     "wrapKey"
   ]
-  
-  #rotation_policy {
-  #  automatic {
-  #    enabled   = true
-  #    interval  = "P90D"
-  #    time_after_create = "P7D"
-  #  }
-  #}
-  
-  rotation_policy {
-    automatic {
-      enabled = false
-    }
-  }
-  
+      
   depends_on = [azurerm_key_vault.prodmyapp]
   
 }
