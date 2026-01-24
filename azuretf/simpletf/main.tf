@@ -233,15 +233,15 @@ resource "azurerm_key_vault_secret" "sp_subscription_id" {
 # (Creating new storage account resource block to avoid confusion between phases and changes in phases)
 
 #RBAC for Terraform key vault created 'prodmyappkv'
-resource "azurerm_role_assignment" "tf_kv_crypto_officer" {
+resource "azurerm_role_assignment" "tf_kv_admin" {
   scope                = azurerm_key_vault.prodmyapp.id
-  role_definition_name = "Key Vault Crypto Officer"
+  role_definition_name = "Key Vault Administrator"
   principal_id         = data.azurerm_client_config.current.object_id
 }
 
 #A small wait before key creation (prod pipelines only): (Wait for RBAC propagation)
 resource "time_sleep" "wait_for_kv_rbac" {
-  depends_on      = [azurerm_role_assignment.tf_kv_crypto_officer]
+  depends_on      = [azurerm_role_assignment.tf_kv_admin]
   create_duration = "60s"
 }
 
@@ -317,7 +317,6 @@ resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
     azurerm_role_assignment.storage_kv_crypto,
     azurerm_key_vault_key.prodmyapp_key
   ]
-
 }
 
 /*
