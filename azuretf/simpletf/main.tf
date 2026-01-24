@@ -246,6 +246,7 @@ resource "time_sleep" "wait_for_kv_rbac" {
 }
 
 # Create key with explicit rotation policy
+/*
 resource "azurerm_key_vault_key" "prodmyapp_key" {
   name         = "my-storage-cmk"
   key_vault_id = azurerm_key_vault.prodmyapp.id
@@ -273,6 +274,7 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
     time_sleep.wait_for_kv_rbac
   ]
 }
+*/
 
 # Create User-Assigned Identity: Grant access to Key Vault.
 resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
@@ -306,7 +308,7 @@ resource "azurerm_storage_account" "prodmyapp_cmk" {
   #  ]
   #}
 }
-
+/*
 resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
   storage_account_id = azurerm_storage_account.prodmyapp_cmk.id
   key_vault_id       = azurerm_key_vault.prodmyapp.id
@@ -318,6 +320,7 @@ resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
     azurerm_key_vault_key.prodmyapp_key
   ]
 }
+*/
 
 /*
 ## VNET w/ cidr 10.0.0.0/16
