@@ -314,9 +314,12 @@ resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
   key_name          = azurerm_key_vault_key.prodmyapp_key.name
   key_version       = azurerm_key_vault_key.prodmyapp_key.version
 
+  user_assigned_identity_id = azurerm_user_assigned_identity.prodmyapp_sa_identity.id
+  
   depends_on = [
     azurerm_role_assignment.storage_kv_crypto,
-    azurerm_key_vault_key.prodmyapp_key
+    azurerm_key_vault_key.prodmyapp_key,
+    azurerm_storage_account.prodmyapp_cmk
   ]
 }
 
