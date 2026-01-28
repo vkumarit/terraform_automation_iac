@@ -279,7 +279,7 @@ resource "azurerm_storage_account" "prodmyapp_cmk" {
 }
 
 # Create key with explicit rotation policy
-
+/*
 resource "azurerm_key_vault_key" "prodmyapp_key" {
   name         = "my-storage-cmk"
   key_vault_id = azurerm_key_vault.prodmyapp.id
@@ -307,7 +307,7 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
     time_sleep.wait_for_kv_rbac
   ]
 }
-
+*/
 
 /*
 resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
