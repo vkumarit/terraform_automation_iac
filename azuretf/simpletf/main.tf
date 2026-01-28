@@ -245,37 +245,6 @@ resource "time_sleep" "wait_for_kv_rbac" {
   create_duration = "60s"
 }
 
-# Create key with explicit rotation policy
-/*
-resource "azurerm_key_vault_key" "prodmyapp_key" {
-  name         = "my-storage-cmk"
-  key_vault_id = azurerm_key_vault.prodmyapp.id
-  key_type     = "RSA"
-  key_size     = 2048
-
-  key_opts = [
-    "encrypt",
-    "decrypt",
-    "wrapKey",
-    "unwrapKey"
-  ]
-
-  rotation_policy {
-    expire_after         = "P90D"
-    notify_before_expiry = "P30D"
-
-    automatic {
-      time_before_expiry = "P30D"
-    }
-  }
-
-  depends_on = [
-    azurerm_key_vault.prodmyapp,
-    time_sleep.wait_for_kv_rbac
-  ]
-}
-*/
-
 # Create User-Assigned Identity: Grant access to Key Vault.
 resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   name                = "my-storage-identity"
@@ -308,6 +277,38 @@ resource "azurerm_storage_account" "prodmyapp_cmk" {
   #  ]
   #}
 }
+
+# Create key with explicit rotation policy
+
+resource "azurerm_key_vault_key" "prodmyapp_key" {
+  name         = "my-storage-cmk"
+  key_vault_id = azurerm_key_vault.prodmyapp.id
+  key_type     = "RSA"
+  key_size     = 2048
+
+  key_opts = [
+    "encrypt",
+    "decrypt",
+    "wrapKey",
+    "unwrapKey"
+  ]
+
+  #rotation_policy {
+  #  expire_after         = "P90D"
+  #  notify_before_expiry = "P30D"
+#
+  #  automatic {
+  #    time_before_expiry = "P30D"
+  #  }
+  #}
+
+  depends_on = [
+    azurerm_key_vault.prodmyapp,
+    time_sleep.wait_for_kv_rbac
+  ]
+}
+
+
 /*
 resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
   storage_account_id = azurerm_storage_account.prodmyapp_cmk.id
