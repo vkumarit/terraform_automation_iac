@@ -279,7 +279,7 @@ resource "azurerm_storage_account" "prodmyapp_cmk" {
 }
 
 # Create key with explicit rotation policy
-/*
+
 resource "azurerm_key_vault_key" "prodmyapp_key" {
   name         = "my-storage-cmk"
   key_vault_id = azurerm_key_vault.prodmyapp.id
@@ -293,21 +293,21 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
     "unwrapKey"
   ]
 
-  rotation_policy {
-    expire_after         = "P90D"
-    notify_before_expiry = "P30D"
+  #rotation_policy {
+  #  expire_after         = "P90D"
+  #  notify_before_expiry = "P30D"
 
-    automatic {
-      time_before_expiry = "P30D"
-    }
-  }
+  #  automatic {
+  #    time_before_expiry = "P30D"
+  #  }
+  #}
 
   depends_on = [
     azurerm_key_vault.prodmyapp,
     time_sleep.wait_for_kv_rbac
   ]
 }
-*/
+
 
 /*
 resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
