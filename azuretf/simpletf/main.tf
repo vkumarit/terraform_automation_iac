@@ -293,14 +293,14 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
     "unwrapKey"
   ]
 
-  #rotation_policy {
-  #  expire_after         = "P90D"
-  #  notify_before_expiry = "P30D"
-#
-  #  automatic {
-  #    time_before_expiry = "P30D"
-  #  }
-  #}
+  rotation_policy {
+    expire_after         = "P90D"
+    notify_before_expiry = "P30D"
+
+    automatic {
+      time_before_expiry = "P30D"
+    }
+  }
 
   depends_on = [
     azurerm_key_vault.prodmyapp,
