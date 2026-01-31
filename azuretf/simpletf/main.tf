@@ -394,14 +394,14 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
 resource "azurerm_subnet" "pub_subnet" {
   name                 = "prodmyapp_pub_subnet1"
   resource_group_name  = azurerm_resource_group.prodmyapp.name
-  virtual_network_name = azurerm_virtual_network.main.name
+  virtual_network_name = azurerm_virtual_network.prodmyapp_vnet.name
   address_prefixes     = ["10.0.1.0/28"]
 }
 
 resource "azurerm_subnet" "pvt_subnet" {
   name                 = "prodmyapp_pvt_subnet2"
   resource_group_name  = azurerm_resource_group.prodmyapp.name
-  virtual_network_name = azurerm_virtual_network.main.name
+  virtual_network_name = azurerm_virtual_network.prodmyapp_vnet.name
   address_prefixes     = ["10.0.2.0/24"]
 }
 
