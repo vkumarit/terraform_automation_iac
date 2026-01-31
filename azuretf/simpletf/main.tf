@@ -375,10 +375,7 @@ resource "azurerm_network_security_group" "prodmyapp_sg" {
   }
 }
 
-## Subnets w/ network security group
-# public subnet (10.0.1.0/28) 
-# private subnet (10.0.2.0/24) 
-
+# VNET
 resource "azurerm_virtual_network" "prodmyapp_vnet" {
   name                = "prodmyapp_virtual-network"
   location            = azurerm_resource_group.prodmyapp.location  
@@ -393,13 +390,17 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
   #}
   
   # CRITICAL: Explicitly empty to force deletion
-  subnet = []
+  #subnet = []
   
   tags = {
     environment = "Production"
   }
 }
-/*
+
+## Subnets w/ network security group
+# public subnet (10.0.1.0/28) 
+# private subnet (10.0.2.0/24) 
+
 resource "azurerm_subnet" "pub_subnet" {
   name                 = "prodmyapp_pub_subnet1"
   resource_group_name  = azurerm_resource_group.prodmyapp.name
@@ -413,11 +414,11 @@ resource "azurerm_subnet" "pvt_subnet" {
   virtual_network_name = azurerm_virtual_network.prodmyapp_vnet.name
   address_prefixes     = ["10.0.2.0/24"]
 }
-*/
+
 # Separate Subnet NSG associations 
 # recommended over inline subnet.security_group, prevents recreation issues
 # First implement vnet and subnet then implement association
-/*
+
 resource "azurerm_subnet_network_security_group_association" "pub_subnet_nsg" {
   subnet_id                 = azurerm_virtual_network.prodmyapp_vnet.subnet[0].id
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
@@ -427,7 +428,7 @@ resource "azurerm_subnet_network_security_group_association" "pvt_subnet_nsg" {
   subnet_id                 = azurerm_virtual_network.prodmyapp_vnet.subnet[1].id
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
 }
-*/
+
 
 /*
 -----------------
