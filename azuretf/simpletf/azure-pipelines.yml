@@ -32,6 +32,7 @@ stages:
         backendAzureRmContainerName: '$(containerName)'
         backendAzureRmKey: '$(key)'
         environmentServiceNameAzureRM: '$(serviceConnection)'
+        commandOptions: '-upgrade'
 
     - task: TerraformTaskV4@4
       inputs:
