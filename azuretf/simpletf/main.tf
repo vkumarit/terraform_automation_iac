@@ -386,11 +386,20 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
 
   address_space = ["10.0.0.0/16"]
 
+  # When want to delete subnets created using inline subnets code like below we do `subnet=[]`
+  #subnet {
+  #  name           = "prodmyapp_pub_subnet1"
+  #  address_prefixes = ["10.0.1.0/28"]
+  #}
+  
+  # CRITICAL: Explicitly empty to force deletion
+  subnet = []
+  
   tags = {
     environment = "Production"
   }
 }
-
+/*
 resource "azurerm_subnet" "pub_subnet" {
   name                 = "prodmyapp_pub_subnet1"
   resource_group_name  = azurerm_resource_group.prodmyapp.name
@@ -404,7 +413,7 @@ resource "azurerm_subnet" "pvt_subnet" {
   virtual_network_name = azurerm_virtual_network.prodmyapp_vnet.name
   address_prefixes     = ["10.0.2.0/24"]
 }
-
+*/
 # Separate Subnet NSG associations 
 # recommended over inline subnet.security_group, prevents recreation issues
 # First implement vnet and subnet then implement association
