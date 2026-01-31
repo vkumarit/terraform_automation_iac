@@ -340,7 +340,7 @@ resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
 
 ## Virtual Network w/ cidr 10.0.0.0/16 and Subnets
 
-# Network Security Group
+# Network Security Group (All allowed for testing)
 resource "azurerm_network_security_group" "prodmyapp_sg" {
   name                = "open-security-group"
   location            = azurerm_resource_group.prodmyapp.location
@@ -378,33 +378,41 @@ resource "azurerm_network_security_group" "prodmyapp_sg" {
 ## Subnets w/ network security group
 # public subnet (10.0.1.0/28) 
 # private subnet (10.0.2.0/24) 
-/*
+
 resource "azurerm_virtual_network" "prodmyapp_vnet" {
   name                = "prodmyapp_virtual-network"
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
-  address_space       = ["10.0.0.0/16"]
-  #dns_servers         = ["10.0.0.4", "10.0.0.5"]
+  location            = azurerm_resource_group.prodmyapp.location  
+  resource_group_name = azurerm_resource_group.prodmyapp.name      
 
-  # public subnet (10.0.1.0/28)
+  address_space = ["10.0.0.0/16"]
+
   subnet {
-    name             = "prodmyapp_pub_subnet1"
-    address_prefixes = ["10.0.1.0/24"]
-    security_group   = azurerm_network_security_group.prodmyapp_sg.id
+    name           = "prodmyapp_pub_subnet1"
+    address_prefixes = ["10.0.1.0/28"]
   }
 
-  # private subnet (10.0.2.0/24)
   subnet {
-    name             = "prodmyapp_pvt_subnet2"
+    name           = "prodmyapp_pvt_subnet2"
     address_prefixes = ["10.0.2.0/24"]
-    security_group   = azurerm_network_security_group.prodmyapp_sg.id
   }
 
   tags = {
     environment = "Production"
   }
 }
-*/
+
+# Separate Subnet NSG associations 
+# recommended over inline subnet.security_group, prevents recreation issues
+resource "azurerm_subnet_network_security_group_association" "pub_subnet_nsg" {
+  subnet_id                 = azurerm_virtual_network.prodmyapp_vnet.subnet[0].id
+  network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
+}
+
+resource "azurerm_subnet_network_security_group_association" "pvt_subnet_nsg" {
+  subnet_id                 = azurerm_virtual_network.prodmyapp_vnet.subnet[1].id
+  network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
+}
+
 /*
 -----------------
 azurerm_resource_group: To contain your network resources.
