@@ -420,12 +420,12 @@ resource "azurerm_subnet" "pvt_subnet" {
 # First implement vnet and subnet then implement association
 
 resource "azurerm_subnet_network_security_group_association" "pub_subnet_nsg" {
-  subnet_id                 = azurerm_virtual_network.prodmyapp_vnet.subnet[0].id
+  subnet_id                 = azurerm_subnet.pub_subnet.id
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
 }
 
 resource "azurerm_subnet_network_security_group_association" "pvt_subnet_nsg" {
-  subnet_id                 = azurerm_virtual_network.prodmyapp_vnet.subnet[1].id
+  subnet_id                 = azurerm_subnet.pvt_subnet.id
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
 }
 
