@@ -386,21 +386,23 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
 
   address_space = ["10.0.0.0/16"]
 
-  subnet {
-    name           = "prodmyapp_pub_subnet1"
-    address_prefixes = ["10.0.1.0/28"]
-    network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
-  }
-
-  subnet {
-    name           = "prodmyapp_pvt_subnet2"
-    address_prefixes = ["10.0.2.0/24"]
-    network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
-  }
-
   tags = {
     environment = "Production"
   }
+}
+
+resource "azurerm_subnet" "pub_subnet" {
+  name                 = "prodmyapp_pub_subnet1"
+  resource_group_name  = azurerm_resource_group.prodmyapp.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["10.0.1.0/28"]
+}
+
+resource "azurerm_subnet" "pvt_subnet" {
+  name                 = "prodmyapp_pvt_subnet2"
+  resource_group_name  = azurerm_resource_group.prodmyapp.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["10.0.2.0/24"]
 }
 
 # Separate Subnet NSG associations 
