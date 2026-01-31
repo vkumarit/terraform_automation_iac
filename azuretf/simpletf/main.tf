@@ -389,11 +389,13 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
   subnet {
     name           = "prodmyapp_pub_subnet1"
     address_prefixes = ["10.0.1.0/28"]
+    network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
   }
 
   subnet {
     name           = "prodmyapp_pvt_subnet2"
     address_prefixes = ["10.0.2.0/24"]
+    network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
   }
 
   tags = {
@@ -404,7 +406,7 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
 # Separate Subnet NSG associations 
 # recommended over inline subnet.security_group, prevents recreation issues
 # First implement vnet and subnet then implement association
-
+/*
 resource "azurerm_subnet_network_security_group_association" "pub_subnet_nsg" {
   subnet_id                 = azurerm_virtual_network.prodmyapp_vnet.subnet[0].id
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
@@ -414,7 +416,7 @@ resource "azurerm_subnet_network_security_group_association" "pvt_subnet_nsg" {
   subnet_id                 = azurerm_virtual_network.prodmyapp_vnet.subnet[1].id
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
 }
-
+*/
 
 /*
 -----------------
