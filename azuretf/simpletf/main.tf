@@ -118,7 +118,6 @@ resource "azurerm_storage_container" "prodmyapp" {
   name                  = "mytfstate"
   storage_account_name = azurerm_storage_account.prodmyapp.name
   container_access_type = "private"
-  
   depends_on = [azurerm_storage_account.prodmyapp]  # ensures storage account creates first
 }
 
@@ -138,7 +137,7 @@ terraform {
     storage_account_name = "prodmyapptfstate01"
     container_name       = "mytfstate"
     key                  = "terraform.tfstate"       # folder/file name/directory inside container
-    #use_azuread_auth     = true                      # When using entra id for authentication
+    #use_azuread_auth     = true                      # When want to use entra id for authentication
     #use_cli              = true  
     # use_cli uses logged-in az cli context for authentication, comment out when switching to pipeline
   }
@@ -186,7 +185,7 @@ resource "azurerm_key_vault_secret" "sp_client_id" {
 variable "arm_client_secret" {
   type      = string
   sensitive = true
-  default   = ""              # empty string allows env var to populate
+  default   = ""              # empty string allows env var to populate (takes variable from environment),
   description = "ARM_CLIENT_SECRET from environment variable"
 }
 
@@ -241,8 +240,8 @@ resource "azurerm_role_assignment" "tf_kv_admin" {
 
 #A small wait before key creation (prod pipelines only): (Wait for RBAC propagation)
 resource "time_sleep" "wait_for_kv_rbac" {
-  depends_on      = [azurerm_role_assignment.tf_kv_admin]
   create_duration = "60s"
+  depends_on      = [azurerm_role_assignment.tf_kv_admin]
 }
 
 # Create User-Assigned Identity: Grant access to Key Vault.
@@ -255,6 +254,13 @@ resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
 resource "azurerm_role_assignment" "storage_kv_crypto" {
   scope                = azurerm_key_vault.prodmyapp.id
   role_definition_name = "Key Vault Crypto Service Encryption User"
+  principal_id         = azurerm_user_assigned_identity.prodmyapp_sa_identity.principal_id
+}
+
+# Helps with permissions for viewing the keys via dashboard
+resource "azurerm_role_assignment" "human_kv_crypto_officer" {
+  scope                = azurerm_key_vault.prodmyapp.id
+  role_definition_name = "Key Vault Crypto Officer"
   principal_id         = azurerm_user_assigned_identity.prodmyapp_sa_identity.principal_id
 }
 
