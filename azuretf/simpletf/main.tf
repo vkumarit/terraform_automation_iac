@@ -403,7 +403,8 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
 
 # Separate Subnet NSG associations 
 # recommended over inline subnet.security_group, prevents recreation issues
-/*
+# First implement vnet and subnet then implement association
+
 resource "azurerm_subnet_network_security_group_association" "pub_subnet_nsg" {
   subnet_id                 = azurerm_virtual_network.prodmyapp_vnet.subnet[0].id
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
@@ -413,7 +414,7 @@ resource "azurerm_subnet_network_security_group_association" "pvt_subnet_nsg" {
   subnet_id                 = azurerm_virtual_network.prodmyapp_vnet.subnet[1].id
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
 }
-*/
+
 
 /*
 -----------------
