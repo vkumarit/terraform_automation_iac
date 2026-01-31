@@ -257,13 +257,6 @@ resource "azurerm_role_assignment" "storage_kv_crypto" {
   principal_id         = azurerm_user_assigned_identity.prodmyapp_sa_identity.principal_id
 }
 
-# Helps with permissions for viewing the keys via dashboard
-resource "azurerm_role_assignment" "human_kv_key_officer" {
-  scope                = azurerm_key_vault.prodmyapp.id
-  role_definition_name = "Key Vault Administrator"         # Or, Key Vault Administrator
-  principal_id         = data.azurerm_client_config.current.object_id
-}
-
 #Create Storage Account (CMK): Link the identity and key.
 resource "azurerm_storage_account" "prodmyapp_cmk" {
   name                     = "prodmyappsacmk01"
@@ -277,11 +270,11 @@ resource "azurerm_storage_account" "prodmyapp_cmk" {
     identity_ids = [azurerm_user_assigned_identity.prodmyapp_sa_identity.id]
   }
   
-  #lifecycle {
-  #  ignore_changes = [
-  #    customer_managed_key
-  #  ]
-  #}
+  lifecycle {
+    ignore_changes = [
+      customer_managed_key
+    ]
+  }
 }
 
 # Create key with explicit rotation policy
