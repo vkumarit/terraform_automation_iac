@@ -505,8 +505,8 @@ steps:
 * Syntax is provider-specific but conceptually the same.
 * `Write the resource block before importing.` Terraform won’t create `.tf` files for you.
 * Check resource IDs carefully.** AWS uses names/ARNs; Azure uses full resource IDs.
-* Locally: run `terraform init` → `terraform import` → `terraform plan`.
-* In pipelines: authenticate → init → import → plan → apply (optional).
+* Locally: run `terraform init` > `terraform import` > `terraform plan`.
+* In pipelines: authenticate > init > import > plan > apply (optional).
 * `Use remote state in pipelines` to prevent state conflicts and also if want the state shared across runs.
 * Always run `terraform plan` after import** to sync your config with real resource settings.
 * Always verify and adjust the `.tf` config after import.
@@ -622,6 +622,7 @@ Cloud      → actual state
 * Explain **drift detection tools**
 * Share a **safe “import day” checklist for prod**
 * Walk through a **multi-resource bulk import**
+* key vault/key visibility on dashboard - add private endpoint + firewall (portal visibility changes again there)
 ?????????
 
 -------------------------------------------------------------------------------------------------------------

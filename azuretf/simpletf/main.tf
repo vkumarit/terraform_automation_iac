@@ -258,10 +258,10 @@ resource "azurerm_role_assignment" "storage_kv_crypto" {
 }
 
 # Helps with permissions for viewing the keys via dashboard
-resource "azurerm_role_assignment" "human_kv_crypto_officer" {
+resource "azurerm_role_assignment" "human_kv_key_officer" {
   scope                = azurerm_key_vault.prodmyapp.id
-  role_definition_name = "Key Vault Crypto Officer"
-  principal_id         = azurerm_user_assigned_identity.prodmyapp_sa_identity.principal_id
+  role_definition_name = "Key Vault Key Officer"         # Or, Key Vault Administrator
+  principal_id         = data.azurerm_client_config.current.object_id
 }
 
 #Create Storage Account (CMK): Link the identity and key.
