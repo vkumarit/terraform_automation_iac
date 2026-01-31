@@ -624,6 +624,29 @@ Cloud      → actual state
 * Walk through a **multi-resource bulk import**
 * key vault/key visibility on dashboard - add private endpoint + firewall (portal visibility changes again there)
 ?????????
+-------------------------------------------------------------------------------------------------------------
+Scenario - Suppose we are doing terraform pipeline as SP not as user and we create key vault and key, then 
+we want to see the key created inside key vault > keys using dashboard as a user. 
+
+Method 1 - (Recommended) Manual assignment of role (to enable permissions to view)
+$ az role assignment create \
+  --role "Key Vault Crypto Officer" \
+  --assignee usrlsothdevops@gmail.com \
+  --scope /subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv
+
+# Industry best practice
+# After doing this Required Microsoft Graph permission `Directory.Read.All` will not be required.
+
+Method 2 - (Terraform Only) Use resource block for role assignment to user using its' `object_id`.
+
+resource "azurerm_role_assignment" "human_kv_crypto_officer" {
+  scope                = azurerm_key_vault.prodmyapp.id
+  role_definition_name = "Key Vault Crypto Officer"
+  principal_id         = "USER_OBJECT_ID_HERE"
+}
+
+# Principal - Hardcode object IDs of known humans or service accounts. Like DevOps lead or security engineer’s object IDs. No AzureAD provider block required, No Graph permissions required. It's Deterministic.
+# Enables the Object id user to view the key or other resources on dashboard.
 
 -------------------------------------------------------------------------------------------------------------
 Recommended Production Pattern

@@ -11,3 +11,9 @@ $ az ad sp create-for-rbac --name "tf-bootstrap-sp" --role Contributor --scopes 
 
 Create service connection:
 az devops ?
+
+Role Assignment: 
+az role assignment create \
+  --role "Key Vault Crypto Officer" \
+  --assignee usrlsothdevops@gmail.com \
+  --scope /subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv

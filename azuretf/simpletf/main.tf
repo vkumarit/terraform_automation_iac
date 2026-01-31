@@ -51,15 +51,7 @@ provider "azurerm" {
   if needed, after exporting id explicitly reference as a variable and call it in provider block,
   #subscription_id  = var.subscription_id   
   */
-
 }
-
-# Configured the Azure AD provider - automatically reuse the same Service Principal credentials
-# required to provide user the key vault crypto officer permissions, so can view keys in dashboard as user.
-provider "azuread" {
-  tenant_id = data.azurerm_client_config.current.tenant_id
-}
-
 
 ## Resource Group
 
@@ -270,15 +262,15 @@ resource "azurerm_role_assignment" "storage_kv_crypto" {
 }
 
 # Helps with permissions for viewing the keys via dashboard
-data "azuread_user" "human" {
-  user_principal_name = "usrsloth8devops@gmail.com"
-}
-
+/*
 resource "azurerm_role_assignment" "human_kv_crypto_officer" {
   scope                = azurerm_key_vault.prodmyapp.id
   role_definition_name = "Key Vault Crypto Officer"
-  principal_id         = data.azuread_user.human.object_id
+  principal_id         = "USER_OBJECT_ID_HERE"        
+  # Hardcode object IDs of known humans or service accounts. 
+  # Like DevOps lead or security engineer’s object IDs. 
 }
+*/
 
 
 #Create Storage Account (CMK): Link the identity and key.
