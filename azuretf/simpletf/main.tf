@@ -338,32 +338,74 @@ resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
   ]
 }
 
+## Virtual Network w/ cidr 10.0.0.0/16 and Subnets
 
-/*
-## VNET w/ cidr 10.0.0.0/16
-resource "azurerm_virtual_network" "vnet1" {
-  name                = "v1-network"
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.ample.location
-  resource_group_name = azurerm_resource_group.ample.name
+# Network Security Group
+resource "azurerm_network_security_group" "prodmyapp_sg" {
+  name                = "open-security-group"
+  location            = azurerm_resource_group.prodmyapp.location
+  resource_group_name = azurerm_resource_group.prodmyapp.name
+  
+  security_rule {
+    name                       = "AllowAllInbound"
+    priority                   = 100             # ranges 100-4096; lower process first (i.e, 100 before 101)
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"             # Tcp, Udp, Icmp, Esp, Ah
+    source_port_range          = "*"             # ports ranges 0-65535, `*` equivalent to "0-65535"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"             # `*` equivalent to  "0.0.0.0/0"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowAllOutbound"
+    priority                   = 101             # ranges 100-4096; lower process first (i.e, 100 before 101)
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "*"             # Tcp, Udp, Icmp, Esp, Ah
+    source_port_range          = "*"             # # ports ranges 0-65535, `*` equivalent to "0-65535"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"             # `*` equivalent to  "0.0.0.0/0"
+    destination_address_prefix = "*"
+  }
+  
+  tags = {
+    environment = "Production"
+  }
 }
 
 ## Subnets w/ network security group
 # public subnet (10.0.1.0/28) 
-resource "azurerm_subnet" "pubnet1" {
-  name                 = "pub1-subnet"
-  resource_group_name  = azurerm_resource_group.ample
-  virtual_network_name = azurerm_virtual_network.vnet1
-  address_prefixes     = ["10.0.1.0/28"]
-}
 # private subnet (10.0.2.0/24) 
-resource "azurerm_subnet" "pvtnet" {
-  name                 = "pvt1-subnet"
-  resource_group_name  = azurerm_resource_group.ample
-  virtual_network_name = azurerm_virtual_network.vnet1
-  address_prefixes     = ["10.0.2.0/24"]
-}
+/*
+resource "azurerm_virtual_network" "prodmyapp_vnet" {
+  name                = "prodmyapp_virtual-network"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  address_space       = ["10.0.0.0/16"]
+  #dns_servers         = ["10.0.0.4", "10.0.0.5"]
 
+  # public subnet (10.0.1.0/28)
+  subnet {
+    name             = "prodmyapp_pub_subnet1"
+    address_prefixes = ["10.0.1.0/24"]
+    security_group   = azurerm_network_security_group.prodmyapp_sg.id
+  }
+
+  # private subnet (10.0.2.0/24)
+  subnet {
+    name             = "prodmyapp_pvt_subnet2"
+    address_prefixes = ["10.0.2.0/24"]
+    security_group   = azurerm_network_security_group.prodmyapp_sg.id
+  }
+
+  tags = {
+    environment = "Production"
+  }
+}
+*/
+/*
 -----------------
 azurerm_resource_group: To contain your network resources.
 azurerm_virtual_network: Defines the VNet and its overall address space.
