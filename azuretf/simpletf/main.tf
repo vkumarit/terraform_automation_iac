@@ -260,7 +260,7 @@ resource "azurerm_role_assignment" "storage_kv_crypto" {
 # Helps with permissions for viewing the keys via dashboard
 resource "azurerm_role_assignment" "human_kv_key_officer" {
   scope                = azurerm_key_vault.prodmyapp.id
-  role_definition_name = "Key Vault Key Officer"         # Or, Key Vault Administrator
+  role_definition_name = "Key Vault Administrator"         # Or, Key Vault Administrator
   principal_id         = data.azurerm_client_config.current.object_id
 }
 
