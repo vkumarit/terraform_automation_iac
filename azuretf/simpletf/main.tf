@@ -479,7 +479,7 @@ resource "azurerm_network_interface" "prodmyapp_nic" {
 }
 
 # Network Interface & Security Group Association
-resource "azurerm_network_interface_security_group_association" "example" {
+resource "azurerm_network_interface_security_group_association" "nic_nsg_assn" {
   network_interface_id      = azurerm_network_interface.prodmyapp_nic.id
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
 }
