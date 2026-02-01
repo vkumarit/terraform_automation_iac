@@ -338,6 +338,18 @@ resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
   ]
 }
 
+/*
+-----------------
+azurerm_resource_group: To contain your network resources.
+azurerm_virtual_network: Defines the VNet and its overall address space.
+azurerm_subnet: Creates individual subnets (public/private) within the VNet, specifying their address prefixes.
+azurerm_public_ip: For resources needing direct internet access (e.g., VMs in public subnet).
+azurerm_network_security_group: Applies firewall rules to control traffic.
+azurerm_network_interface: Attaches network settings (IP, NSG) to a VM.
+azurerm_network_interface_security_group_association: Links NSGs to network interfaces
+-----------------
+*/
+
 ## Virtual Network w/ cidr 10.0.0.0/16 and Subnets
 
 # Network Security Group (All allowed for testing)
@@ -397,10 +409,9 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
   }
 }
 
-## Subnets w/ network security group
-# public subnet (10.0.1.0/28) 
-# private subnet (10.0.2.0/24) 
+## Subnets w/ Network Security Group
 
+# public subnet (10.0.1.0/28) 
 resource "azurerm_subnet" "pub_subnet" {
   name                 = "prodmyapp_pub_subnet1"
   resource_group_name  = azurerm_resource_group.prodmyapp.name
@@ -408,6 +419,7 @@ resource "azurerm_subnet" "pub_subnet" {
   address_prefixes     = ["10.0.1.0/28"]
 }
 
+# private subnet (10.0.2.0/24) 
 resource "azurerm_subnet" "pvt_subnet" {
   name                 = "prodmyapp_pvt_subnet2"
   resource_group_name  = azurerm_resource_group.prodmyapp.name
@@ -429,20 +441,48 @@ resource "azurerm_subnet_network_security_group_association" "pvt_subnet_nsg" {
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
 }
 
+# Public IP (used to expose VMs' to internet)
+resource "azurerm_public_ip" "prodmyapp_pub_ips" {
+  name                = "prodmyapp_public_ip1"
+  resource_group_name = azurerm_resource_group.prodmyapp.name
+  location            = azurerm_resource_group.prodmyapp.location
+  
+  allocation_method   = "Static"                
+  # Static - User supplied IP address will be used or 
+  # Dynamic - allotted after IP attached to a VM/Resource. An IP is automatically assigned during creation.
+  # Can use data block `azurerm_public_ip` to obtain IP Address also.
 
-/*
------------------
-azurerm_resource_group: To contain your network resources.
-azurerm_virtual_network: Defines the VNet and its overall address space.
-azurerm_subnet: Creates individual subnets (public/private) within the VNet, specifying their address prefixes.
-azurerm_public_ip: For resources needing direct internet access (e.g., VMs in public subnet).
-azurerm_network_security_group: Applies firewall rules to control traffic.
-azurerm_network_interface: Attaches network settings (IP, NSG) to a VM.
-azurerm_network_interface_security_group_association: Links NSGs to network interfaces
------------------
-*/
+  tags = {
+    environment = "Production"
+  }
+}
 
+# Network Interface (NSG & IP + VM)
+resource "azurerm_network_interface" "prodmyapp_nic" {
+  name                = "prodmyapp-nic1"
+  location            = azurerm_resource_group.prodmyapp.location
+  resource_group_name = azurerm_resource_group.prodmyapp.name
 
+  ip_configuration {
+    name                          = "ip_config_1"
+    subnet_id                     = azurerm_subnet.pub_subnet.id  #public for internet facing VMs
+    
+    #private_ip_address_version    = "IPv4"                # IPv4/IPv6
+    private_ip_address_allocation = "Dynamic"             # Static/Dynamic
+    #private_ip_address            = [""]                    # Static IP Address
+    
+    #public_ip_address_id          = ""                    #  Public IP Address to associate w/ interface
+    
+    #primary                      = true                  
+    # true if multiple blocks and this is first/primary ip_configurations 
+  }
+}
+
+# Network Interface & Security Group Association
+resource "azurerm_network_interface_security_group_association" "example" {
+  network_interface_id      = azurerm_network_interface.prodmyapp_nic.id
+  network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
+}
 
 # VMs - linux/windows each 
 #Linux VM

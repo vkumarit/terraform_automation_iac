@@ -750,7 +750,7 @@ Goto Organization > Project > Pipelines > Environments > Create environment > Na
 
 Add YAML Code under 'jobs:' as
 
-  # ✅ APPROVAL GATE via Environment
+  # ./ APPROVAL GATE via Environment
   - deployment: ProductionDeployment
     displayName: 'Deploy to Production'
     environment: 'prod'  # Create this environment in Azure DevOps first
