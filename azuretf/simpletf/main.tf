@@ -4,17 +4,34 @@
 ## Azure Provider source and version
 terraform {
   required_providers {
+    
+    # azure resource manager 
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "=4.1.0"
     }
-    
+
+    # Microsoft Entra ID - formerly, Microsoft Azure Active Directory(AD)
+    # Cloud-based identity and access management (IAM) solution.
     azuread = {
       source  = "hashicorp/azuread"
       version = "~> 2.50"
     }
+
+    # TLS provides utilities for working with Transport Layer Security keys and certificates.
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+
+    # Local provider is used to manage local resources, such as files.
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.0"
+    }
   }
 }
+
 
 ###               PHASE-I               ###
 # Create Core Resources - Resource Group, Storage Account, Storage Container.
@@ -365,8 +382,13 @@ resource "azurerm_network_security_group" "prodmyapp_sg" {
     access                     = "Allow"
     protocol                   = "*"             # Tcp, Udp, Icmp, Esp, Ah
     source_port_range          = "*"             # ports ranges 0-65535, `*` equivalent to "0-65535"
-    destination_port_range     = "*"
-    source_address_prefix      = "*"             # `*` equivalent to  "0.0.0.0/0"
+    destination_port_range     = "*"             # `22` for SSH (Only Inbound)
+    
+    source_address_prefix      = "*"             
+    # "AzureCloud" (Azure DevOps Microsoft-hosted agent) / "*" (`*` equivalent to  "0.0.0.0/0") 
+    # Or, "<AGENT_PUBLIC_IP>/32"  # strongly recommended for Azure VM, EC2, on-prem VM with static IP
+    # Best: Bastion - No public IP , SSH NSG rule, 
+    
     destination_address_prefix = "*"
   }
 
@@ -376,8 +398,8 @@ resource "azurerm_network_security_group" "prodmyapp_sg" {
     direction                  = "Outbound"
     access                     = "Allow"
     protocol                   = "*"             # Tcp, Udp, Icmp, Esp, Ah
-    source_port_range          = "*"             # # ports ranges 0-65535, `*` equivalent to "0-65535"
-    destination_port_range     = "*"
+    source_port_range          = "*"             # ports ranges 0-65535, `*` equivalent to "0-65535"
+    destination_port_range     = "*"             
     source_address_prefix      = "*"             # `*` equivalent to  "0.0.0.0/0"
     destination_address_prefix = "*"
   }
@@ -463,16 +485,18 @@ resource "azurerm_network_interface" "prodmyapp_nic" {
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
 
+  # ip_configurations can be multiple
   ip_configuration {
     name                          = "ip_config_1"
     subnet_id                     = azurerm_subnet.pub_subnet.id  #public for internet facing VMs
     
     #private_ip_address_version    = "IPv4"                # IPv4/IPv6
     private_ip_address_allocation = "Dynamic"             # Static/Dynamic
-    #private_ip_address            = [""]                    # Static IP Address
+    #private_ip_address            = [""]                  # Static IP Address
     
-    #public_ip_address_id          = ""                    #  Public IP Address to associate w/ interface
-    
+    # Public IP Address to associate w/ interface
+    public_ip_address_id          = azurerm_public_ip.prodmyapp_pub_ips.id 
+        
     #primary                      = true                  
     # true if multiple blocks and this is first/primary ip_configurations 
   }
@@ -484,20 +508,50 @@ resource "azurerm_network_interface_security_group_association" "nic_nsg_assn" {
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
 }
 
+# SSH Key Generation (tls provider block required)
+
+# Creating Key
+resource "tls_private_key" "vm_ssh" {
+  algorithm = "RSA"
+  rsa_bits  = 4096                   # 2048 Min. required, 4096 for better security (production)
+}
+
+# Writing for SSH purpose
+#> Write the private key to a local file with secure permissions
+resource "local_sensitive_file" "private_key_pem" {
+  filename        = pathexpand("~/.ssh/prodmyapp-vm1.pem")
+  content         = tls_private_key.vm_ssh.private_key_pem
+  file_permission = "0400"           # Owner: read only (4) Group: no access  (0) Others: no access (0)
+}
+
+#> Write the public key to a local file (standard permissions)
+resource "local_file" "public_key_openssh" {
+  filename        = pathexpand("~/.ssh/prodmyapp-vm1.pub")
+  content         = tls_private_key.vm_ssh.public_key_openssh
+  file_permission = "0644"           # Owner: read+write (6) Group: read only  (4) Others: read only (4)
+}
+
+
 # VMs - linux/windows each 
+# Define variable for VM selection
+
+
+
 #Linux VM
-/*
-resource "azurerm_linux_virtual_machine" "example" {
-  name                = "example-vm"
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
-  size                = "Standard_DS1_v2"
+
+resource "azurerm_linux_virtual_machine" "linux_vm" {
+  name                = "linux_vm_1"
+  location            = azurerm_resource_group.prodmyapp.location
+  resource_group_name = azurerm_resource_group.prodmyapp.name
+  #size                = "Standard_DS1_v2"
+  size                = var.vm_size ???
+  
   admin_username      = "adminuser"
-  network_interface_ids = [azurerm_network_interface.example.id]
+  network_interface_ids = [azurerm_network_interface.prodmyapp_nic.id]
 
   admin_ssh_key {
     username   = "adminuser"
-    public_key = file("~/.ssh/id_rsa.pub")
+    public_key = tls_private_key.vm_ssh.public_key_openssh
   }
 
   os_disk {
@@ -521,6 +575,6 @@ resource "azurerm_linux_virtual_machine" "example" {
     # Read/Update timeouts remain default
   #}
 }
-*/
+
 
 # Deployment of resources in different regions using loop

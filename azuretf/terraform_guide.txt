@@ -867,7 +867,55 @@ stages:
         environmentServiceNameAzureRM: '$(serviceConnection)'
         commandOptions: '-auto-approve'
 --------------------------------------------------------------------------------------------------------------
+Defining variable for VM size selection (Production):
 
+--------------------------------------------------------------------------------------------------------------
+Scenario - We run Terraform via Azure DevOps pipelines (init → plan → apply). A person triggering or
+contributing does not have Azure portal access, may not have Azure DevOps UI access (run summary), but
+still needs to see Terraform outputs/logs (IPs, URLs, resource names, IDs, etc.). So, where do Terraform
+outputs go, and how can one consume them?
 
+--------------------------------------------------------------------------------------------------------------
+Terraform SSH Key Creation and Use with VM afterwards :
+
+Creation part:
+- With the use of tls provider settings. 
+We create SSH key first with 
+resource "tls_private_key" "vm_ssh" {...} block
+
+- With the use of local provider settings.
+We write private and public files with permissions for use, on agent VM with
+resource "local_sensitive_file" "private_key_pem" {...} and,
+resource "local_file" "public_key_openssh" {...} blocks.
+
+[ Agent Server ]
+  ~/.ssh/prodmyapp-vm.pem   (PRIVATE KEY)
+          |
+          |  ssh -i prodmyapp-vm.pem
+          v
+[ Azure VM ]
+  ~/.ssh/authorized_keys   (PUBLIC KEY)
+
+How to SSH into the VM after apply from agent server/VM:
+$ ssh -i ~/.ssh/prodmyapp-vm.pem adminuser@<PUBLIC_IP>
+
+- We SSH from the az agent server / jump VM into the created Azure VM
+- Key files exist only on the agent server
+- The private key is NOT copied to the Azure VM
+- The public key is injected into the VM by Azure during creation
+
+---------------------------------------------------------------------------------------------------------------
+Production Deployment Checklist:
+
+- Separate state files per environment
+- Compiled plans (plan → artifact → apply)
+- Environment-specific SPs with scoped RBAC  
+- Manual approval gates for prod
+- GitHub Releases for outputs (primary access)
+- Key Vault backup (secondary access)
+- Slack/Teams notifications
+- terraform fmt/validate in PR checks
+- Drift detection (plan on schedule)
+- State file versioning (keep 5 backups)
 
 

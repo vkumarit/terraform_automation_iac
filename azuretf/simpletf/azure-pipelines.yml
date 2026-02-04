@@ -1,14 +1,17 @@
 trigger:
 - main
 
-pool:
-  name: 'az-classic-pool'  # EC2 self-hosted agent pool
-
 variables:
-  serviceConnection: 'az-classic-conn'  # Azure RM service connection
+  system.accesstoken: $(System.AccessToken)  # Enables GitHub Checks
+  serviceConnection: 'az-classic-conn'
   containerName: 'mytfstate'
   key: 'terraform.tfstate'
   resourceGroup: 'myTFResourceGroup'
+  
+pool:
+  name: 'az-classic-pool'  # EC2 self-hosted agent pool
+
+
 
 ############# Avoid Artifact 'tfplan' and Approval Gate - works for dev/test using '-auto-approve'
 

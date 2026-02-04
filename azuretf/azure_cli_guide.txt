@@ -10,10 +10,24 @@ Create Service Principal(SPN):
 $ az ad sp create-for-rbac --name "tf-bootstrap-sp" --role Contributor --scopes /subscriptions/{your-sub-id} --sdk-auth
 
 Create service connection:
-az devops ?
+$ az devops ?
 
 Role Assignment: 
-az role assignment create \
+$ az role assignment create \
   --role "Key Vault Crypto Officer" \
   --assignee usrlsothdevops@gmail.com \
   --scope /subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv
+
+OS Lookup for VMs: 
+
+# All os images in location
+$ az vm image list --location "Australia East" --output table --all
+
+*Shows URN format: publisher:offer:sku:version
+*Latest for version to auto-pick the newest patched image
+
+# Specific publisher (e.g., Canonical/Ubuntu)
+$ az vm image list --publisher Canonical --location "Australia East" --all --output table
+
+# Filter by offer/SKU (e.g., Ubuntu Jammy 22.04 LTS)
+$ az vm image list --publisher Canonical --offer 0001-com-ubuntu-server-jammy --sku 22_04-lts --location "Australia East" --output table
