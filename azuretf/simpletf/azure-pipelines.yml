@@ -2,7 +2,7 @@ trigger:
 - main
 
 variables:
-  system.accesstoken: $(System.AccessToken)  # Enables GitHub Checks
+  #system.accesstoken: $(System.AccessToken)  # Enables GitHub Checks (views az pipeline run logs)
   serviceConnection: 'az-classic-conn'
   containerName: 'mytfstate'
   key: 'terraform.tfstate'
