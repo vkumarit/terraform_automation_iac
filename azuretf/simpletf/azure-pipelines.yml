@@ -7,6 +7,8 @@ variables:
   containerName: 'mytfstate'
   key: 'terraform.tfstate'
   resourceGroup: 'myTFResourceGroup'
+  TF_LOG: ERROR
+  TF_LOG_PATH: $(Build.SourcesDirectory)/tf-error.log
   
 pool:
   name: 'az-classic-pool'  # EC2 self-hosted agent pool
@@ -38,12 +40,15 @@ stages:
         #commandOptions: '-upgrade'
 
     - task: TerraformTaskV4@4
+      name: TerraformPlan
       inputs:
         provider: 'azurerm'
         command: 'plan'
         workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
         environmentServiceNameAzureRM: '$(serviceConnection)'
-        commandOptions: ' -var="arm_client_secret=$(ARM_CLIENT_SECRET)"'  # Optional: pass secrets
+        commandOptions: >
+          -no-color                                           # makes logs readable outside UI
+          -var="arm_client_secret=$(ARM_CLIENT_SECRET)"       # Can also pass secret directly
 
     - task: TerraformTaskV4@4
       inputs:
@@ -51,7 +56,23 @@ stages:
         command: 'apply'
         workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
         environmentServiceNameAzureRM: '$(serviceConnection)'
-        commandOptions: '-auto-approve'
+        commandOptions: >
+          -no-color
+          -auto-approve                              # no approval required dev/stage
+
+#  Publish error log as artifact
+#    - task: PublishPipelineArtifact@1
+#      inputs:
+#        targetPath: 'tf-error.log'
+#        artifact: 'terraform-error-summary'
+#        publishLocation: 'pipeline'
+#      condition: failed()
+
+#  Post error summary back to GitHub
+    - script: |
+        ERROR_MSG=$(cat tf-error.log | head -50)
+        echo "Terraform failed: $ERROR_MSG"
+      displayName: 'Post error to GitHub'
 
 ############ Use Artifact 'tfplan' and Approval Gate
 #stages:
