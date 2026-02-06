@@ -1,85 +1,240 @@
+---
+# (start of file)
+
+# When access to azure devops pipeline job run summary not available
+# Using Github Checks
+
 trigger:
 - main
 
 variables:
-  #system.accesstoken: $(System.AccessToken)  # Enables GitHub Checks (views az pipeline run logs)
   serviceConnection: 'az-classic-conn'
   containerName: 'mytfstate'
   key: 'terraform.tfstate'
-  resourceGroup: 'myTFResourceGroup'
 
-# variables for error log view in github
   TF_LOG: ERROR
-  TF_LOG_PATH: $(Build.SourcesDirectory)/tf-error.log
-  
-pool:
-  name: 'az-classic-pool'  # EC2 self-hosted agent pool
+  TF_LOG_PATH: $(Pipeline.Workspace)/terraform-debug.log
 
+pool:
+  name: 'az-classic-pool'   # EC2 self-hosted agent
+
+stages:
+- stage: Deploy
+  displayName: "Terraform Deploy"
+  jobs:
+  - job: Terraform
+    displayName: "Terraform Plan & Apply"
+    steps:
+
+    # -----------------------------
+    # Install Terraform
+    # -----------------------------
+    - task: TerraformInstaller@0
+      inputs:
+        terraformVersion: '1.14.3'
+
+    # -----------------------------
+    # Terraform Init
+    # -----------------------------
+    - script: |
+        set -e
+        terraform init -no-color
+      workingDirectory: azuretf/simpletf
+      displayName: "Terraform Init"
+      env:
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+
+    # -----------------------------
+    # Terraform Plan (capture logs)
+    # -----------------------------
+    - script: |
+        set +e
+        terraform plan \
+          -no-color \
+          -out=tfplan.binary \
+          > terraform-plan.log 2>&1
+        echo $? > plan.exitcode
+      workingDirectory: azuretf/simpletf
+      displayName: "Terraform Plan"
+      env:
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+
+    # -----------------------------
+    # Parse Terraform boxed errors → GitHub Checks
+    # -----------------------------
+    - script: |
+        set +e
+
+        LOG=terraform-plan.log
+        FOUND=0
+
+        awk '
+          BEGIN { err=""; file=""; line="" }
+
+          /│ Error:/ {
+            err=$0
+            gsub(/.*Error: /,"",err)
+          }
+
+          /on .* line [0-9]+/ {
+            match($0, /on ([^ ]+) line ([0-9]+)/, m)
+            file=m[1]
+            line=m[2]
+          }
+
+          /╵/ {
+            if (err != "") {
+              if (file != "" && line != "") {
+                printf "##vso[task.logissue type=error;sourcepath=%s;linenumber=%s]%s\n", file, line, err
+              } else {
+                printf "##vso[task.logissue type=error]%s\n", err
+              }
+              FOUND=1
+            }
+            err=""; file=""; line=""
+          }
+
+          END { if (FOUND) exit 1 }
+        ' "$LOG"
+
+        # Terraform summary (non-fatal)
+        SUMMARY=$(grep -E "Plan:|No changes" terraform-plan.log | head -n 1)
+        if [ -n "$SUMMARY" ]; then
+          echo "##vso[task.logissue type=warning]Terraform Summary: $SUMMARY"
+        fi
+      workingDirectory: azuretf/simpletf
+      displayName: "Terraform Plan → GitHub Checks (Parsed Errors)"
+
+    # -----------------------------
+    # Terraform Apply
+    # -----------------------------
+    - script: |
+        set +e
+        terraform apply \
+          -no-color \
+          -auto-approve tfplan.binary \
+          > terraform-apply.log 2>&1
+        echo $? > apply.exitcode
+      workingDirectory: azuretf/simpletf
+      displayName: "Terraform Apply"
+
+    # -----------------------------
+    # Parse Apply Errors → GitHub Checks
+    # -----------------------------
+    - script: |
+        set +e
+
+        LOG=terraform-apply.log
+        FOUND=0
+
+        awk '
+          BEGIN { err=""; file=""; line="" }
+
+          /│ Error:/ {
+            err=$0
+            gsub(/.*Error: /,"",err)
+          }
+
+          /on .* line [0-9]+/ {
+            match($0, /on ([^ ]+) line ([0-9]+)/, m)
+            file=m[1]
+            line=m[2]
+          }
+
+          /╵/ {
+            if (err != "") {
+              if (file != "" && line != "") {
+                printf "##vso[task.logissue type=error;sourcepath=%s;linenumber=%s]%s\n", file, line, err
+              } else {
+                printf "##vso[task.logissue type=error]%s\n", err
+              }
+              FOUND=1
+            }
+            err=""; file=""; line=""
+          }
+
+          END { if (FOUND) exit 1 }
+        ' "$LOG"
+      workingDirectory: azuretf/simpletf
+      displayName: "Terraform Apply → GitHub Checks (Parsed Errors)"
+
+    # -----------------------------
+    # Publish Full Logs (Failed)
+    # -----------------------------
+    - task: PublishPipelineArtifact@1
+      condition: failed()
+      inputs:
+        targetPath: azuretf/simpletf/terraform-plan.log
+        artifact: terraform-error-log
+# (end of file)
+...
+
+
+# When access to azure devops pipeline jobs run summary available
+
+#trigger:
+#- main
+
+#variables:
+#  serviceConnection: 'az-classic-conn'
+#  containerName: 'mytfstate'
+#  key: 'terraform.tfstate'
+#  #resourceGroup: 'myTFResourceGroup'
+
+#pool:
+#  name: 'az-classic-pool'  # EC2 self-hosted agent pool
 
 
 ############# Avoid Artifact 'tfplan' and Approval Gate - works for dev/test using '-auto-approve'
 
-stages:
-- stage: Deploy
-  jobs:
-  - job: Deploy
-    steps:
-    - task: TerraformInstaller@0
-      inputs:
-        terraformVersion: '1.14.3'  # Match version
+#stages:
+#- stage: Deploy
+#  jobs:
+#  - job: Deploy
+#    steps:
+#    - task: TerraformInstaller@0
+#      inputs:
+#        terraformVersion: '1.14.3'  # Match version
 
-    - task: TerraformTaskV4@4
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
-        workingDirectory: 'azuretf/simpletf' # since files in terraform_automation_IaC/azuretf/simpletf/
-        backendServiceArm: '$(serviceConnection)'
-        backendAzureRmResourceGroupName: 'myTFResourceGroup'
-        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
-        backendAzureRmContainerName: '$(containerName)'
-        backendAzureRmKey: '$(key)'
-        environmentServiceNameAzureRM: '$(serviceConnection)'
-        #commandOptions: '-upgrade'
+#    - task: TerraformTaskV4@4
+#      inputs:
+#        provider: 'azurerm'
+#        command: 'init'
+#        workingDirectory: 'azuretf/simpletf' # since files in terraform_automation_IaC/azuretf/simpletf/
+#        backendServiceArm: '$(serviceConnection)'
+#        backendAzureRmResourceGroupName: 'myTFResourceGroup'
+#        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
+#        backendAzureRmContainerName: '$(containerName)'
+#        backendAzureRmKey: '$(key)'
+#        environmentServiceNameAzureRM: '$(serviceConnection)'
+#        #commandOptions: '-upgrade'
 
-    - task: TerraformTaskV4@4
-      name: TerraformPlan
-      inputs:
-        provider: 'azurerm'
-        command: 'plan'
-        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
-        environmentServiceNameAzureRM: '$(serviceConnection)'
-        commandOptions: >
-          -no-color                                           
-          -var="arm_client_secret=$(ARM_CLIENT_SECRET)"       
+#    - task: TerraformTaskV4@4
+#      name: TerraformPlan
+#      inputs:
+#        provider: 'azurerm'
+#        command: 'plan'
+#        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
+#        environmentServiceNameAzureRM: '$(serviceConnection)'
+#        commandOptions: >
+#          -no-color                                           
+#          -var="arm_client_secret=$(ARM_CLIENT_SECRET)"       
         
         # `-no-color` - makes logs readable outside UI
         # `-var="<arm-client-secret>"` - Can also pass secret directly
 
-    - task: TerraformTaskV4@4
-      inputs:
-        provider: 'azurerm'
-        command: 'apply'
-        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
-        environmentServiceNameAzureRM: '$(serviceConnection)'
-        commandOptions: >
-          -no-color
-          -auto-approve                              
+#    - task: TerraformTaskV4@4
+#      inputs:
+#        provider: 'azurerm'
+#        command: 'apply'
+#        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
+#        environmentServiceNameAzureRM: '$(serviceConnection)'
+#        commandOptions: >
+#          -no-color
+#          -auto-approve                              
           
         # `-auto-approve` - no approval required dev/stage
 
-#  Publish error log as artifact
-#    - task: PublishPipelineArtifact@1
-#      inputs:
-#        targetPath: 'tf-error.log'
-#        artifact: 'terraform-error-summary'
-#        publishLocation: 'pipeline'
-#      condition: failed()
-
-#  Post error summary back to GitHub
-    - script: |
-        ERROR_MSG=$(cat tf-error.log | head -50)
-        echo "Terraform failed: $ERROR_MSG"
-      displayName: 'Post error to GitHub'
 
 ############ Use Artifact 'tfplan' and Approval Gate
 #stages:
