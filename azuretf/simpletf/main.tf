@@ -538,7 +538,7 @@ resource "local_file" "public_key_openssh" {
 
 
 #Linux VM
-/*
+
 resource "azurerm_linux_virtual_machine" "linux_vm" {
   name                = "linux_vm_1"
   location            = azurerm_resource_group.prodmyapp.location
