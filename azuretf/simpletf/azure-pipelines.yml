@@ -27,6 +27,13 @@ stages:
     steps:
 
     # -----------------------------
+    # Clean previous terraform logs
+    # -----------------------------
+    - script: |
+        rm -f azuretf/simpletf/*.log
+      displayName: "Clean previous terraform logs"
+
+    # -----------------------------
     # Install Terraform
     # -----------------------------
     - task: TerraformInstaller@0
@@ -164,8 +171,9 @@ stages:
     - task: PublishPipelineArtifact@1
       condition: failed()
       inputs:
-        targetPath: azuretf/simpletf/terraform-plan.log
+        targetPath: azuretf/simpletf
         artifact: terraform-error-log
+
 # (end of file)
 ...
 
