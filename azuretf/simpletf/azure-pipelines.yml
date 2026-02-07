@@ -10,7 +10,7 @@ trigger:
 variables:
   TF_LOG: ERROR
   TF_LOG_PATH: $(Pipeline.Workspace)/terraform-debug.log
-#  GITHUB_TOKEN: $(githubtoken-feb)   # GitHub PAT (repo:checks, repo:status)
+  GITHUB_TOKEN: $(githubtoken-feb)   # GitHub PAT (repo:checks, repo:status)
 
 pool:
   name: 'az-classic-pool'   # EC2 self-hosted agent

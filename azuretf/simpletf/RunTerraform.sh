@@ -1,50 +1,52 @@
 #!/bin/bash
-set -euo pipefail
+set -u
+set -o pipefail
 
 # ==========================
 # CONFIG
 # ==========================
-REPO="your-org/your-repo"        # 🔴 CHANGE THIS
-COMMAND="$1"                    # init | plan | apply
+REPO="vkumarit/terraform_automation_iac"
+COMMAND="$1"
 LOG_FILE="terraform-${COMMAND}.log"
 
 TOKEN="${GITHUB_TOKEN}"
 COMMIT_SHA="$(git rev-parse HEAD)"
 
-# ==========================
-# RUN TERRAFORM
-# ==========================
 echo "Running terraform ${COMMAND}..."
 
+# ==========================
+# RUN TERRAFORM (NON-FATAL)
+# ==========================
+TF_EXIT=0
+
 if [[ "$COMMAND" == "init" ]]; then
-  terraform init -no-color > "$LOG_FILE" 2>&1 || true
+  terraform init -no-color > "$LOG_FILE" 2>&1 || TF_EXIT=$?
 elif [[ "$COMMAND" == "plan" ]]; then
-  terraform plan -no-color -out=tfplan.binary > "$LOG_FILE" 2>&1 || true
+  terraform plan -no-color -out=tfplan.binary > "$LOG_FILE" 2>&1 || TF_EXIT=$?
 elif [[ "$COMMAND" == "apply" ]]; then
-  terraform apply -no-color -auto-approve tfplan.binary > "$LOG_FILE" 2>&1 || true
+  terraform apply -no-color -auto-approve tfplan.binary > "$LOG_FILE" 2>&1 || TF_EXIT=$?
 else
   echo "Unknown command: $COMMAND"
   exit 1
 fi
 
 # ==========================
-# CREATE GITHUB CHECK RUN
+# CREATE CHECK RUN
 # ==========================
 CHECK_RUN_ID=$(
   curl -s -X POST "https://api.github.com/repos/${REPO}/check-runs" \
     -H "Authorization: Bearer ${TOKEN}" \
-    -H "Accept: application/vnd.github.v3+json" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
     -d "{
       \"name\": \"Terraform ${COMMAND^}\",
       \"head_sha\": \"${COMMIT_SHA}\",
       \"status\": \"in_progress\"
-    }" | grep -oP '"id":\K[0-9]+'
+    }" | jq -r '.id'
 )
 
-echo "GitHub Check Run ID: ${CHECK_RUN_ID}"
-
 # ==========================
-# PARSE ERRORS → ANNOTATIONS
+# PARSE ERRORS
 # ==========================
 echo "[" > annotations.json
 FIRST=1
@@ -67,32 +69,28 @@ awk '
   err=""; file=""; line=""
 }
 BEGIN { first=1 }
-END {}
 ' "$LOG_FILE" >> annotations.json
 
 echo "]" >> annotations.json
 
 # ==========================
-# DETERMINE RESULT
+# DECIDE RESULT
 # ==========================
-if grep -q '"annotation_level":"failure"' annotations.json; then
+if [[ "$TF_EXIT" -ne 0 ]]; then
   CONCLUSION="failure"
   SUMMARY="Terraform ${COMMAND^} failed"
 else
   CONCLUSION="success"
-  if [[ "$COMMAND" == "plan" ]]; then
-    SUMMARY=$(grep -E "Plan:|No changes" "$LOG_FILE" | head -n1 || echo "Terraform Plan successful")
-  else
-    SUMMARY="Terraform ${COMMAND^} successful"
-  fi
+  SUMMARY="Terraform ${COMMAND^} succeeded"
 fi
 
 # ==========================
-# COMPLETE CHECK RUN
+# COMPLETE CHECK
 # ==========================
 curl -s -X PATCH "https://api.github.com/repos/${REPO}/check-runs/${CHECK_RUN_ID}" \
   -H "Authorization: Bearer ${TOKEN}" \
-  -H "Accept: application/vnd.github.v3+json" \
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
   -d "{
     \"status\": \"completed\",
     \"conclusion\": \"${CONCLUSION}\",
@@ -103,5 +101,4 @@ curl -s -X PATCH "https://api.github.com/repos/${REPO}/check-runs/${CHECK_RUN_ID
     }
   }"
 
-echo "Terraform ${COMMAND} → GitHub Checks updated"
-
+exit "$TF_EXIT"
