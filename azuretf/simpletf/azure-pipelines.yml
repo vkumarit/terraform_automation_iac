@@ -78,13 +78,25 @@ stages:
         GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
-    # Publish logs if failed
+    # Prepare minimal artifacts
+    # -----------------------------
+    - script: |
+        mkdir -p artifacts
+        cp azuretf/simpletf/*.log artifacts/ || true
+        cp azuretf/simpletf/annotations.json artifacts/ || true
+      condition: failed()
+      displayName: "Prepare minimal artifacts"
+
+    # -----------------------------
+    # Publish logs only
     # -----------------------------
     - task: PublishPipelineArtifact@1
       condition: failed()
       inputs:
-        targetPath: azuretf/simpletf
+        targetPath: artifacts
         artifact: terraform-logs
+      env:
+        AZURE_DEVOPS_DEDUP_PARALLELISM: "1"
 
 
 # (end of file)
