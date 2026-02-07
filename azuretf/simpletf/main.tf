@@ -243,6 +243,13 @@ resource "azurerm_key_vault_secret" "sp_subscription_id" {
 }
 
 # Store GitHub Token 
+variable "github_token" {
+  type      = string
+  sensitive = true
+  default   = ""              # empty string allows env var to populate (takes variable from environment),
+  description = "GitHub token for Key Vault"
+}
+
 resource "azurerm_key_vault_secret" "github_token" {
   name         = "github_token_feb"
   value        = var.github_token         # var when exported GITHUB_TOKEN to EC2/VM env vars
