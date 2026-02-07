@@ -4,7 +4,6 @@
 # When access to azure devops pipeline job run summary not available
 # Using Github Checks
 
----
 trigger:
 - main
 
