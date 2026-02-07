@@ -242,6 +242,18 @@ resource "azurerm_key_vault_secret" "sp_subscription_id" {
   depends_on   = [azurerm_key_vault.prodmyapp]
 }
 
+# Store GitHub Token 
+resource "azurerm_key_vault_secret" "github_token" {
+  name         = "github_token_feb"
+  value        = var.github_token         # var when exported GITHUB_TOKEN to EC2/VM env vars
+  
+  # Secrets as code (version controlled) - Secret rotation 
+  # Update ARM_CLIENT_SECRET env var > terraform apply > Key Vault updates automatically.
+  
+  key_vault_id = azurerm_key_vault.prodmyapp.id
+  depends_on   = [azurerm_key_vault.prodmyapp]
+}
+
 ###               PHASE-III               ###
 
 ## User Enable encyption to storage account
@@ -538,7 +550,7 @@ resource "local_file" "public_key_openssh" {
 
 
 #Linux VM
-
+/*
 resource "azurerm_linux_virtual_machine" "linux_vm" {
   name                = "linux_vm_1"
   location            = azurerm_resource_group.prodmyapp.location

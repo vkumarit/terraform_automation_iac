@@ -4,6 +4,7 @@
 # When access to azure devops pipeline job run summary not available
 # Using Github Checks
 
+---
 trigger:
 - main
 
@@ -14,6 +15,7 @@ variables:
 
   TF_LOG: ERROR
   TF_LOG_PATH: $(Pipeline.Workspace)/terraform-debug.log
+  GITHUB_TOKEN: $(GITHUB_TOKEN)   # GitHub PAT stored as secret in pipeline
 
 pool:
   name: 'az-classic-pool'   # EC2 self-hosted agent
@@ -23,7 +25,7 @@ stages:
   displayName: "Terraform Deploy"
   jobs:
   - job: Terraform
-    displayName: "Terraform Plan & Apply"
+    displayName: "Terraform Init, Plan & Apply"
     steps:
 
     # -----------------------------
@@ -41,129 +43,112 @@ stages:
         terraformVersion: '1.14.3'
 
     # -----------------------------
-    # Terraform Init
+    # Reusable script to run Terraform + GitHub Checks
     # -----------------------------
     - script: |
-        set -e
-        terraform init -no-color
-      workingDirectory: azuretf/simpletf
-      displayName: "Terraform Init"
-      env:
-        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        #!/bin/bash
+        set -euo pipefail
 
-    # -----------------------------
-    # Terraform Plan (capture logs)
-    # -----------------------------
-    - script: |
-        set +e
-        terraform plan \
-          -no-color \
-          -out=tfplan.binary \
-          > terraform-plan.log 2>&1
-        echo $? > plan.exitcode
-      workingDirectory: azuretf/simpletf
-      displayName: "Terraform Plan"
-      env:
-        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        REPO="your-org/your-repo"  # Change this
+        COMMIT_SHA=$(git rev-parse HEAD)
+        TOKEN="${GITHUB_TOKEN}"
+        COMMAND=$1          # init / plan / apply
+        LOG_FILE="terraform-${COMMAND}.log"
 
-    # -----------------------------
-    # Parse Terraform boxed errors → GitHub Checks
-    # -----------------------------
-    - script: |
-        set +e
-
-        LOG=terraform-plan.log
-        FOUND=0
-
-        awk '
-          BEGIN { err=""; file=""; line="" }
-
-          /│ Error:/ {
-            err=$0
-            gsub(/.*Error: /,"",err)
-          }
-
-          /on .* line [0-9]+/ {
-            match($0, /on ([^ ]+) line ([0-9]+)/, m)
-            file=m[1]
-            line=m[2]
-          }
-
-          /╵/ {
-            if (err != "") {
-              if (file != "" && line != "") {
-                printf "##vso[task.logissue type=error;sourcepath=%s;linenumber=%s]%s\n", file, line, err
-              } else {
-                printf "##vso[task.logissue type=error]%s\n", err
-              }
-              FOUND=1
-            }
-            err=""; file=""; line=""
-          }
-
-          END { if (FOUND) exit 1 }
-        ' "$LOG"
-
-        # Terraform summary (non-fatal)
-        SUMMARY=$(grep -E "Plan:|No changes" terraform-plan.log | head -n 1)
-        if [ -n "$SUMMARY" ]; then
-          echo "##vso[task.logissue type=warning]Terraform Summary: $SUMMARY"
+        # Run Terraform command
+        if [[ "$COMMAND" == "plan" ]]; then
+          terraform plan -no-color -out=tfplan.binary > "$LOG_FILE" 2>&1
+        elif [[ "$COMMAND" == "apply" ]]; then
+          terraform apply -no-color -auto-approve tfplan.binary > "$LOG_FILE" 2>&1
+        else
+          terraform init -no-color > "$LOG_FILE" 2>&1
         fi
-      workingDirectory: azuretf/simpletf
-      displayName: "Terraform Plan → GitHub Checks (Parsed Errors)"
 
-    # -----------------------------
-    # Terraform Apply
-    # -----------------------------
-    - script: |
-        set +e
-        terraform apply \
-          -no-color \
-          -auto-approve tfplan.binary \
-          > terraform-apply.log 2>&1
-        echo $? > apply.exitcode
-      workingDirectory: azuretf/simpletf
-      displayName: "Terraform Apply"
+        # Create GitHub check run
+        CHECK_RUN_ID=$(curl -s -X POST "https://api.github.com/repos/${REPO}/check-runs" \
+          -H "Authorization: Bearer ${TOKEN}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          -d @- | grep -oP '"id":\K[0-9]+') 
 
-    # -----------------------------
-    # Parse Apply Errors → GitHub Checks
-    # -----------------------------
-    - script: |
-        set +e
+        echo "Created GitHub check run: $CHECK_RUN_ID"
 
-        LOG=terraform-apply.log
-        FOUND=0
+        # Initialize annotations array
+        echo "[" > annotations.json
 
+        # Parse all errors
         awk '
-          BEGIN { err=""; file=""; line="" }
-
-          /│ Error:/ {
-            err=$0
-            gsub(/.*Error: /,"",err)
+        BEGIN { err=""; file=""; line="" }
+        /│ Error:/ { err=$0; gsub(/.*Error: /,"",err) }
+        /on .* line [0-9]+/ { match($0,/on ([^ ]+) line ([0-9]+)/,m); file=m[1]; line=m[2] }
+        /╵/ {
+          if(err!="") {
+            printf("%s{\"path\":\"%s\",\"start_line\":%s,\"end_line\":%s,\"annotation_level\":\"failure\",\"message\":\"%s\",\"title\":\"Terraform Error\"}", (NR>1?",":""), file, line, line, err)
+            NR++
           }
+          err=""; file=""; line=""
+        }
+        END { print "" }
+        ' "$LOG_FILE" >> annotations.json
 
-          /on .* line [0-9]+/ {
-            match($0, /on ([^ ]+) line ([0-9]+)/, m)
-            file=m[1]
-            line=m[2]
-          }
+        echo "]" >> annotations.json
 
-          /╵/ {
-            if (err != "") {
-              if (file != "" && line != "") {
-                printf "##vso[task.logissue type=error;sourcepath=%s;linenumber=%s]%s\n", file, line, err
-              } else {
-                printf "##vso[task.logissue type=error]%s\n", err
-              }
-              FOUND=1
-            }
-            err=""; file=""; line=""
-          }
+        # Determine conclusion and summary
+        if grep -q '"annotation_level":"failure"' annotations.json; then
+          CONCLUSION="failure"
+          SUMMARY="Terraform ${COMMAND} found errors"
+        else
+          CONCLUSION="success"
+          if [[ "$COMMAND" == "plan" ]]; then
+            SUMMARY=$(grep -E "Plan:|No changes" "$LOG_FILE" | head -n1 || echo "Terraform Plan succeeded")
+          else
+            SUMMARY="Terraform ${COMMAND^} succeeded"
+          fi
+        fi
 
-          END { if (FOUND) exit 1 }
-        ' "$LOG"
+        # Complete GitHub check run
+        curl -s -X PATCH "https://api.github.com/repos/${REPO}/check-runs/${CHECK_RUN_ID}" \
+          -H "Authorization: Bearer ${TOKEN}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          -d @- <<EOF
+{
+  "status": "completed",
+  "conclusion": "${CONCLUSION}",
+  "completed_at": "$(date -Iseconds)",
+  "output": {
+    "title": "Terraform ${COMMAND^}",
+    "summary": "${SUMMARY}",
+    "annotations": $(cat annotations.json)
+  }
+}
+EOF
       workingDirectory: azuretf/simpletf
-      displayName: "Terraform Apply → GitHub Checks (Parsed Errors)"
+      displayName: "Run Terraform Command → GitHub Checks"
+      env:
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+    # -----------------------------
+    # Run Init
+    # -----------------------------
+    - script: |
+        ./RunTerraform.sh init
+      workingDirectory: azuretf/simpletf
+      displayName: "Terraform Init → GitHub Checks"
+
+    # -----------------------------
+    # Run Plan
+    # -----------------------------
+    - script: |
+        ./RunTerraform.sh plan
+      workingDirectory: azuretf/simpletf
+      displayName: "Terraform Plan → GitHub Checks"
+
+    # -----------------------------
+    # Run Apply
+    # -----------------------------
+    - script: |
+        ./RunTerraform.sh apply
+      workingDirectory: azuretf/simpletf
+      displayName: "Terraform Apply → GitHub Checks"
 
     # -----------------------------
     # Publish Full Logs (Failed)
