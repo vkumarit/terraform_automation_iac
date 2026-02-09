@@ -885,6 +885,9 @@ DevOps Engineer
                                 └── Linux VM on AWS EC2
                                       └── terraform init / plan / apply
 
+
+XXXXXX -----Didn't Work ---------XXXXXX
+
 Correct approach in Azure DevOps:
 - Enable detailed logging
 - Export Terraform output to a file
@@ -982,6 +985,13 @@ Writes Terraform on Windows + Git Bash > Pushes to GitHub > Pipeline runs on EC2
 If failure: Error summary: > Posted to GitHub OR Available as artifact > Developer fixes code locally
 > Pushes again, No Azure DevOps dashboard access needed, No pipeline log access needed.
 
+XXXXXX -----Didn't Work ---------XXXXXX
+
+XXXXXX -----            ---------XXXXXX
+
+
+
+XXXXXX -----            ---------XXXXXX
 --------------------------------------------------------------------------------------------------------------
 Adding terraform logs to GitHub comments:
 
@@ -1045,6 +1055,215 @@ $ ssh -i ~/.ssh/prodmyapp-vm.pem adminuser@<PUBLIC_IP>
 - The public key is injected into the VM by Azure during creation
 
 ---------------------------------------------------------------------------------------------------------------
+MEMORY ERROR HANDLING/TROUBLESHOOTING
+------------------------------x
+
+Terraform error exit codes - 
+Exit 0 - Success
+Exit 0 - Failure (script still completes)
+Exit 1 - Crash (failure + summary) 
+
+xxxxxxxxxx Scenario 2 - EC2 memory exhaustion issue (Exit code 137 = OOM killer) - Out of memory - Agent crash.
+Reason - heavy artifact publishing upload size
+
+Error 1 - 
+```
+Starting: PublishPipelineArtifact
+==============================================================================
+Task         : Publish Pipeline Artifacts
+Description  : Publish (upload) a file or directory as a named artifact for the current run
+Version      : 1.242.0
+Author       : Microsoft Corporation
+Help         : https://docs.microsoft.com/azure/devops/pipelines/tasks/utility/publish-pipeline-artifact
+==============================================================================
+Artifact name input: terraform-logs
+Uploading pipeline artifact from /opt/agent/_work/1/s/azuretf/simpletf for build #110
+Using default max parallelism.
+Max dedup parallelism: 192
+DomainId: 0
+ApplicationInsightsTelemetrySender will correlate events with X-TFS-Session ebc40439-e747-4c22-9fcf-73c1eeba487c
+Hashtype: Dedup1024K
+DedupManifestArtifactClient will correlate http requests with X-TFS-Session ebc40439-e747-4c22-9fcf-73c1eeba487c
+18 files processed.
+Processed 18 files from /opt/agent/_work/1/s/azuretf/simpletf successfully.
+Uploading 18 files from directory /opt/agent/_work/1/s/azuretf/simpletf.
+Uploaded 71,399,829 out of 303,696,955 bytes.
+##[warning]Free memory is lower than 5%; Currently used: 99.73%
+##[warning]Free memory is lower than 5%; Currently used: 100.00%
+##[warning]Free memory is lower than 5%; Currently used: 100.00%
+##[warning]Free memory is lower than 5%; Currently used: 100.00%
+Uploading 18 files from directory /opt/agent/_work/1/s/azuretf/simpletf.
+Uploaded 71,399,829 out of 303,696,955 bytes.
+##[error]Exit code 137 returned from process: file name '/opt/agent/bin/Agent.PluginHost', arguments 'task "Agent.Plugins.PipelineArtifact.PublishPipelineArtifactTaskV1, Agent.Plugins"'.
+Finishing: PublishPipelineArtifact
+
+```
+
+Error 2 - script didn't ran and exited with non zero 
+``` 
+Starting: Terraform Init → GitHub Checks
+==============================================================================
+Task         : Command line
+Description  : Run a command line script using Bash on Linux and macOS and cmd.exe on Windows
+Version      : 2.268.0
+Author       : Microsoft Corporation
+Help         : https://docs.microsoft.com/azure/devops/pipelines/tasks/utility/command-line
+==============================================================================
+Generating script.
+Script contents:
+./RunTerraform.sh init
+========================== Starting Command Output ===========================
+/usr/bin/bash --noprofile --norc /opt/agent/_work/_temp/590913ab-7cdb-4928-a6b2-22a29c2e37a7.sh
+Running terraform init...
+
+##[error]Bash exited with code '1'.
+Finishing: Terraform Init → GitHub Checks
+
+```
+
+Solutions/Handling - 
+-----------------------
+
+1) Limit artifact parallelism / Limit dedup parallelism:
+Add this to yaml code 
+```
+env:
+  AZURE_DEVOPS_DEDUP_PARALLELISM: "1"
+``` 
+
+2) Add swap - EC2-side fixes (strongly recommended)
+Run on ec2,
+$ sudo fallocate -l 4G /swapfile
+$ sudo chmod 600 /swapfile
+$ sudo mkswap /swapfile
+$ sudo swapon /swapfile
+
+Persist - making swap memory permanent across reboots, 
+$ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+# Every time the EC2 instance boots, enable /swapfile as swap memory.
+
+* /swapfile - This is the path to your swap file
+* none - Swap does not get mounted to a directory (unlike disks), So none is used instead of a mount point
+* swap - Filesystem type = swap, Tells Linux this entry is for swap space
+* sw - Mount options, sw = enable swap with default options
+* 0 - Dump field, Swap does not need filesystem backups so 0
+* 0 - fsck order, Swap should not be checked at boot so 0
+* /etc/fstab = filesystem table, tells Linux to mount disks/filesystems/swap automatically at boot. 
+
+Verify swap 
+$ swapon --show
+$ free -h
+
+3) Minimum EC2 sizing (realistic) - t3.medium (4 GB)/t3.large 
+
+4) Drop Linux page cache (only if memory is low), When free memory is critically low. 
+Without killing process, agent running as user with sudo.
+---
+- script: |
+    FREE=$(free | awk '/Mem:/ {print int($4/$2*100)}')
+    if [ "$FREE" -lt 10 ]; then
+      echo "Low memory detected ($FREE%), clearing caches"
+      sudo sync
+      echo 3 | sudo tee /proc/sys/vm/drop_caches
+    else
+      echo "Memory OK ($FREE%), skipping cache clear"
+    fi
+  condition: always()
+  displayName: "Conditional memory cleanup"
+---
+
+5) Restart agent nightly (best practice) - Long-running agents accumulate memory fragmentation.
+Create a cron job:
+sudo crontab -e
+Add:
+0 3 * * * systemctl restart azure-pipelines-agent
+
+STORAGE SOLUTIONS:
+------------------
+6) EC2/VM Disk Occupied by,
+- Agent work folders - `/opt/agent/_work/` - old pipeline runs not deleted automatically.
+- Terraform leftovers - `.terraform/`, `*.tfstate*`, `terraform providers`.
+- Pipeline artifacts cache - `/opt/agent/_work/_tool/`.
+- Docker images.
+- Old logs + temp files. 
+
+SAFE cleanup strategy:
+
+a) Check disk usage before/after, run - 
+$ df -h
+$ du -sh /opt/agent/_work/*
+
+b) Clean old pipeline work directories as Azure DevOps does NOT auto-clean old runs. Safe rule is to
+keep last 3 runs delete the rest. This frees GBs of space safely, run this on the EC2 agent:
+# Go to directory
+$ cd /opt/agent/_work
+
+# List run directories
+ls -d [0-9]*/ 2>/dev/null
+
+# Keep last 3, delete the rest
+ls -dt [0-9]*/ | tail -n +4 | xargs -r rm -rf
+
+c) Clean agent temp folder - Safe anytime — files are recreated automatically.
+$ rm -rf /opt/agent/_work/_temp/*
+
+d) Clean tool cache (optional, but large) - Terraform installers accumulate here. TerraformInstaller
+task will re-download automatically, to clean run:
+$ rm -rf /opt/agent/_work/_tool/terraform
+
+f) AUTOMATE THE PROCESS - Create a safe cleanup script:
+create file - `/opt/agent/cleanup-agent.sh`, add code below -
+
+```
+#!/bin/bash
+set -e
+
+echo "Cleaning Azure DevOps agent storage..."
+
+cd /opt/agent/_work || exit 0
+
+# Keep last 3 pipeline runs
+ls -dt [0-9]*/ 2>/dev/null | tail -n +4 | xargs -r rm -rf
+
+# Clean temp
+rm -rf /opt/agent/_work/_temp/*
+
+# Optional: clean terraform tools
+rm -rf /opt/agent/_work/_tool/terraform
+
+echo "Cleanup complete"
+df -h
+```
+
+Make script executable:
+$ chmod +x /opt/agent/cleanup-agent.sh
+
+Run `cleanup-agent.sh` during night via cron as
+$ sudo crontab -e
+add,
+$ 0 2 * * * /opt/agent/cleanup-agent.sh >> /var/log/agent-cleanup.log 2>&1
+
+e) Clean Terraform junk after every run
+Prevent memory + disk bloat across runs.
+run/use,
+
+- script: |
+    rm -rf azuretf/simpletf/.terraform
+    rm -f azuretf/simpletf/.terraform.lock.hcl
+    rm -f *.tfstate*
+    rm -f azuretf/simpletf/tfplan.binary
+  condition: always()
+  displayName: "Cleanup Terraform working directory/Pipeline cleanup"
+Or/And,
+Clean Terraform junk (repo-level) - Inside your repo directory run:
+$ find . -type d -name ".terraform" -prune -exec rm -rf {} \;
+$ find . -type f -name "*.tfstate*" -delete
+$ find . -type f -name "tfplan.binary" -delete
+
+
+xxxxxxxxxx 
+
+---------------------------------------------------------------------------------------------------------------
 Production Deployment Checklist:
 
 - Separate state files per environment
@@ -1057,5 +1276,8 @@ Production Deployment Checklist:
 - terraform fmt/validate in PR checks
 - Drift detection (plan on schedule)
 - State file versioning (keep 5 backups)
-
+- Multi-agent auto-scaling
+- Immutable agent AMI
+- Spot instance + recovery
+- One-click agent bootstrap
 

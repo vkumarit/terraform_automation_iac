@@ -97,6 +97,16 @@ stages:
         artifact: terraform-logs
       env:
         AZURE_DEVOPS_DEDUP_PARALLELISM: "1"
+    
+    # -----------------------------
+    # Clean Terraform junk after every run
+    # -----------------------------    
+    - script: |
+        rm -rf azuretf/simpletf/.terraform
+        rm -f azuretf/simpletf/.terraform.lock.hcl
+        rm -f azuretf/simpletf/tfplan.binary
+      condition: always()
+      displayName: "Cleanup Terraform working directory"
 
 
 # (end of file)
