@@ -1063,7 +1063,8 @@ Exit 0 - Success
 Exit 0 - Failure (script still completes)
 Exit 1 - Crash (failure + summary) 
 
-xxxxxxxxxx Scenario 2 - EC2 memory exhaustion issue (Exit code 137 = OOM killer) - Out of memory - Agent crash.
+xxxxxxxxxx Scenario 2 
+EC2 memory exhaustion issue (Exit code 137 = OOM killer) - Out of memory (OOM) - Agent crash.
 Reason - heavy artifact publishing upload size
 
 Error 1 - 

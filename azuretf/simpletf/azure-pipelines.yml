@@ -10,7 +10,7 @@ trigger:
 variables:
   TF_LOG: ERROR
   TF_LOG_PATH: $(Pipeline.Workspace)/terraform-debug.log
-  GITHUB_TOKEN: $(githubtoken-feb)   # GitHub PAT (repo:checks, repo:status)
+  #GITHUB_TOKEN: $(githubtoken-feb)   # GitHub PAT (repo:checks, repo:status)
 
 pool:
   name: 'az-classic-pool'   # EC2 self-hosted agent
@@ -29,7 +29,7 @@ stages:
     # Clean logs
     # -----------------------------
     - script: |
-        rm -f azuretf/simpletf/*.log annotations.json
+        rm -f azuretf/simpletf/*.log azuretf/simpletf/annotations.json
       displayName: "Clean previous logs"
 
     # -----------------------------
@@ -103,6 +103,7 @@ stages:
     # -----------------------------    
     - script: |
         rm -rf azuretf/simpletf/.terraform
+        rm -f *.tfstate*
         rm -f azuretf/simpletf/.terraform.lock.hcl
         rm -f azuretf/simpletf/tfplan.binary
       condition: always()
