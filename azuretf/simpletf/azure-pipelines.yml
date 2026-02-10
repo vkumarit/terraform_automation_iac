@@ -46,7 +46,7 @@ stages:
     #    fi
     #  displayName: "Install jq"
       
-    # Use `sudo yum install -y jq` once on ec2/VM and comment above code or 
+    #** Use `sudo yum install -y jq` once on ec2/VM and comment above code or 
     # keep using above code to install jq (OPTIONAL)
 
     # -----------------------------
