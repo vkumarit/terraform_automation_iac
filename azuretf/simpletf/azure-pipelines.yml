@@ -8,9 +8,8 @@ trigger:
 - main
 
 variables:
-- group: az-classic-kv-var   # contains githubtoken-feb secret variable
+  serviceConnection: 'az-classic-conn'
 
-  
 pool:
   name: 'az-classic-pool'   # EC2 self-hosted agent
 
@@ -20,6 +19,11 @@ stages:
   jobs:
   - job: Terraform
     displayName: "Terraform Init, Plan & Apply"
+    
+    # Inject secret ONCE for all steps
+    env:
+      GITHUB_TOKEN: $(githubtoken-feb)
+    
     steps:
 
     - checkout: self
@@ -50,6 +54,17 @@ stages:
     # keep using above code to install jq (OPTIONAL)
 
     # -----------------------------
+    # FetchSecrets
+    # -----------------------------
+    - task: AzureKeyVault@2
+      displayName: "Download secrets: prodmyappkv"
+      inputs:
+        azureSubscription: '$(serviceConnection)'
+        KeyVaultName: 'prodmyappkv'
+        SecretsFilter: 'githubtoken-feb'
+        RunAsPreJob: true
+
+    # -----------------------------
     # Clean logs
     # -----------------------------
     - script: |
@@ -78,8 +93,6 @@ stages:
         ./RunTerraform.sh init
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Init → GitHub Checks"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Plan → GitHub Checks
@@ -88,8 +101,6 @@ stages:
         ./RunTerraform.sh plan
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan → GitHub Checks"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Apply → GitHub Checks
@@ -98,8 +109,6 @@ stages:
         ./RunTerraform.sh apply
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply → GitHub Checks"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Prepare minimal artifacts
