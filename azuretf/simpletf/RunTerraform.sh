@@ -3,7 +3,7 @@ set -u
 set -o pipefail
 
 # ==========================
-# HARDENING / MEMORY CONTROL
+# MEMORY HARDENING
 # ==========================
 export TF_CLI_ARGS_plan="-parallelism=5"
 export TF_CLI_ARGS_apply="-parallelism=5"
@@ -27,22 +27,26 @@ command -v jq >/dev/null 2>&1 || {
 }
 
 # ==========================
-# CREATE CHECK RUN EARLY
+# CREATE CHECK RUN (DEBUG ON)
 # ==========================
-CHECK_RUN_ID=$(
-  curl -sf -X POST "https://api.github.com/repos/${REPO}/check-runs" \
-    -H "Authorization: Bearer ${TOKEN}" \
-    -H "Accept: application/vnd.github+json" \
-    -H "X-GitHub-Api-Version: 2022-11-28" \
-    -d "{
-      \"name\": \"Terraform ${COMMAND^}\",
-      \"head_sha\": \"${COMMIT_SHA}\",
-      \"status\": \"in_progress\"
-    }" | jq -r '.id'
-)
+CHECK_RUN_RESPONSE=$(curl -s -X POST "https://api.github.com/repos/${REPO}/check-runs" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Accept: application/vnd.github+json" \
+  -H "Content-Type: application/json" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  -d "{
+    \"name\": \"Terraform ${COMMAND^}\",
+    \"head_sha\": \"${COMMIT_SHA}\",
+    \"status\": \"in_progress\"
+  }")
+
+echo "GitHub Check Run API response:"
+echo "$CHECK_RUN_RESPONSE"
+
+CHECK_RUN_ID=$(echo "$CHECK_RUN_RESPONSE" | jq -r '.id')
 
 if [[ -z "$CHECK_RUN_ID" || "$CHECK_RUN_ID" == "null" ]]; then
-  echo "Failed to create GitHub Check Run"
+  echo "ERROR: Failed to create GitHub Check Run"
   exit 3
 fi
 
@@ -52,29 +56,18 @@ fi
 TF_EXIT=0
 
 if [[ "$COMMAND" == "init" ]]; then
-  if compgen -G "$TF_PLUGIN_CACHE_DIR/*" > /dev/null; then
-    terraform init -no-color -plugin-dir="$TF_PLUGIN_CACHE_DIR" \
-      > "$LOG_FILE" 2>&1 || TF_EXIT=$?
-  else
-    terraform init -no-color \
-      > "$LOG_FILE" 2>&1 || TF_EXIT=$?
-  fi
-
+  terraform init -no-color > "$LOG_FILE" 2>&1 || TF_EXIT=$?
 elif [[ "$COMMAND" == "plan" ]]; then
-  terraform plan -no-color -out=tfplan.binary \
-    > "$LOG_FILE" 2>&1 || TF_EXIT=$?
-
+  terraform plan -no-color -out=tfplan.binary > "$LOG_FILE" 2>&1 || TF_EXIT=$?
 elif [[ "$COMMAND" == "apply" ]]; then
-  terraform apply -no-color -auto-approve tfplan.binary \
-    > "$LOG_FILE" 2>&1 || TF_EXIT=$?
-
+  terraform apply -no-color -auto-approve tfplan.binary > "$LOG_FILE" 2>&1 || TF_EXIT=$?
 else
   echo "Unknown command: $COMMAND"
   TF_EXIT=1
 fi
 
 # ==========================
-# PARSE ERRORS → ANNOTATIONS (max 50)
+# PARSE ERRORS → ANNOTATIONS
 # ==========================
 echo "[" > annotations.json
 
@@ -103,22 +96,20 @@ BEGIN { count=0 }
 echo "]" >> annotations.json
 
 # ==========================
-# DECIDE RESULT
+# COMPLETE CHECK RUN
 # ==========================
+CONCLUSION="success"
+SUMMARY="Terraform ${COMMAND^} succeeded"
+
 if [[ "$TF_EXIT" -ne 0 ]]; then
   CONCLUSION="failure"
   SUMMARY="Terraform ${COMMAND^} failed"
-else
-  CONCLUSION="success"
-  SUMMARY="Terraform ${COMMAND^} succeeded"
 fi
 
-# ==========================
-# COMPLETE CHECK RUN
-# ==========================
-curl -sf -X PATCH "https://api.github.com/repos/${REPO}/check-runs/${CHECK_RUN_ID}" \
+curl -s -X PATCH "https://api.github.com/repos/${REPO}/check-runs/${CHECK_RUN_ID}" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Accept: application/vnd.github+json" \
+  -H "Content-Type: application/json" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   -d "{
     \"status\": \"completed\",

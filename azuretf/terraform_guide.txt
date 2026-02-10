@@ -1322,6 +1322,19 @@ This is exactly how large enterprises run Terraform on self-hosted agents:
 #
 xxxxxxxxxx 
 
+--------------------------------------------------------------------------------------------------------------
+Use of jq for github checks:
+Terraform runs
+↓
+Script calls GitHub API
+↓
+GitHub returns JSON
+↓
+jq extracts Check Run ID
+↓
+Script updates GitHub Check
+# jq is a required tool that lets your Bash script understand GitHub’s JSON responses.
+# Without it, GitHub Checks cannot be created or updated.
 ---------------------------------------------------------------------------------------------------------------
 Production Deployment Checklist:
 

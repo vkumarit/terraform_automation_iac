@@ -7,9 +7,9 @@
 trigger:
 - main
 
-variables:
-  TF_LOG: ERROR
-  TF_LOG_PATH: $(Pipeline.Workspace)/terraform-debug.log
+#variables:
+  #TF_LOG: ERROR
+  #TF_LOG_PATH: $(Pipeline.Workspace)/terraform-debug.log
   #GITHUB_TOKEN: $(githubtoken-feb)   # GitHub PAT (repo:checks, repo:status)
 
 pool:
@@ -116,7 +116,8 @@ stages:
     # Publish logs only
     # -----------------------------
     - task: PublishPipelineArtifact@1
-      condition: failed()
+      condition: failed()             
+      # always() - optional
       inputs:
         targetPath: artifacts
         artifact: terraform-logs
@@ -132,7 +133,7 @@ stages:
         rm -f azuretf/simpletf/.terraform.lock.hcl
         rm -f azuretf/simpletf/tfplan.binary
       condition: always()
-      displayName: "Cleanup Terraform working directory"
+      displayName: "Cleanup Terraform workdir"
 
 
 # (end of file)
