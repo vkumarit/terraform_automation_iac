@@ -20,10 +20,6 @@ stages:
   - job: Terraform
     displayName: "Terraform Init, Plan & Apply"
     
-    # Inject secret ONCE for all steps
-    env:
-      GITHUB_TOKEN: $(githubtoken-feb)
-    
     steps:
 
     - checkout: self
@@ -93,6 +89,8 @@ stages:
         ./RunTerraform.sh init
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Init → GitHub Checks"
+      env:
+        GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Plan → GitHub Checks
@@ -101,6 +99,8 @@ stages:
         ./RunTerraform.sh plan
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan → GitHub Checks"
+      env:
+        GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Apply → GitHub Checks
@@ -109,6 +109,8 @@ stages:
         ./RunTerraform.sh apply
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply → GitHub Checks"
+      env:
+        GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Prepare minimal artifacts
