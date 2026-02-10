@@ -24,6 +24,31 @@ stages:
     steps:
 
     - checkout: self
+    
+    # -----------------------------
+    # Install jq - command-line JSON processor (required for GitHub Checks)
+    # -----------------------------
+    #- script: |
+    #    if command -v jq >/dev/null 2>&1; then
+    #      echo "jq already installed"
+    #      exit 0
+    #    fi
+
+    #    echo "Installing jq..."
+
+    #    if command -v yum >/dev/null 2>&1; then
+    #      sudo yum install -y jq
+    #    elif command -v apt-get >/dev/null 2>&1; then
+    #      sudo apt-get update
+    #      sudo apt-get install -y jq
+    #    else
+    #      echo "No supported package manager found"
+    #      exit 1
+    #    fi
+    #  displayName: "Install jq"
+      
+    # Use `sudo yum install -y jq` once on ec2/VM and comment above code or 
+    # keep using above code to install jq (OPTIONAL)
 
     # -----------------------------
     # Clean logs
@@ -103,7 +128,7 @@ stages:
     # -----------------------------    
     - script: |
         rm -rf azuretf/simpletf/.terraform
-        rm -f *.tfstate*
+        rm -f azuretf/simpletf/*.tfstate*
         rm -f azuretf/simpletf/.terraform.lock.hcl
         rm -f azuretf/simpletf/tfplan.binary
       condition: always()
