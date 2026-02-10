@@ -1336,6 +1336,14 @@ Script updates GitHub Check
 # jq is a required tool that lets your Bash script understand GitHub’s JSON responses.
 # Without it, GitHub Checks cannot be created or updated.
 ---------------------------------------------------------------------------------------------------------------
+Verify GitHub Token from EC2/VM:
+```
+curl -i \
+  -H "Authorization: Bearer <github-token>" \
+  -H "Accept: application/vnd.github+json" \
+  https://api.github.com/user
+```
+---------------------------------------------------------------------------------------------------------------
 Production Deployment Checklist:
 
 - Separate state files per environment
@@ -1355,4 +1363,5 @@ Production Deployment Checklist:
 - Calculate the optimal parallelism for your EC2 size
 - Show how to auto-detect RAM and set parallelism dynamically
 - Provide a hardened RunTerraform.sh v3
+
 

@@ -3,11 +3,12 @@ set -u
 set -o pipefail
 
 # ==========================
-# MEMORY HARDENING
+# HARDENING / MEMORY CONTROL
 # ==========================
 export TF_CLI_ARGS_plan="-parallelism=5"
 export TF_CLI_ARGS_apply="-parallelism=5"
 
+# Provider plugin cache (critical for init memory)
 export TF_PLUGIN_CACHE_DIR="$PWD/.terraform-plugin-cache"
 mkdir -p "$TF_PLUGIN_CACHE_DIR"
 
@@ -19,15 +20,21 @@ COMMAND="$1"
 LOG_FILE="terraform-${COMMAND}.log"
 
 TOKEN="${GITHUB_TOKEN}"
+
+if [[ -z "$TOKEN" ]]; then
+  echo "ERROR: GITHUB_TOKEN is not set"
+  exit 4
+fi
+
 COMMIT_SHA="$(git rev-parse HEAD)"
 
 command -v jq >/dev/null 2>&1 || {
-  echo "jq is required but not installed"
+  echo "ERROR: jq is required but not installed"
   exit 2
 }
 
 # ==========================
-# CREATE CHECK RUN (DEBUG ON)
+# CREATE CHECK RUN EARLY
 # ==========================
 CHECK_RUN_RESPONSE=$(curl -s -X POST "https://api.github.com/repos/${REPO}/check-runs" \
   -H "Authorization: Bearer ${TOKEN}" \
@@ -56,11 +63,16 @@ fi
 TF_EXIT=0
 
 if [[ "$COMMAND" == "init" ]]; then
-  terraform init -no-color > "$LOG_FILE" 2>&1 || TF_EXIT=$?
+  terraform init -no-color -plugin-dir="$TF_PLUGIN_CACHE_DIR" \
+    > "$LOG_FILE" 2>&1 || TF_EXIT=$?
+
 elif [[ "$COMMAND" == "plan" ]]; then
-  terraform plan -no-color -out=tfplan.binary > "$LOG_FILE" 2>&1 || TF_EXIT=$?
+  terraform plan -no-color -out=tfplan.binary \
+    > "$LOG_FILE" 2>&1 || TF_EXIT=$?
+
 elif [[ "$COMMAND" == "apply" ]]; then
-  terraform apply -no-color -auto-approve tfplan.binary > "$LOG_FILE" 2>&1 || TF_EXIT=$?
+  terraform apply -no-color -auto-approve tfplan.binary \
+    > "$LOG_FILE" 2>&1 || TF_EXIT=$?
 else
   echo "Unknown command: $COMMAND"
   TF_EXIT=1
@@ -72,40 +84,37 @@ fi
 echo "[" > annotations.json
 
 awk '
-/│ Error:/ {
-  err=$0
-  gsub(/.*Error: /,"",err)
-}
-/on .* line [0-9]+/ {
-  match($0,/on ([^ ]+) line ([0-9]+)/,m)
-  file=m[1]; line=m[2]
-}
+/│ Error:/ { err=$0; gsub(/.*Error: /,"",err) }
+/on .* line [0-9]+/ { match($0,/on ([^ ]+) line ([0-9]+)/,m); file=m[1]; line=m[2] }
 /╵/ {
   if(err!="") {
     if(count < 50) {
-      if(count > 0) printf(",")
-      printf("{\"path\":\"%s\",\"start_line\":%s,\"end_line\":%s,\"annotation_level\":\"failure\",\"message\":\"%s\",\"title\":\"Terraform Error\"}", file, line, line, err)
+      if(count>0) printf(",");
+      printf("{\"path\":\"%s\",\"start_line\":%s,\"end_line\":%s,\"annotation_level\":\"failure\",\"message\":\"%s\",\"title\":\"Terraform Error\"}", file,line,line,err)
     }
     count++
   }
   err=""; file=""; line=""
 }
-BEGIN { count=0 }
+BEGIN {count=0}
 ' "$LOG_FILE" >> annotations.json
 
 echo "]" >> annotations.json
 
 # ==========================
-# COMPLETE CHECK RUN
+# DECIDE RESULT
 # ==========================
-CONCLUSION="success"
-SUMMARY="Terraform ${COMMAND^} succeeded"
-
 if [[ "$TF_EXIT" -ne 0 ]]; then
   CONCLUSION="failure"
   SUMMARY="Terraform ${COMMAND^} failed"
+else
+  CONCLUSION="success"
+  SUMMARY="Terraform ${COMMAND^} succeeded"
 fi
 
+# ==========================
+# COMPLETE CHECK RUN
+# ==========================
 curl -s -X PATCH "https://api.github.com/repos/${REPO}/check-runs/${CHECK_RUN_ID}" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Accept: application/vnd.github+json" \
