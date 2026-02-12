@@ -17,45 +17,52 @@ fi
 
 COMMIT_SHA="$(git rev-parse HEAD)"
 ROOT_DIR="$(git rev-parse --show-toplevel)"
-CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+CURRENT_BRANCH="$(git branch --show-current || true)"
 
 LOG_FILE="terraform-${COMMAND}.log"
 TF_EXIT=0
 
-echo "Running terraform ${COMMAND}..."
+echo "========================================="
+echo "Running terraform ${COMMAND}"
 echo "Commit: ${COMMIT_SHA}"
-echo "Branch: ${CURRENT_BRANCH}"
+echo "Branch: ${CURRENT_BRANCH:-DETACHED}"
+echo "========================================="
 
 # ==========================
 # RUN TERRAFORM
 # ==========================
 if [[ "$COMMAND" == "init" ]]; then
 
-  terraform init -no-color > "$LOG_FILE" 2>&1
-  TF_EXIT=$?
+  set +e
+  terraform init -no-color 2>&1 | tee "$LOG_FILE"
+  TF_EXIT=${PIPESTATUS[0]}
+  set -e
 
 elif [[ "$COMMAND" == "plan" ]]; then
 
-  # detailed exit codes:
   # 0 = no changes
   # 1 = error
   # 2 = changes present (NOT failure)
-  terraform plan -no-color -detailed-exitcode -out=tfplan.binary > "$LOG_FILE" 2>&1
-  TF_EXIT=$?
+
+  set +e
+  terraform plan -no-color -detailed-exitcode -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
+  TF_EXIT=${PIPESTATUS[0]}
+  set -e
 
   if [[ "$TF_EXIT" -eq 1 ]]; then
     echo "Terraform plan FAILED"
     exit 1
   fi
 
-  # treat 0 and 2 as success
   echo "Terraform plan completed (exit code: $TF_EXIT)"
   exit 0
 
 elif [[ "$COMMAND" == "apply" ]]; then
 
-  terraform apply -no-color -auto-approve tfplan.binary > "$LOG_FILE" 2>&1
-  TF_EXIT=$?
+  set +e
+  terraform apply -no-color -auto-approve tfplan.binary 2>&1 | tee "$LOG_FILE"
+  TF_EXIT=${PIPESTATUS[0]}
+  set -e
 
 else
   echo "Unknown command: $COMMAND"
@@ -94,30 +101,30 @@ fi
 RUN_DIR="runs/${COMMIT_SHA}"
 mkdir -p "$RUN_DIR"
 
-# Copy logs
 cp azuretf/simpletf/*.log "$RUN_DIR/" 2>/dev/null || true
 cp azuretf/simpletf/outputs.json "$RUN_DIR/" 2>/dev/null || true
 
-# Create summary
 if [[ "$TF_EXIT" -ne 0 ]]; then
   echo "Terraform Apply FAILED" > "$RUN_DIR/summary.txt"
 else
   echo "Terraform Apply SUCCEEDED" > "$RUN_DIR/summary.txt"
 fi
 
-# Only commit if changes exist
+# Only commit if there are changes
 if [[ -n "$(git status --porcelain)" ]]; then
   git add .
   git commit -m "Terraform logs for ${COMMIT_SHA}"
   git push https://x-access-token:${TOKEN}@github.com/${REPO}.git terraform-logs
 else
-  echo "No changes to commit on terraform-logs branch."
+  echo "No changes to commit."
 fi
 
 # ==========================
 # RETURN TO ORIGINAL BRANCH
 # ==========================
-git checkout "$CURRENT_BRANCH"
+if [[ -n "$CURRENT_BRANCH" ]]; then
+  git checkout "$CURRENT_BRANCH" || true
+fi
 
 # ==========================
 # POST COMMIT COMMENT
@@ -125,16 +132,15 @@ git checkout "$CURRENT_BRANCH"
 if [[ "$TF_EXIT" -ne 0 ]]; then
   MESSAGE="❌ Terraform Apply FAILED
 
-Logs available:
+Logs:
 https://github.com/${REPO}/tree/terraform-logs/runs/${COMMIT_SHA}"
 else
   MESSAGE="✅ Terraform Apply SUCCEEDED
 
-Logs and outputs available:
+Logs and outputs:
 https://github.com/${REPO}/tree/terraform-logs/runs/${COMMIT_SHA}"
 fi
 
-# Escape newlines safely
 JSON_PAYLOAD=$(printf '{"body":"%s"}' "$(echo "$MESSAGE" | sed ':a;N;$!ba;s/\n/\\n/g')")
 
 curl -s -X POST \
