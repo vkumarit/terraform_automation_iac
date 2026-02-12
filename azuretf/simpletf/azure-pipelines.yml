@@ -2,10 +2,13 @@
 # (start of file)
 
 # When access to azure devops pipeline job run summary not available
-# Using Github Checks
 
 trigger:
-- main
+  branches:
+    include:
+      - main
+    exclude:
+      - terraform-logs
 
 variables:
   serviceConnection: 'az-classic-conn'
@@ -23,6 +26,7 @@ stages:
     steps:
 
     - checkout: self
+      persistCredentials: true
     
     # -----------------------------
     # Install jq - command-line JSON processor (required for GitHub Checks)
@@ -63,9 +67,9 @@ stages:
     # -----------------------------
     # Clean logs
     # -----------------------------
-    - script: |
-        rm -f azuretf/simpletf/*.log azuretf/simpletf/annotations.json
-      displayName: "Clean previous logs"
+    #- script: |
+    #    rm -f azuretf/simpletf/*.log azuretf/simpletf/annotations.json
+    #  displayName: "Clean previous logs"
 
     # -----------------------------
     # Install Terraform
@@ -75,38 +79,38 @@ stages:
         terraformVersion: '1.14.4'
 
     # -----------------------------
-    # Make RunTerraform.sh executable
+    # Make runterraform.sh executable
     # -----------------------------
     - script: |
-        chmod +x RunTerraform.sh
+        chmod +x runterraform.sh
       workingDirectory: azuretf/simpletf
-      displayName: "Make RunTerraform.sh executable"
+      displayName: "Make runterraform.sh executable"
     
     # -----------------------------
-    # Terraform Init → GitHub Checks
+    # Terraform Init
     # -----------------------------
     - script: |
-        ./RunTerraform.sh init
+        ./runterraform.sh init
       workingDirectory: azuretf/simpletf
-      displayName: "Terraform Init → GitHub Checks"
+      displayName: "Terraform Init"
       env:
         GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
-    # Terraform Plan → GitHub Checks
+    # Terraform Plan
     # -----------------------------
     - script: |
-        ./RunTerraform.sh plan
+        ./runterraform.sh plan
       workingDirectory: azuretf/simpletf
-      displayName: "Terraform Plan → GitHub Checks"
+      displayName: "Terraform Plan"
       env:
         GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
-    # Terraform Apply → GitHub Checks
+    # Terraform Apply
     # -----------------------------
     - script: |
-        ./RunTerraform.sh apply
+        ./runterraform.sh apply
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply → GitHub Checks"
       env:
@@ -115,24 +119,24 @@ stages:
     # -----------------------------
     # Prepare minimal artifacts
     # -----------------------------
-    - script: |
-        mkdir -p artifacts
-        cp azuretf/simpletf/*.log artifacts/ || true
-        cp azuretf/simpletf/annotations.json artifacts/ || true
-      condition: failed()
-      displayName: "Prepare minimal artifacts"
+    #- script: |
+    #    mkdir -p artifacts
+    #    cp azuretf/simpletf/*.log artifacts/ || true
+    #    cp azuretf/simpletf/annotations.json artifacts/ || true
+    #  condition: failed()
+    #  displayName: "Prepare minimal artifacts"
 
     # -----------------------------
     # Publish logs only
     # -----------------------------
-    - task: PublishPipelineArtifact@1
-      condition: failed()             
+    #- task: PublishPipelineArtifact@1
+    #  condition: failed()             
       # always() - optional
-      inputs:
-        targetPath: artifacts
-        artifact: terraform-logs
-      env:
-        AZURE_DEVOPS_DEDUP_PARALLELISM: "1"
+    #  inputs:
+    #    targetPath: artifacts
+    #    artifact: terraform-logs
+    #  env:
+    #    AZURE_DEVOPS_DEDUP_PARALLELISM: "1"
     
     # -----------------------------
     # Clean Terraform junk after every run
@@ -144,7 +148,6 @@ stages:
         rm -f azuretf/simpletf/tfplan.binary
       condition: always()
       displayName: "Cleanup Terraform workdir"
-
 
 # (end of file)
 ...

@@ -886,144 +886,16 @@ DevOps Engineer
                                       └── terraform init / plan / apply
 
 
-XXXXXX -----Didn't Work ---------XXXXXX
 
-Correct approach in Azure DevOps:
-- Enable detailed logging
-- Export Terraform output to a file
-- Extract errors
-- Post summary back to GitHub (Optionally)
-
-How to handle plan-time errors in a restricted-access production setup?
-
-Step A — Enable detailed Terraform logging
-Terraform writes all plan+apply errors only to tf-error.log with no printed secrets.
-Add this at top of file,
---
-#TerraformTaskV4 compatible
-variables:
-  system.accesstoken: $(System.AccessToken)  # Enables GitHub Checks (views az pipeline run logs)
-  TF_LOG: ERROR
-  TF_LOG_PATH: $(Build.SourcesDirectory)/tf-error.log
---
-
-Step B — Modify PLAN task
-`-no-color` makes logs readable outside UI and errors will go to `tf-error.log` file.
-Add change as below,
---
-- task: TerraformTaskV4@4
-  name: TerraformPlan
-  inputs:
-    provider: 'azurerm'
-    command: 'plan'
-    workingDirectory: 'azuretf/simpletf'     # files in terraform_automation_IaC/azuretf/simpletf/
-    environmentServiceNameAzureRM: '$(serviceConnection)'
-    commandOptions: >                                  
-      -no-color
-      -var="arm_client_secret=$(ARM_CLIENT_SECRET)"     
-      
-    # ` > ` for multiline commands
-    # can also pass secret directly (dev/test)
---
-
-Step C - Modify APPLY task
-Apply output is readable and errors are written to tf-error.log
---
-- task: TerraformTaskV4@4
-  name: TerraformApply
-  inputs:
-    provider: 'azurerm'
-    command: 'apply'
-    workingDirectory: 'azuretf/simpletf'
-    environmentServiceNameAzureRM: '$(serviceConnection)'
-    commandOptions: >
-      -no-color
-      -auto-approve
---
- 
-Step C - Add an error extraction step 
-(Add IMMEDIATELY AFTER plan & apply)
-Prints a short error summary only if Terraform failed. Safe even if file does not exist
---
-    - script: |
-        echo "===== Terraform Error Summary ====="
-        if [ -f tf-error.log ]; then
-          #cat tf-error.log
-          sed -n '1,120p' tf-error.log
-        else
-          echo "No Terraform error log found."
-        fi
-      displayName: 'Terraform Error Summary'
-      condition: failed()
---
-
-Step D — Publish error log as artifact (Optional) (HIGHLY recommended)
-(ADD AFTER the extraction step)
-Someone with artifact-only permission can download it and no dashboard permissions required.
---
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: 'tf-error.log'
-        artifact: 'terraform-error-summary'
-        publishLocation: 'pipeline'
-      condition: failed()
---
-And/Or,
-
-+ Post error summary back to GitHub (Optional) (BEST PRACTICE)
-This is exactly how teams avoid giving pipeline access and developers/devops can see errors directly
-in GitHub. This requires GitHub service connection Or System.AccessToken + GitHub API .
---
-- script: |
-    ERROR_MSG=$(cat tf-error.log | head -50)
-    echo "Terraform failed: $ERROR_MSG"
-  displayName: 'Post error to GitHub'
---
-
-DEVELOPER EXPERIENCE:
-Writes Terraform on Windows + Git Bash > Pushes to GitHub > Pipeline runs on EC2 Linux agent > 
-If failure: Error summary: > Posted to GitHub OR Available as artifact > Developer fixes code locally
-> Pushes again, No Azure DevOps dashboard access needed, No pipeline log access needed.
-
-XXXXXX -----Didn't Work ---------XXXXXX
 
 XXXXXX -----            ---------XXXXXX
+“full implementation for logs branch + commit comment”
+
 
 
 
 XXXXXX -----            ---------XXXXXX
 --------------------------------------------------------------------------------------------------------------
-Adding terraform logs to GitHub comments:
-
-How to add GitHub PR (pull-request) comments automatically (high level)?
-PRs are about review, not execution. So first, PR > Plan then secondly, Merge / protected branch > Apply.
-
-PLAN-only for dev (discussion):
-Triggered on pull_request > Runs terraform plan > Post the plan as a PR comment > Never runs terraform apply.
-PR opened / updated > GitHub Actions runs - terraform init & plan > Capture the plan output >
-Post it back to the PR as a comment using - GitHub API (actions/github-script) or a community action 
-(e.g., terraform-plan-commenter)
-- Because PRs can come from Junior engineers, Automation, Forks, and can lead to secrets exposure, accidental resource deletion, unreviewed infra changes.
-- Posting plans as PR comments makes infra diffs reviewable like code, enables discussion inline and creates
-an audit trail.
-- Faster feedback - Dev environments change often.
-Plan-only gives immediate validation, no waiting for approvals, no risk.
-
-APPLY-only for prod (execution):
-Triggered when PR already reviewed/Plan already seen > push to main or manual approval (workflow_dispatch) >
-terraform apply -auto-approve .
-- Many orgs require separation of duties and evidence that someone approved infra changes.
-- Splitting plan and apply satisfies SOC2, ISO 27001, and Internal governance.
-
-One-sentence summary (for devs)
-We run PLAN on PRs so humans can review infrastructure changes safely, and APPLY only after merge so production changes are deliberate, approved, and auditable.
-
-Why not “plan + apply everywhere”?
-It can cause:
-- accidental applies which can result in broken prod
-- security incident by exposing secrets
-- compliance failure with unreviewed infra
-- pager fatigue from hard-to-debug changes
 
 --------------------------------------------------------------------------------------------------------------
 Terraform SSH Key Creation and Use with VM afterwards :
@@ -1131,6 +1003,21 @@ Add this to yaml code
 env:
   AZURE_DEVOPS_DEDUP_PARALLELISM: "1"
 ``` 
+Example:
+
+    # -----------------------------
+    # Publish logs only
+    # -----------------------------
+    - task: PublishPipelineArtifact@1
+      condition: failed()             
+      # always() - optional
+      inputs:
+        targetPath: artifacts
+        artifact: terraform-logs
+      env:
+        AZURE_DEVOPS_DEDUP_PARALLELISM: "1"
+
+```
 This affects only,
 - PublishPipelineArtifact
 - Azure DevOps deduplication engine
@@ -1142,7 +1029,7 @@ and
 
 2) Limit Terraform parallelism (-parallelism): 
 Preventing memory spike by Stabilizing low-memory agents. 
-Add to your script (top), 
+Add to shell script (top) or export directly to env using bash cli, 
 ```
 export TF_CLI_ARGS_plan="-parallelism=5"
 export TF_CLI_ARGS_apply="-parallelism=5"
@@ -1168,7 +1055,7 @@ Add this before terraform init into RunTerraform.sh,
 export TF_PLUGIN_CACHE_DIR="$PWD/.terraform-plugin-cache"
 mkdir -p "$TF_PLUGIN_CACHE_DIR"
 ```
-Then change init to,
+Then change/use init as,
 ```
 terraform init -no-color -plugin-dir="$TF_PLUGIN_CACHE_DIR" > "$LOG_FILE" 2>&1 || true
 ```
@@ -1201,6 +1088,7 @@ $ free -h
 4) Drop Linux page cache (only if memory is low), When free memory is critically low. 
 Without killing process, agent running as user with sudo.
 ---
+Example:
 - script: |
     FREE=$(free | awk '/Mem:/ {print int($4/$2*100)}')
     if [ "$FREE" -lt 10 ]; then
@@ -1288,7 +1176,7 @@ $ 0 2 * * * /opt/agent/cleanup-agent.sh >> /var/log/agent-cleanup.log 2>&1
 e) Clean Terraform junk after every run
 Prevent memory + disk bloat across runs.
 run/use,
-
+```
 - script: |
     rm -rf azuretf/simpletf/.terraform
     rm -f azuretf/simpletf/.terraform.lock.hcl
@@ -1296,6 +1184,7 @@ run/use,
     rm -f azuretf/simpletf/tfplan.binary
   condition: always()
   displayName: "Cleanup Terraform working directory/Pipeline cleanup"
+```
 Or/And,
 Clean Terraform junk (repo-level) - Inside your repo directory run:
 $ find . -type d -name ".terraform" -prune -exec rm -rf {} \;
@@ -1323,23 +1212,12 @@ This is exactly how large enterprises run Terraform on self-hosted agents:
 xxxxxxxxxx 
 
 --------------------------------------------------------------------------------------------------------------
-Use of jq for github checks:
-Terraform runs
-↓
-Script calls GitHub API
-↓
-GitHub returns JSON
-↓
-jq extracts Check Run ID
-↓
-Script updates GitHub Check
-# jq is a required tool that lets your Bash script understand GitHub’s JSON responses.
-# Without it, GitHub Checks cannot be created or updated.
+
 ---------------------------------------------------------------------------------------------------------------
 Verify GitHub Token from EC2/VM:
 ```
 curl -i \
-  -H "Authorization: Bearer <github-token>" \
+  -H "Authorization: Bearer ghp_k7pt3nlRS6nYdQlZxxxjcSjJpL02CN1rCmwl" \
   -H "Accept: application/vnd.github+json" \
   https://api.github.com/user
 ```
