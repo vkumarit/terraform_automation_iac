@@ -1,38 +1,38 @@
----
+#---
 # (start of file)
 
 # When access to azure devops pipeline job run summary not available
 
-trigger:
-  branches:
-    include:
-      - main
-    exclude:
-      - terraform-logs
+#trigger:
+#  branches:
+#    include:
+#      - main
+#    exclude:
+#      - terraform-logs
 
-variables:
-- group: az-classic-kv-var
-- name: serviceConnection
-  value: 'az-classic-conn'
-- name: GITHUB_TOKEN
-  value: $(githubtoken-feb)
+#variables:
+#- group: az-classic-kv-var
+#- name: serviceConnection
+#  value: 'az-classic-conn'
+#- name: GITHUB_TOKEN
+#  value: $(githubtoken-feb)
 
-pool:
-  name: 'az-classic-pool'   # EC2 self-hosted agent
+#pool:
+#  name: 'az-classic-pool'   # EC2 self-hosted agent
 
-stages:
-- stage: Deploy
-  displayName: "Terraform Deploy"
-  jobs:
-  - job: Terraform
-    displayName: "Terraform Init, Plan & Apply"
+##stages:
+#- stage: Deploy
+#  displayName: "Terraform Deploy"
+#  jobs:
+#  - job: Terraform
+#    displayName: "Terraform Init, Plan & Apply"
     #variables:
     #  GITHUB_TOKEN: $(githubtoken-feb)
     
-    steps:
+#    steps:
 
-    - checkout: self
-      persistCredentials: true
+#    - checkout: self
+#      persistCredentials: true
     
     # -----------------------------
     # Install jq - command-line JSON processor (required for GitHub Checks)
@@ -80,45 +80,45 @@ stages:
     # -----------------------------
     # Install Terraform
     # -----------------------------
-    - task: TerraformInstaller@0
-      inputs:
-        terraformVersion: '1.14.4'
+#  #  - task: TerraformInstaller@0
+#      inputs:
+#        terraformVersion: '1.14.4'
 
     # -----------------------------
     # Make runterraform.sh executable
     # -----------------------------
-    - script: |
-        chmod +x runterraform.sh
-      workingDirectory: azuretf/simpletf
-      displayName: "Make runterraform.sh executable"
+#    - script: |
+#        chmod +x runterraform.sh
+#      workingDirectory: azuretf/simpletf
+#      displayName: "Make runterraform.sh executable"
     
     # -----------------------------
     # Terraform Init
     # -----------------------------
-    - script: |
-        ./runterraform.sh init
-      workingDirectory: azuretf/simpletf
-      displayName: "Terraform Init"
+#    - script: |
+#        ./runterraform.sh init
+#      workingDirectory: azuretf/simpletf
+#      displayName: "Terraform Init"
     #  env:
     #    GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Plan
     # -----------------------------
-    - script: |
-        ./runterraform.sh plan
-      workingDirectory: azuretf/simpletf
-      displayName: "Terraform Plan"
+#    - script: |
+#        ./runterraform.sh plan
+#      workingDirectory: azuretf/simpletf
+#      displayName: "Terraform Plan"
     #  env:
     #    GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Apply
     # -----------------------------
-    - script: |
-        ./runterraform.sh apply
-      workingDirectory: azuretf/simpletf
-      displayName: "Terraform Apply"
+#    - script: |
+#        ./runterraform.sh apply
+#     # workingDirectory: azuretf/simpletf
+#      displayName: "Terraform Apply"
     #  env:
     #    GITHUB_TOKEN: $(githubtoken-feb)
 
@@ -147,81 +147,81 @@ stages:
     # -----------------------------
     # Clean Terraform junk after every run
     # -----------------------------    
-    - script: |
-        rm -rf azuretf/simpletf/.terraform
-        rm -f azuretf/simpletf/*.tfstate*
-        rm -f azuretf/simpletf/.terraform.lock.hcl
-        rm -f azuretf/simpletf/tfplan.binary
-      condition: always()
-      displayName: "Cleanup Terraform workdir"
+#    - script: |
+#        rm -rf azuretf/simpletf/.terraform
+#        rm -f azuretf/simpletf/*.tfstate*
+#        rm -f azuretf/simpletf/.terraform.lock.hcl
+#        rm -f azuretf/simpletf/tfplan.binary
+#      condition: always()
+#      displayName: "Cleanup Terraform workdir"
 
 # (end of file)
-...
+##...
 
-#---
+---
 
-## When access to azure devops pipeline jobs run summary available
+# When access to azure devops pipeline jobs run summary available
 
-#trigger:
-#- main
+trigger:
+- main
 
-#variables:
-#  serviceConnection: 'az-classic-conn'
-#  containerName: 'mytfstate'
-#  key: 'terraform.tfstate'
-#  #resourceGroup: 'myTFResourceGroup'
+variables:
+  serviceConnection: 'az-classic-conn'
+  containerName: 'mytfstate'
+  key: 'terraform.tfstate'
+  #resourceGroup: 'myTFResourceGroup'
 
-#pool:
-#  name: 'az-classic-pool'  # EC2 self-hosted agent pool
+pool:
+  name: 'az-classic-pool'  # EC2 self-hosted agent pool
 
 
 ############# Avoid Artifact 'tfplan' and Approval Gate - works for dev/test using '-auto-approve'
 
-#stages:
-#- stage: Deploy
-#  jobs:
-#  - job: Deploy
-#    steps:
-#    - task: TerraformInstaller@0
-#      inputs:
-#        terraformVersion: '1.14.3'  # Match version
+stages:
+- stage: Deploy
+  jobs:
+  - job: Deploy
+    steps:
+    - task: TerraformInstaller@0
+      inputs:
+        terraformVersion: '1.14.3'  # Match version
 
-#    - task: TerraformTaskV4@4
-#      inputs:
-#        provider: 'azurerm'
-#        command: 'init'
-#        workingDirectory: 'azuretf/simpletf' # since files in terraform_automation_IaC/azuretf/simpletf/
-#        backendServiceArm: '$(serviceConnection)'
-#        backendAzureRmResourceGroupName: 'myTFResourceGroup'
-#        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
-#        backendAzureRmContainerName: '$(containerName)'
-#        backendAzureRmKey: '$(key)'
-#        environmentServiceNameAzureRM: '$(serviceConnection)'
-#        #commandOptions: '-upgrade'
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: 'azuretf/simpletf' # since files in terraform_automation_IaC/azuretf/simpletf/
+        backendServiceArm: '$(serviceConnection)'
+        backendAzureRmResourceGroupName: 'myTFResourceGroup'
+        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
+        backendAzureRmContainerName: '$(containerName)'
+        backendAzureRmKey: '$(key)'
+        environmentServiceNameAzureRM: '$(serviceConnection)'
+        #commandOptions: '-upgrade'
 
-#    - task: TerraformTaskV4@4
-#      name: TerraformPlan
-#      inputs:
-#        provider: 'azurerm'
-#        command: 'plan'
-#        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
-#        environmentServiceNameAzureRM: '$(serviceConnection)'
-#        commandOptions: >
-#          -no-color                                           
-#          -var="arm_client_secret=$(ARM_CLIENT_SECRET)"       
+    - task: TerraformTaskV4@4
+      name: TerraformPlan
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
+        environmentServiceNameAzureRM: '$(serviceConnection)'
+        commandOptions: >
+          -no-color                                           
+          -var="arm_client_secret=$(ARM_CLIENT_SECRET)"       
         
         # `-no-color` - makes logs readable outside UI
         # `-var="<arm-client-secret>"` - Can also pass secret directly
 
-#    - task: TerraformTaskV4@4
-#      inputs:
-#        provider: 'azurerm'
-#        command: 'apply'
-#        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
-#        environmentServiceNameAzureRM: '$(serviceConnection)'
-#        commandOptions: >
-#          -no-color
-#          -auto-approve                              
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
+        environmentServiceNameAzureRM: '$(serviceConnection)'
+        commandOptions: >
+          -no-color
+          -auto-approve                              
           
         # `-auto-approve` - no approval required dev/stage
 
