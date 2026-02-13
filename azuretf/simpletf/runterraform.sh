@@ -10,10 +10,13 @@ if [[ -z "$COMMAND" ]]; then
   exit 1
 fi
 
+echo "---- TOKEN DEBUG ----"
 if [[ -z "$TOKEN" ]]; then
-  echo "ERROR: GITHUB_TOKEN is not set"
-  exit 1
+  echo "TOKEN is empty!"
+else
+  echo "TOKEN length: ${#TOKEN}"
 fi
+echo "---------------------"
 
 COMMIT_SHA="$(git rev-parse HEAD)"
 ROOT_DIR="$(git rev-parse --show-toplevel)"
@@ -139,7 +142,9 @@ if [[ -n "$(git status --porcelain runs/)" ]]; then
 
   # Set authenticated remote
   # Instead of embedding credentials in every push command
-  git remote set-url origin https://${TOKEN}@github.com/${REPO}.git
+  #git remote set-url origin https://${TOKEN}@github.com/${REPO}.git
+  git remote set-url origin "https://${TOKEN}@github.com/${REPO}.git"
+
 
   git push origin terraform-logs
 else

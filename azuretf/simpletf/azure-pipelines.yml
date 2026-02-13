@@ -11,7 +11,9 @@ trigger:
       - terraform-logs
 
 variables:
-  serviceConnection: 'az-classic-conn'
+- group: az-classic-kv-var
+- name: serviceConnection
+  value: 'az-classic-conn'
 
 pool:
   name: 'az-classic-pool'   # EC2 self-hosted agent
@@ -22,6 +24,8 @@ stages:
   jobs:
   - job: Terraform
     displayName: "Terraform Init, Plan & Apply"
+    #variables:
+    #  GITHUB_TOKEN: $(githubtoken-feb)
     
     steps:
 
@@ -56,13 +60,13 @@ stages:
     # -----------------------------
     # FetchSecrets
     # -----------------------------
-    - task: AzureKeyVault@2
-      displayName: "Download secrets: prodmyappkv"
-      inputs:
-        azureSubscription: '$(serviceConnection)'
-        KeyVaultName: 'prodmyappkv'
-        SecretsFilter: 'githubtoken-feb'
-        RunAsPreJob: true
+    #- task: AzureKeyVault@2
+    #  displayName: "Download secrets: prodmyappkv"
+    #  inputs:
+    #    azureSubscription: '$(serviceConnection)'
+    #    KeyVaultName: 'prodmyappkv'
+    #    SecretsFilter: 'githubtoken-feb'
+    #    RunAsPreJob: true
 
     # -----------------------------
     # Clean logs
@@ -93,8 +97,8 @@ stages:
         ./runterraform.sh init
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+    #  env:
+    #    GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Plan
@@ -103,8 +107,8 @@ stages:
         ./runterraform.sh plan
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+    #  env:
+    #    GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Apply
@@ -112,9 +116,9 @@ stages:
     - script: |
         ./runterraform.sh apply
       workingDirectory: azuretf/simpletf
-      displayName: "Terraform Apply → GitHub Checks"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+      displayName: "Terraform Apply"
+    #  env:
+    #    GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Prepare minimal artifacts
