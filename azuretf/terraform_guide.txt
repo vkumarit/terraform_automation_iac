@@ -1221,6 +1221,10 @@ curl -i \
   -H "Accept: application/vnd.github+json" \
   https://api.github.com/user
 ```
+Or,
+```
+curl -H "Authorization: Bearer YOUR_TOKEN" https://api.github.com/user
+```
 ---------------------------------------------------------------------------------------------------------------
 Production Deployment Checklist:
 

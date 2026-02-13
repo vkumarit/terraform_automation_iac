@@ -111,13 +111,35 @@ else
 fi
 
 # Only commit if there are changes
-if [[ -n "$(git status --porcelain)" ]]; then
-  git add .
+#if [[ -n "$(git status --porcelain)" ]]; then
+#  git add .
+   # adds .terraform/, providers, tfplan, etc. grows branch to huge
+#  git commit -m "Terraform logs for ${COMMIT_SHA}"
+  # for GitHub App tokens and Installation tokens
+#  git push https://x-access-token:${TOKEN}@github.com/${REPO}.git terraform-logs
+  # for classic PAT
+#  git push https://${TOKEN}@github.com/${REPO}.git terraform-logs
+#else
+#  echo "No changes to commit."
+#fi
+
+#Alternatively,
+
+# Only commit logs
+if [[ -n "$(git status --porcelain runs/)" ]]; then
+  git add runs/
+  # Use runs/ - prevents logs branch growth and corrupt.
   git commit -m "Terraform logs for ${COMMIT_SHA}"
-  git push https://x-access-token:${TOKEN}@github.com/${REPO}.git terraform-logs
+
+  # Set authenticated remote
+  # Instead of embedding credentials in every push command
+  git remote set-url origin https://${TOKEN}@github.com/${REPO}.git
+
+  git push origin terraform-logs
 else
   echo "No changes to commit."
 fi
+
 
 # ==========================
 # RETURN TO ORIGINAL BRANCH
