@@ -91,8 +91,14 @@ git config user.name "signinvipin"
 
 git fetch origin || true
 
-if git show-ref --verify --quiet refs/remotes/origin/terraform-logs; then
-  git checkout -B terraform-logs origin/terraform-logs
+# Delete local branch if it exists
+if git show-ref --verify --quiet refs/heads/terraform-logs; then
+  git branch -D terraform-logs
+fi
+
+# If remote branch exists, track it
+if git ls-remote --exit-code --heads origin terraform-logs >/dev/null 2>&1; then
+  git checkout -b terraform-logs origin/terraform-logs
 else
   git checkout --orphan terraform-logs
   git rm -rf . >/dev/null 2>&1 || true
@@ -128,7 +134,7 @@ fi
 # Only commit logs
 if [[ -n "$(git status --porcelain runs/)" ]]; then
   git add runs/
-  # Use runs/ - prevents logs branch growth and corrupt.
+  # Use runs/ - prevents logs branch growth and corruption.
   git commit -m "Terraform logs for ${COMMIT_SHA}"
 
   # Set authenticated remote
