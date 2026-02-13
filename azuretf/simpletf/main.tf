@@ -251,7 +251,7 @@ variable "github_token" {
 }
 
 resource "azurerm_key_vault_secret" "github_token" {
-  name         = "githubtoken-feb"
+  name         = "githubtokenfeb"
   value        = var.github_token         # var when exported GITHUB_TOKEN to EC2/VM env vars
   
   # Secrets as code (version controlled) - Secret rotation 
