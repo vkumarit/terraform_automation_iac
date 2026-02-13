@@ -82,7 +82,7 @@ stages:
     # -----------------------------
     - task: TerraformInstaller@0
       inputs:
-        terraformVersion: '1.14.4'
+        terraformVersion: 'latest'  # '1.14.4' for prod
 
     # -----------------------------
     # Make runterraform.sh executable

@@ -423,6 +423,34 @@ $ terraform state rm azurerm_storage_container.mytfstate
 $ terraform plan
 ----End-Error-handling----
 
+----Start-Error-handling----
+```
+Error: Error acquiring the state lock
+
+Error message: state blob is already locked
+Lock Info:
+  ID:        7d0f5123-6d43-3eac-6acb-352879a60005
+  Path:      mytfstate/terraform.tfstate
+  Operation: OperationTypePlan
+  Who:       cloud-user@terraform-server
+  Version:   1.14.4
+  Created:   2026-02-13 13:52:19.862423651 +0000 UTC
+  Info:      
+
+Terraform acquires a state lock to protect the state from being written
+by multiple users at the same time. Please resolve the issue above and try
+again. For most commands, you can disable locking with the "-lock=false"
+flag, but this is not recommended.
+Terraform plan FAILED
+
+```
+Go to location/directory where terraform files are stored 
+like `/home/cloud-user/terraform_automation_iac/azuretf/simpletf` and 
+run bash cmd,
+$ terraform force-unlock 7d0f5123-6d43-3eac-6acb-352879a60005
+
+----End-Error-handling----
+
 -------------------------------------------------------------------------------------------------------------
 How to use `terraform import` in both **Azure** and **AWS** contexts, either from a **CI/CD pipeline** or **locally**. 
 
