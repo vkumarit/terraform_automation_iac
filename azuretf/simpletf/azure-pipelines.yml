@@ -14,8 +14,7 @@ variables:
 - group: az-classic-kv-var
 - name: serviceConnection
   value: 'az-classic-conn'
-#- name: GITHUB_TOKEN
-#  value: $(githubtoken-feb)
+
 
 pool:
   name: 'az-classic-pool'   # EC2 self-hosted agent
@@ -26,8 +25,10 @@ stages:
   jobs:
   - job: Terraform
     displayName: "Terraform Init, Plan & Apply"
-    variables:
-      GITHUB_TOKEN: $(githubtoken-feb)
+     variables:
+       GITHUB_TOKEN: $(githubtoken-feb)
+     env:
+       GITHUB_TOKEN: $(GITHUB_TOKEN)
     
     steps:
 
@@ -88,8 +89,8 @@ stages:
         ./runterraform.sh init
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+    #  env:
+    #    GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Plan
@@ -98,8 +99,8 @@ stages:
         ./runterraform.sh plan
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+    #  env:
+    #    GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Apply
@@ -108,8 +109,8 @@ stages:
         ./runterraform.sh apply
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+    #  env:
+    #    GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Prepare minimal artifacts
