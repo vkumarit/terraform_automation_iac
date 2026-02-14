@@ -26,8 +26,8 @@ stages:
   jobs:
   - job: Terraform
     displayName: "Terraform Init, Plan & Apply"
-    variables:
-      GITHUB_TOKEN: $(githubtoken-feb)
+    #variables:
+    #  GITHUB_TOKEN: $(githubtoken-feb)
     
     steps:
 
@@ -99,8 +99,8 @@ stages:
         ./runterraform.sh init
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
-    #  env:
-    #    GITHUB_TOKEN: $(githubtoken-feb)
+      env:
+        GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Plan
@@ -109,8 +109,8 @@ stages:
         ./runterraform.sh plan
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
-    #  env:
-    #    GITHUB_TOKEN: $(githubtoken-feb)
+      env:
+        GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Apply
@@ -119,8 +119,8 @@ stages:
         ./runterraform.sh apply
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
-    #  env:
-    #    GITHUB_TOKEN: $(githubtoken-feb)
+      env:
+        GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Prepare minimal artifacts
