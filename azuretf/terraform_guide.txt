@@ -1275,3 +1275,6 @@ Production Deployment Checklist:
 - Provide a hardened RunTerraform.sh v3
 
 
+git branch -r
+git branch -a 
+git branch -all
