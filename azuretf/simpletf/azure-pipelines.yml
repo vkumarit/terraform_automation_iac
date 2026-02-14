@@ -14,8 +14,8 @@ variables:
 - group: az-classic-kv-var
 - name: serviceConnection
   value: 'az-classic-conn'
-- name: GITHUB_TOKEN
-  value: $(githubtoken-feb)
+#- name: GITHUB_TOKEN
+#  value: $(githubtoken-feb)
 
 pool:
   name: 'az-classic-pool'   # EC2 self-hosted agent
@@ -58,17 +58,6 @@ stages:
       
     #** Use `sudo yum install -y jq` once on ec2/VM and comment above code or 
     # keep using above code to install jq (OPTIONAL)
-
-    # -----------------------------
-    # FetchSecrets
-    # -----------------------------
-    #- task: AzureKeyVault@2
-    #  displayName: "Download secrets: prodmyappkv"
-    #  inputs:
-    #    azureSubscription: '$(serviceConnection)'
-    #    KeyVaultName: 'prodmyappkv'
-    #    SecretsFilter: 'githubtoken-feb'
-    #    RunAsPreJob: true
 
     # -----------------------------
     # Clean logs
