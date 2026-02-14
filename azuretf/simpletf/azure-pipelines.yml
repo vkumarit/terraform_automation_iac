@@ -25,10 +25,10 @@ stages:
   jobs:
   - job: Terraform
     displayName: "Terraform Init, Plan & Apply"
-     variables:
-       GITHUB_TOKEN: $(githubtoken-feb)
-     env:
-       GITHUB_TOKEN: $(GITHUB_TOKEN)
+    variables:
+      GITHUB_TOKEN: $(githubtoken-feb)
+    env:
+      GITHUB_TOKEN: $(GITHUB_TOKEN)
     
     steps:
 
