@@ -25,9 +25,7 @@ stages:
   jobs:
   - job: Terraform
     displayName: "Terraform Init, Plan & Apply"
-    variables:
-      GITHUB_TOKEN: $(githubtoken-feb)
-        
+            
     steps:
 
     - checkout: self
@@ -88,7 +86,7 @@ stages:
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
       env:
-        GITHUB_TOKEN: $(GITHUB_TOKEN)
+        GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Plan
@@ -98,7 +96,7 @@ stages:
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
       env:
-        GITHUB_TOKEN: $(GITHUB_TOKEN)
+        GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Apply
@@ -108,30 +106,8 @@ stages:
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
       env:
-        GITHUB_TOKEN: $(GITHUB_TOKEN)
-
-    # -----------------------------
-    # Prepare minimal artifacts
-    # -----------------------------
-    #- script: |
-    #    mkdir -p artifacts
-    #    cp azuretf/simpletf/*.log artifacts/ || true
-    #    cp azuretf/simpletf/annotations.json artifacts/ || true
-    #  condition: failed()
-    #  displayName: "Prepare minimal artifacts"
-
-    # -----------------------------
-    # Publish logs only
-    # -----------------------------
-    #- task: PublishPipelineArtifact@1
-    #  condition: failed()             
-      # always() - optional
-    #  inputs:
-    #    targetPath: artifacts
-    #    artifact: terraform-logs
-    #  env:
-    #    AZURE_DEVOPS_DEDUP_PARALLELISM: "1"
-    
+        GITHUB_TOKEN: $(githubtoken-feb)
+        
     # -----------------------------
     # Clean Terraform junk after every run
     # -----------------------------    
