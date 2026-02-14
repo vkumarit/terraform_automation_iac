@@ -14,8 +14,8 @@ variables:
 - group: az-classic-kv-var
 - name: serviceConnection
   value: 'az-classic-conn'
-- name: GITHUB_TOKEN
-  value: $(githubtoken-feb)
+#- name: GITHUB_TOKEN
+#  value: $(githubtoken-feb)
 
 pool:
   name: 'az-classic-pool'   # EC2 self-hosted agent
@@ -26,13 +26,13 @@ stages:
   jobs:
   - job: Terraform
     displayName: "Terraform Init, Plan & Apply"
-    #variables:
-    #  GITHUB_TOKEN: $(githubtoken-feb)
+    variables:
+      GITHUB_TOKEN: $(githubtoken-feb)
     
     steps:
 
     - checkout: self
-      persistCredentials: true
+      #persistCredentials: true
     
     # -----------------------------
     # Install jq - command-line JSON processor (required for GitHub Checks)
