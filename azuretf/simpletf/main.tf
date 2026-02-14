@@ -247,13 +247,17 @@ resource "azurerm_key_vault_secret" "sp_subscription_id" {
 variable "github_token" {
   type      = string
   sensitive = true
-  default   = ""              # empty string allows env var to populate (takes variable from environment),
+  
+  default   = ""              
+  # empty string allows env var to populate (takes variable from environment),
+  # export value as `export TF_VAR_github_token=ghp_k7pt3nlRS6xxxxZFaYjcSjJpL02CN1rCmwl`
+  
   description = "GitHub token for Key Vault"
 }
 
 resource "azurerm_key_vault_secret" "github_token" {
   name         = "githubtoken-feb"
-  value        = var.github_token         # var when exported GITHUB_TOKEN to EC2/VM env vars
+  value        = var.github_token         # var when exported TF_VAR_github_token to EC2/VM env vars
   
   # Secrets as code (version controlled) - Secret rotation 
   # Update ARM_CLIENT_SECRET env var > terraform apply > Key Vault updates automatically.
