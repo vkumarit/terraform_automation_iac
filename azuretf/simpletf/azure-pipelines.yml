@@ -65,7 +65,7 @@ stages:
     # Terraform Init
     # -----------------------------
     - script: |
-#        ./runterraform.sh init
+        #./runterraform.sh init
         terraform init
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
@@ -76,7 +76,7 @@ stages:
     # Terraform Plan
     # -----------------------------
     - script: |
-#        ./runterraform.sh plan
+        #./runterraform.sh plan
         terraform plan
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
@@ -87,7 +87,7 @@ stages:
     # Terraform Apply
     # -----------------------------
     - script: |
-#        ./runterraform.sh apply
+        #./runterraform.sh apply
         terraform apply
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
