@@ -77,7 +77,7 @@ stages:
     # -----------------------------
     - script: |
         #./runterraform.sh plan
-        terraform plan
+        terraform plan -out=tfplan
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
       env:
@@ -88,7 +88,7 @@ stages:
     # -----------------------------
     - script: |
         #./runterraform.sh apply
-        terraform apply -yes
+        terraform apply -auto-approve tfplan
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
       env:
