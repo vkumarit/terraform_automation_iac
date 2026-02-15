@@ -76,9 +76,10 @@ stages:
     # Terraform Init
     # -----------------------------
     - script: |
+        cd azuretf/simpletf
         ./runterraform.sh init
         #terraform init
-      workingDirectory: azuretf/simpletf
+    #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
       env:
         GITHUB_TOKEN: $(githubtoken-feb)
@@ -87,9 +88,10 @@ stages:
     # Terraform Plan
     # -----------------------------
     - script: |
+        cd azuretf/simpletf
         ./runterraform.sh plan
         #terraform plan -out=tfplan
-      workingDirectory: azuretf/simpletf
+    #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
       env:
         GITHUB_TOKEN: $(githubtoken-feb)
@@ -98,9 +100,10 @@ stages:
     # Terraform Apply
     # -----------------------------
     - script: |
+        cd azuretf/simpletf
         ./runterraform.sh apply
         #terraform apply -auto-approve tfplan
-      workingDirectory: azuretf/simpletf
+    #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
       env:
         GITHUB_TOKEN: $(githubtoken-feb)
