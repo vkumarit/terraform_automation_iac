@@ -32,38 +32,6 @@ stages:
       #persistCredentials: true
     
     # -----------------------------
-    # Install jq - command-line JSON processor (required for GitHub Checks)
-    # -----------------------------
-    #- script: |
-    #    if command -v jq >/dev/null 2>&1; then
-    #      echo "jq already installed"
-    #      exit 0
-    #    fi
-
-    #    echo "Installing jq..."
-
-    #    if command -v yum >/dev/null 2>&1; then
-    #      sudo yum install -y jq
-    #    elif command -v apt-get >/dev/null 2>&1; then
-    #      sudo apt-get update
-    #      sudo apt-get install -y jq
-    #    else
-    #      echo "No supported package manager found"
-    #      exit 1
-    #    fi
-    #  displayName: "Install jq"
-      
-    #** Use `sudo yum install -y jq` once on ec2/VM and comment above code or 
-    # keep using above code to install jq (OPTIONAL)
-
-    # -----------------------------
-    # Clean logs
-    # -----------------------------
-    #- script: |
-    #    rm -f azuretf/simpletf/*.log azuretf/simpletf/annotations.json
-    #  displayName: "Clean previous logs"
-
-    # -----------------------------
     # Install Terraform
     # -----------------------------
     - task: TerraformInstaller@0
@@ -78,6 +46,21 @@ stages:
       workingDirectory: azuretf/simpletf
       displayName: "Make runterraform.sh executable"
     
+    # -----------------------------
+    # Verify GITHUB_TOKEN
+    # -----------------------------
+    - script: |
+        echo "---- DEBUG GITHUB_TOKEN ----"
+        if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+          echo "GITHUB_TOKEN is empty!"
+        else
+          echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
+        fi
+      workingDirectory: azuretf/simpletf
+      displayName: "Check GITHUB_TOKEN"
+      env:
+        GITHUB_TOKEN: $(githubtoken-feb)
+
     # -----------------------------
     # Terraform Init
     # -----------------------------
@@ -122,200 +105,3 @@ stages:
 # (end of file)
 ...
 
-#---
-
-# When access to azure devops pipeline jobs run summary available
-
-#trigger:
-#- main
-
-#variables:
-#  serviceConnection: 'az-classic-conn'
-#  containerName: 'mytfstate'
-#  key: 'terraform.tfstate'
-#  #resourceGroup: 'myTFResourceGroup'
-
-#pool:
-#  name: 'az-classic-pool'  # EC2 self-hosted agent pool
-
-
-############# Avoid Artifact 'tfplan' and Approval Gate - works for dev/test using '-auto-approve'
-
-#stages:
-#- stage: Deploy
-#  jobs:
-#  - job: Deploy
-#    steps:
-#    - task: TerraformInstaller@0
-#      inputs:
-#        terraformVersion: '1.14.3'  # Match version
-
-#    - task: TerraformTaskV4@4
-#      inputs:
-#        provider: 'azurerm'
-#        command: 'init'
-#        workingDirectory: 'azuretf/simpletf' # since files in terraform_automation_IaC/azuretf/simpletf/
-#        backendServiceArm: '$(serviceConnection)'
-#        backendAzureRmResourceGroupName: 'myTFResourceGroup'
-#        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
-#        backendAzureRmContainerName: '$(containerName)'
-#        backendAzureRmKey: '$(key)'
-#        environmentServiceNameAzureRM: '$(serviceConnection)'
-#        #commandOptions: '-upgrade'
-
-#    - task: TerraformTaskV4@4
-#      name: TerraformPlan
-#      inputs:
-#        provider: 'azurerm'
-#        command: 'plan'
-#        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
-#        environmentServiceNameAzureRM: '$(serviceConnection)'
-#        commandOptions: >
-#          -no-color                                           
-#          -var="arm_client_secret=$(ARM_CLIENT_SECRET)"       
-        
-        # `-no-color` - makes logs readable outside UI
-        # `-var="<arm-client-secret>"` - Can also pass secret directly
-
-#    - task: TerraformTaskV4@4
-#      inputs:
-#        provider: 'azurerm'
-#        command: 'apply'
-#        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
-#        environmentServiceNameAzureRM: '$(serviceConnection)'
-#        commandOptions: >
-#          -no-color
-#          -auto-approve                              
-          
-        # `-auto-approve` - no approval required dev/stage
-
-
-############ Use Artifact 'tfplan' and Approval Gate
-#stages:
-#- stage: Plan
-#  jobs:
-#  - job: Plan
-#    steps:
-#    - task: TerraformInstaller@0
-#      inputs:
-#        terraformVersion: '1.14.3'  # Match version
-
-#    - task: TerraformTaskV4@4  # Or V2/V3 based on marketplace
-#      inputs:
-#        provider: 'azurerm'
-#        command: 'init'
-#        workingDirectory: 'azuretf/simpletf' # since files in terraform_automation_IaC/azuretf/simpletf/
-#        backendServiceArm: '$(serviceConnection)'
-#        backendAzureRmResourceGroupName: 'myTFResourceGroup'
-#        backendAzureRmStorageAccountName: 'prodmyapptfstate01'
-#        backendAzureRmContainerName: '$(containerName)'
-#        backendAzureRmKey: '$(key)'
-#        environmentServiceNameAzureRM: '$(serviceConnection)'
-
-#    - task: TerraformTaskV4@4
-#      inputs:
-#        provider: 'azurerm'
-#        command: 'plan'
-#        workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
-#        environmentServiceNameAzureRM: '$(serviceConnection)'
-#        commandOptions: '-out=tfplan'
-        
-    # PUBLISH plan as artifact
-#    - task: PublishPipelineArtifact@1
-#      inputs:
-#        targetPath: 'azuretf/simpletf/tfplan'
-#        artifact: 'tfplan'
-#        publishLocation: 'pipeline'
-
-####### Approval Gate - Method 1: Environments
-#- stage: Apply
-#  dependsOn: Plan
-#  condition: succeeded()
-#  jobs:
-  
-    # APPROVAL GATE via Environment
-#  - deployment: ProductionDeployment
-#    displayName: 'Deploy to Production'
-#    environment: 'prod'  # Create this environment in Azure DevOps first as it triggers approval gate
-#    strategy:
-#      runOnce:           # standard deployment pattern
-#        deploy:
-#          steps:
-#          - task: TerraformInstaller@0  # Reinstall for consistency
-          
-          # DOWNLOAD plan artifact
-#          - task: DownloadPipelineArtifact@2
-#            inputs:
-#              buildType: 'current'
-#              artifactName: 'tfplan'
-#              targetPath: 'azuretf/simpletf/'
-          
-          # Add, format and use/continue locs with tasks for init and apply mentioned at end of file.  
-                    
-####### Approval Gate - Method 2: Manual Approval Check (No environments needed)
-#- stage: Approval
-#  dependsOn: Plan
-#  condition: succeeded()
-#  jobs:
-#  - job: ManualApproval
-#    pool: server  # Uses Azure DevOps server (no agent needed)
-#    steps:
-#    - task: ManualValidation@0
-#      timeoutInMinutes: 4320  # 3 days timeout
-#      inputs:
-#        notifyUsers: |
-#          you@company.com
-#          team@company.com
-#        instructions: |
-#          **Review the Terraform Plan above carefully.**
-          
-#          This will deploy:
-#          - Resource Group: myTFResourceGroup (Australia East)
-#          - Storage Account: prodmyapptfstate01  
-#          - Storage Container: mytfstate
-#          - Key Vault: prodmyappkv
-          
-#          **Approve** to proceed with deployment.
-#          **Reject** to stop pipeline.
-          
-#          tfplan artifact available for download.
-#        onTimeout: 'reject'
-
-#- stage: Apply
-#  dependsOn: Approval
-#  condition: succeeded()
-#  jobs:
-#  - job: Apply
-#    steps:
-#    - task: TerraformInstaller@0  # Reinstall for consistency
-    
-    # DOWNLOAD plan artifact
-#    - task: DownloadPipelineArtifact@2
-#      inputs:
-#        buildType: 'current'
-#        artifactName: 'tfplan'
-#        targetPath: 'azuretf/simpletf/'
-
-    # Add, format and use/continue locs with tasks for init and apply mentioned at end of file.
-
-########
-  
-#          - task: TerraformTaskV4@4
-#            inputs:
-#              provider: 'azurerm'
-#              command: 'init'
-#              workingDirectory: 'azuretf/simpletf'  # since files in terraform_automation_IaC/azuretf/simpletf/
-#              backendServiceArm: '$(serviceConnection)'
-#              backendAzureRmResourceGroupName: 'myTFResourceGroup'
-#              backendAzureRmStorageAccountName: 'prodmyapptfstate01'
-#              backendAzureRmContainerName: '$(containerName)'
-#              backendAzureRmKey: '$(key)'
-#              environmentServiceNameAzureRM: '$(serviceConnection)'
-
-#          - task: TerraformTaskV4@4
-#            inputs:
-#              provider: 'azurerm'
-#              command: 'apply'
-#              workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
-#              environmentServiceNameAzureRM: '$(serviceConnection)'
-#              commandOptions: 'tfplan'
