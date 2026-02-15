@@ -62,6 +62,17 @@ stages:
         GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
+    # Debug directory
+    # -----------------------------
+    - script: |
+        echo "PWD:"
+        pwd
+        echo "FILES:"
+        ls -la
+      workingDirectory: azuretf/simpletf
+      displayName: "Debug directory"
+    
+    # -----------------------------
     # Terraform Init
     # -----------------------------
     - script: |
