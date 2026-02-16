@@ -39,6 +39,8 @@ LOG_FILE="terraform-${COMMAND}.log"
 # Log file name per command
 # Example: terraform-init.log
 
+WORK_DIR="$(pwd)"
+# Capture original working directory.
 TF_EXIT=0
 # Variable to store Terraform exit code
 
@@ -144,19 +146,30 @@ echo "========================================="
 push_logs() {
   echo "Pushing logs safely..."
 
+  if [[ -z "$TOKEN" ]]; then
+    echo "ERROR: GITHUB_TOKEN not set"
+    return 0
+  fi
+  # Prevents weird git clone failures if token is empty.
+  
   TMP_DIR=$(mktemp -d)
-
+  
   git clone https://${TOKEN}@github.com/${REPO}.git "$TMP_DIR"
 
+  mkdir -p "$TMP_DIR/runs/${COMMIT_SHA}/${COMMAND}"
+
+  cp "${WORK_DIR}/${LOG_FILE}" "$TMP_DIR/runs/${COMMIT_SHA}/${COMMAND}/terraform-${COMMAND}.log"
+
+  if [[ "$TF_EXIT" -ne 0 ]]; then
+    echo "${COMMAND} FAILED" > "$TMP_DIR/runs/${COMMIT_SHA}/${COMMAND}/summary.txt"
+  else
+    echo "${COMMAND} SUCCEEDED" > "$TMP_DIR/runs/${COMMIT_SHA}/${COMMAND}/summary.txt"
+  fi
+  
   cd "$TMP_DIR" || exit 1
 
   git checkout terraform-logs
-
-  mkdir -p runs/${COMMIT_SHA}/${COMMAND}
-
-  cp "$ROOT_DIR/${LOG_FILE}" runs/${COMMIT_SHA}/${COMMAND}/summary.txt
-
-  git add .
+  git add runs/
   git commit -m "Terraform ${COMMAND} logs for ${COMMIT_SHA}" || echo "Nothing to commit"
   git push origin terraform-logs
 
