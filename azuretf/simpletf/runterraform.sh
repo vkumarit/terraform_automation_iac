@@ -152,12 +152,12 @@ push_logs() {
 
   git checkout terraform-logs
 
-  mkdir -p runs/${COMMIT_SHA}/${ACTION}
+  mkdir -p runs/${COMMIT_SHA}/${COMMAND}
 
-  cp "$ROOT_DIR/${LOG_FILE}" runs/${COMMIT_SHA}/${ACTION}/summary.txt
+  cp "$ROOT_DIR/${LOG_FILE}" runs/${COMMIT_SHA}/${COMMAND}/summary.txt
 
   git add .
-  git commit -m "Terraform ${ACTION} logs for ${COMMIT_SHA}" || echo "Nothing to commit"
+  git commit -m "Terraform ${COMMAND} logs for ${COMMIT_SHA}" || echo "Nothing to commit"
   git push origin terraform-logs
 
   cd "$ROOT_DIR" || exit 1
