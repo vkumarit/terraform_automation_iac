@@ -1,0 +1,5 @@
+# Enforce LF across team members REPO WIDE
+
+* text eol=lf
+*.sh text eol=lf
+
