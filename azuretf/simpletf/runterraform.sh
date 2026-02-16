@@ -69,13 +69,13 @@ push_logs() {
 
   # Clean working directory before branch switch
   
-  git reset --hard
+  #git reset --hard
   # - Discards ALL changes to tracked files. 
   # - Resets working tree to match the last committed state (HEAD).
   # - Terraform or pipeline steps may modify tracked files, and Git 
   #   will refuse to checkout another branch if files differ.
   
-  git clean -fd
+  #git clean -fd
   # - Deletes all untracked files and directories.
   # - Uses -f > force removal and -d > include directories.
   # - Terraform creates untracked files (.terraform/, tfplan.binary, etc.).
