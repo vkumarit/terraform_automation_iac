@@ -222,6 +222,11 @@ elif [[ "$COMMAND" == "plan" ]]; then
   TF_EXIT=${PIPESTATUS[0]}
 
   set -e
+  
+  # If changes detected (exit 2), treat as success
+  if [[ "$TF_EXIT" -eq 2 ]]; then
+    TF_EXIT=0
+  fi
 
 elif [[ "$COMMAND" == "apply" ]]; then
 
@@ -248,4 +253,5 @@ fi
 exit "$TF_EXIT"
 # Exit script with terraform’s actual exit code
 # This makes Azure DevOps mark pipeline correctly
+
 
