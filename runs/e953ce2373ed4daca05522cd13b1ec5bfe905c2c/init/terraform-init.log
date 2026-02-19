@@ -1,0 +1,19 @@
+Initializing the backend...
+
+Successfully configured the backend "azurerm"! Terraform will automatically
+use this backend unless the backend configuration changes.
+
+Error: Terraform encountered problems during initialisation, including problems
+with the configuration, described below.
+
+The Terraform configuration must be valid before initialization so that
+Terraform can determine which modules and providers need to be installed.
+
+
+Error: Unexpected comma after argument
+
+  on main.tf line 275, in resource "azurerm_key_vault_secret" "github_token":
+ 275:     ignore_changes = [], # Allow rotation, available value will be taken
+
+Argument definitions must be separated by newlines, not commas. An argument
+definition must end with a newline.
