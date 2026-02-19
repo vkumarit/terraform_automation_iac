@@ -1,0 +1,5 @@
+Acquiring state lock. This may take a few moments...
+var.github_token
+  GitHub token for Key Vault
+
+  Enter a value: 
