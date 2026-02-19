@@ -253,6 +253,11 @@ variable "github_token" {
   # export value as `export TF_VAR_github_token=ghp_k7pt3nlRS6xxxxZFaYjcSjJpL02CN1rCmwl`
   
   description = "GitHub token for Key Vault"
+  
+  validation {
+    condition     = length(var.github_token) > 20
+    error_message = "GitHub token appears invalid."
+  }
 }
 
 resource "azurerm_key_vault_secret" "github_token" {
@@ -263,6 +268,15 @@ resource "azurerm_key_vault_secret" "github_token" {
   # Update ARM_CLIENT_SECRET env var > terraform apply > Key Vault updates automatically.
   
   key_vault_id = azurerm_key_vault.prodmyapp.id
+  
+  content_type = "github-pat"
+  
+  lifecycle {
+    ignore_changes = [], # Allow rotation, available value will be taken
+#    ignore_changes = [value]  # Never update the secret after first creation, freeze secret forever
+    prevent_destroy = true  # Allows rotation, prevents accidental deletion
+  }
+  
   depends_on   = [azurerm_key_vault.prodmyapp]
 }
 
