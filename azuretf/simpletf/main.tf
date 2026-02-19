@@ -272,8 +272,8 @@ resource "azurerm_key_vault_secret" "github_token" {
   content_type = "github-pat"
   
   lifecycle {
-    ignore_changes = [], # Allow rotation, available value will be taken
-#    ignore_changes = [value]  # Never update the secret after first creation, freeze secret forever
+#    ignore_changes = [], # Allow rotation, available value will be taken
+    ignore_changes = [value],  # Never update the secret after first creation, freeze secret forever
     prevent_destroy = true  # Allows rotation, prevents accidental deletion
   }
   
