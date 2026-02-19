@@ -54,96 +54,10 @@ echo "========================================="
 # ==========================================
 # ALWAYS PUSH LOGS FUNCTION
 # ==========================================
-#push_logs() {
+push_logs() {
 # This function runs automatically when script exits
 # (because of trap below)
 
-#  cd "$ROOT_DIR"
-  # Go back to repo root
-
-#  git config user.email "signinvipin@gmail.com"
-#  git config user.name "signinvipin"
-  # Set git author for commits
-
-#  git fetch origin || true
-  # Fetch latest remote branches
-  # || true prevents failure if fetch fails
-
-  # Clean working directory before branch switch
-  
-#  git reset --hard
-  # - Discards ALL changes to tracked files. 
-  # - Resets working tree to match the last committed state (HEAD).
-  # - Terraform or pipeline steps may modify tracked files, and Git 
-  #   will refuse to checkout another branch if files differ.
-  
-#  git clean -fd
-  # - Deletes all untracked files and directories.
-  # - Uses -f > force removal and -d > include directories.
-  # - Terraform creates untracked files (.terraform/, tfplan.binary, etc.).
-  #   These can block branch checkout if not removed.
-  
-#  if git show-ref --verify --quiet refs/heads/terraform-logs; then
-#    git branch -D terraform-logs
-#  fi
-  # If local terraform-logs branch exists, delete it
-  # Ensures clean branch recreation
-
-#  if git ls-remote --exit-code --heads origin terraform-logs >/dev/null 2>&1; then
-#    git checkout -b terraform-logs origin/terraform-logs
-#  else
-#    git checkout --orphan terraform-logs
-    # Create brand new orphan branch (no history)
-
-#    git rm -rf . >/dev/null 2>&1 || true
-    # Remove all files from working tree
-
-#    git reset --hard
-    # Ensure clean working directory
-#  fi
-
-#  RUN_DIR="runs/${COMMIT_SHA}/${COMMAND}"
-  # Create structured logs folder:
-  # runs/<commit>/<init|plan|apply>
-
-#  mkdir -p "$RUN_DIR"
-  # Create folder if it doesn’t exist
-
-#  cp azuretf/simpletf/terraform-*.log "$RUN_DIR/" 2>/dev/null || true
-  # Copy terraform logs into run directory
-  # Suppress errors if no log exists
-
-#  if [[ "$TF_EXIT" -ne 0 ]]; then
-#    echo "${COMMAND} FAILED" > "$RUN_DIR/summary.txt"
-#  else
-#    echo "${COMMAND} SUCCEEDED" > "$RUN_DIR/summary.txt"
-#  fi
-  # Write success/failure status file
-
-#  if [[ -n "$(git status --porcelain runs/)" ]]; then
-  # Only commit if there are changes in runs/
-
-#    git add runs/
-    # Stage only logs folder (prevents repo bloat)
-
-#    git commit -m "Terraform ${COMMAND} logs for ${COMMIT_SHA}"
-    # Commit logs
-
-#    git remote set-url origin "https://${TOKEN}@github.com/${REPO}.git"
-    # Set authenticated remote using PAT
-
-#    git push origin terraform-logs
-    # Push logs branch to GitHub
-#  fi
-
-#  if [[ -n "$CURRENT_BRANCH" ]]; then
-#    git checkout "$CURRENT_BRANCH" || true
-#  fi
-  # Switch back to original branch
-#}
-
-#trial code
-push_logs() {
   echo "Pushing logs safely..."
 
   if [[ -z "$TOKEN" ]]; then
@@ -154,7 +68,17 @@ push_logs() {
   
   TMP_DIR=$(mktemp -d)
   
-  git clone https://${TOKEN}@github.com/${REPO}.git "$TMP_DIR"
+  # Clone repo and ensure terraform-logs branch exists
+  git clone --branch terraform-logs \
+    https://${TOKEN}@github.com/${REPO}.git "$TMP_DIR" \
+    2>/dev/null || {
+      git clone https://${TOKEN}@github.com/${REPO}.git "$TMP_DIR"
+      cd "$TMP_DIR" || exit 1
+      git checkout -b terraform-logs
+    }
+
+  # Move into the cloned repo
+  cd "$TMP_DIR" || exit 1
 
   mkdir -p "$TMP_DIR/runs/${COMMIT_SHA}/${COMMAND}"
 
@@ -166,9 +90,6 @@ push_logs() {
     echo "${COMMAND} SUCCEEDED" > "$TMP_DIR/runs/${COMMIT_SHA}/${COMMAND}/summary.txt"
   fi
   
-  cd "$TMP_DIR" || exit 1
-
-  git checkout terraform-logs
   git add runs/
   git commit -m "Terraform ${COMMAND} logs for ${COMMIT_SHA}" || echo "Nothing to commit"
   git push origin terraform-logs
