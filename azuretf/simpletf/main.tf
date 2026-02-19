@@ -269,12 +269,12 @@ resource "azurerm_key_vault_secret" "github_token" {
   
   key_vault_id = azurerm_key_vault.prodmyapp.id
   
-  content_type = "github-pat"
+  #content_type = "github-pat"
   
   lifecycle {
 #    ignore_changes = [] # Allow rotation, available value will be taken
     ignore_changes = [value]  # Never update the secret after first creation, freeze secret forever
-    prevent_destroy = true  # Allows rotation, prevents accidental deletion
+#    prevent_destroy = true  # Allows rotation, prevents accidental deletion
   }
   
   depends_on   = [azurerm_key_vault.prodmyapp]
