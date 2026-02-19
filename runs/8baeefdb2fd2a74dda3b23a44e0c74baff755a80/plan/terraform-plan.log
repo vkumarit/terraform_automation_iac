@@ -1,0 +1,19 @@
+Acquiring state lock. This may take a few moments...
+
+Error: Error acquiring the state lock
+
+Error message: state blob is already locked
+Lock Info:
+  ID:        10d42222-87d0-4750-5071-69b8127d3929
+  Path:      mytfstate/terraform.tfstate
+  Operation: OperationTypePlan
+  Who:       cloud-user@terraform-server
+  Version:   1.14.5
+  Created:   2026-02-19 10:06:32.264667602 +0000 UTC
+  Info:      
+
+
+Terraform acquires a state lock to protect the state from being written
+by multiple users at the same time. Please resolve the issue above and try
+again. For most commands, you can disable locking with the "-lock=false"
+flag, but this is not recommended.
