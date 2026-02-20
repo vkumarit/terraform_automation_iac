@@ -1,5 +1,19 @@
 Acquiring state lock. This may take a few moments...
-var.github_token
-  GitHub token for Key Vault
 
-  Enter a value: 
+Error: Error acquiring the state lock
+
+Error message: state blob is already locked
+Lock Info:
+  ID:        1b1f58d0-16cc-1c16-e0cc-7db74ad5df32
+  Path:      mytfstate/terraform.tfstate
+  Operation: OperationTypePlan
+  Who:       cloud-user@terraform-server
+  Version:   1.14.5
+  Created:   2026-02-19 13:39:26.535872576 +0000 UTC
+  Info:      
+
+
+Terraform acquires a state lock to protect the state from being written
+by multiple users at the same time. Please resolve the issue above and try
+again. For most commands, you can disable locking with the "-lock=false"
+flag, but this is not recommended.
