@@ -26,7 +26,7 @@ stages:
 - stage: Deploy
   displayName: "Terraform Deploy"
   jobs:
-  - job: Terraform
+  - deployment: Terraform             # `environment:` and `strategy:` only work with deployment jobs
     displayName: "Terraform Init, Plan & Apply"
     environment: "terraform-prod"
     strategy:
