@@ -18,6 +18,9 @@ variables:
 
 pool:
   name: 'az-classic-pool'   # EC2 self-hosted agent
+  #demands:
+  #- agent.name -equals terraform-agent
+  # Use `demands` when not using environment lock `environment: "terraform-prod"` 
 
 stages:
 - stage: Deploy
@@ -25,99 +28,102 @@ stages:
   jobs:
   - job: Terraform
     displayName: "Terraform Init, Plan & Apply"
-            
-    steps:
+    environment: "terraform-prod"
+    strategy:
+      runOnce:
+        deploy:
+          steps:
 
-    - checkout: self
-      #persistCredentials: true
+          - checkout: self
+            #persistCredentials: true
     
-    # -----------------------------
-    # Install Terraform
-    # -----------------------------
-    - task: TerraformInstaller@0
-      inputs:
-        terraformVersion: 'latest'  # '1.14.4' for prod
+          # -----------------------------
+          # Install Terraform
+          # -----------------------------
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: 'latest'  # '1.14.4' for prod
 
-    # -----------------------------
-    # Make runterraform.sh executable
-    # -----------------------------
-    - script: |
-        chmod +x runterraform.sh
-      workingDirectory: azuretf/simpletf
-      displayName: "Make runterraform.sh executable"
+          # -----------------------------
+          # Make runterraform.sh executable
+          # -----------------------------
+          - script: |
+              chmod +x runterraform.sh
+            workingDirectory: azuretf/simpletf
+            displayName: "Make runterraform.sh executable"
     
-    # -----------------------------
-    # Verify GITHUB_TOKEN
-    # -----------------------------
-    - script: |
-        echo "---- DEBUG GITHUB_TOKEN ----"
-        if [[ -z "${GITHUB_TOKEN:-}" ]]; then
-          echo "GITHUB_TOKEN is empty!"
-        else
-          echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
-        fi
-      workingDirectory: azuretf/simpletf
-      displayName: "Check GITHUB_TOKEN"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+          # -----------------------------
+          # Verify GITHUB_TOKEN
+          # -----------------------------
+          - script: |
+              echo "---- DEBUG GITHUB_TOKEN ----"
+              if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+                echo "GITHUB_TOKEN is empty!"
+              else
+                echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
+              fi
+            workingDirectory: azuretf/simpletf
+            displayName: "Check GITHUB_TOKEN"
+            env:
+              GITHUB_TOKEN: $(githubtoken-feb)
 
-    # -----------------------------
-    # Debug directory
-    # -----------------------------
-    - script: |
-        echo "PWD:"
-        pwd
-        echo "FILES:"
-        ls -la
-      workingDirectory: azuretf/simpletf
-      displayName: "Debug directory"
+          # -----------------------------
+          # Debug directory
+          # -----------------------------
+          - script: |
+              echo "PWD:"
+              pwd
+              echo "FILES:"
+              ls -la
+            workingDirectory: azuretf/simpletf
+            displayName: "Debug directory"
     
-    # -----------------------------
-    # Terraform Init
-    # -----------------------------
-    - script: |
-        cd azuretf/simpletf
-        ./runterraform.sh init
-        #terraform init
-    #  workingDirectory: azuretf/simpletf
-      displayName: "Terraform Init"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+          # -----------------------------
+          # Terraform Init
+          # -----------------------------
+          - script: |
+              cd azuretf/simpletf
+              ./runterraform.sh init
+              #terraform init
+          #        workingDirectory: azuretf/simpletf
+            displayName: "Terraform Init"
+            env:
+              GITHUB_TOKEN: $(githubtoken-feb)
 
-    # -----------------------------
-    # Terraform Plan
-    # -----------------------------
-    - script: |
-        cd azuretf/simpletf
-        ./runterraform.sh plan
-        #terraform plan -out=tfplan
-    #  workingDirectory: azuretf/simpletf
-      displayName: "Terraform Plan"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+          # -----------------------------
+          # Terraform Plan
+          # -----------------------------
+          - script: |
+              cd azuretf/simpletf
+              ./runterraform.sh plan
+              #terraform plan -out=tfplan
+          #  workingDirectory: azuretf/simpletf
+            displayName: "Terraform Plan"
+            env:
+              GITHUB_TOKEN: $(githubtoken-feb)
 
-    # -----------------------------
-    # Terraform Apply
-    # -----------------------------
-    - script: |
-        cd azuretf/simpletf
-        ./runterraform.sh apply
-        #terraform apply -auto-approve tfplan
-    #  workingDirectory: azuretf/simpletf
-      displayName: "Terraform Apply"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+          # -----------------------------
+          # Terraform Apply
+          # -----------------------------
+          - script: |
+              cd azuretf/simpletf
+              ./runterraform.sh apply
+              #terraform apply -auto-approve tfplan
+          #  workingDirectory: azuretf/simpletf
+            displayName: "Terraform Apply"
+            env:
+              GITHUB_TOKEN: $(githubtoken-feb)
         
-    # -----------------------------
-    # Clean Terraform junk after every run
-    # -----------------------------    
-    - script: |
-        rm -rf azuretf/simpletf/.terraform
-        rm -f azuretf/simpletf/*.tfstate*
-        rm -f azuretf/simpletf/.terraform.lock.hcl
-        rm -f azuretf/simpletf/tfplan.binary
-      condition: always()
-      displayName: "Cleanup Terraform workdir"
+          # -----------------------------
+          # Clean Terraform junk after every run
+          # -----------------------------    
+          - script: |
+              rm -rf azuretf/simpletf/.terraform
+              rm -f azuretf/simpletf/*.tfstate*
+              rm -f azuretf/simpletf/.terraform.lock.hcl
+              rm -f azuretf/simpletf/tfplan.binary
+            condition: always()
+            displayName: "Cleanup Terraform workdir"
 
 # (end of file)
 ...

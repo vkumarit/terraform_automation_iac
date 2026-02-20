@@ -134,20 +134,30 @@ elif [[ "$COMMAND" == "plan" ]]; then
 
   set +e
 
-  terraform plan -no-color -detailed-exitcode -lock-timeout=5m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
-  # -detailed-exitcode:
-  #   0 → no changes
-  #   1 → error
-  #   2 → changes present
+  echo "Pre-check: verifying backend state access..."
+  terraform state pull > /dev/null 2>&1
 
-  TF_EXIT=${PIPESTATUS[0]}
-
-  set -e
+  if [[ $? -ne 0 ]]; then
+    echo "ERROR: Cannot access remote state. It may be locked or backend unreachable."
+    TF_EXIT=1
+  else
+    echo "Backend reachable. Running terraform plan..."
   
-  # If changes detected (exit 2), treat as success
-  if [[ "$TF_EXIT" -eq 2 ]]; then
+    terraform plan -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
+    # -detailed-exitcode:
+    #   0 → no changes
+    #   1 → error
+    #   2 → changes present
+
+    TF_EXIT=${PIPESTATUS[0]}
+
+    # If changes detected (exit 2), treat as success
+    if [[ "$TF_EXIT" -eq 2 ]]; then
     TF_EXIT=0
+    fi
   fi
+  
+  set -e
 
 elif [[ "$COMMAND" == "apply" ]]; then
 
