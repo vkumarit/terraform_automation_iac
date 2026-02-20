@@ -19,7 +19,7 @@ variables:
 pool:
   name: 'az-classic-pool'   # EC2 self-hosted agent
   demands:
-  - agent.name -equals terraform-agent
+  - agent.name -equals az-classic-agent
   # Use `demands` when not using environment lock `environment: "terraform-prod"` 
 
 stages:
