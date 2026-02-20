@@ -155,7 +155,7 @@ elif [[ "$COMMAND" == "plan" ]]; then
   else
     echo "Backend reachable. Running terraform plan..."
   
-    terraform plan -no-color -detailed-exitcode -lock-timeout=5m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
+    terraform plan -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
     # -detailed-exitcode:
     #   0 → no changes
     #   1 → error
@@ -175,7 +175,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
 
   set +e
 
-  terraform apply -no-color -auto-approve -lock-timeout=5m tfplan.binary 2>&1 | tee "$LOG_FILE"
+  terraform apply -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
   # -auto-approve skips confirmation
   # Uses previously generated plan file
 
