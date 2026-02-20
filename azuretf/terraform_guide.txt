@@ -651,6 +651,7 @@ Cloud      → actual state
 * Share a **safe “import day” checklist for prod**
 * Walk through a **multi-resource bulk import**
 * key vault/key visibility on dashboard - add private endpoint + firewall (portal visibility changes again there)
+* I can also help you redesign so logs go to Azure DevOps artifacts Or Azure Storage Or Log Analytics. Which removes GitHub dependency completely.
 ?????????
 -------------------------------------------------------------------------------------------------------------
 Scenario - Suppose we are doing terraform pipeline as SP not as user and we create key vault and key, then 

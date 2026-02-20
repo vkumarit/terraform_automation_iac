@@ -60,6 +60,9 @@ push_logs() {
 
   echo "Pushing logs safely..."
 
+  # Never allow logging failure to break Terraform result
+  set +e
+  
   if [[ -z "$TOKEN" ]]; then
     echo "ERROR: GITHUB_TOKEN not set"
     return 0
@@ -73,12 +76,12 @@ push_logs() {
     https://${TOKEN}@github.com/${REPO}.git "$TMP_DIR" \
     2>/dev/null || {
       git clone https://${TOKEN}@github.com/${REPO}.git "$TMP_DIR"
-      cd "$TMP_DIR" || exit 1
+      cd "$TMP_DIR" || exit 0
       git checkout -b terraform-logs
     }
 
   # Move into the cloned repo
-  cd "$TMP_DIR" || exit 1
+  cd "$TMP_DIR" || return 0
 
   mkdir -p "$TMP_DIR/runs/${COMMIT_SHA}/${COMMAND}"
 
@@ -91,11 +94,20 @@ push_logs() {
   fi
   
   git add runs/
-  git commit -m "Terraform ${COMMAND} logs for ${COMMIT_SHA}" || echo "Nothing to commit"
-  git push origin terraform-logs
+  
+  # Commit safely — don't fail if nothing to commit
+  git commit -m "Terraform ${COMMAND} logs for ${COMMIT_SHA}" >/dev/null 2>&1 || echo "Nothing to commit"
+  
+  # Push safely — ignore any errors so Terraform result is not blocked
+  git push origin terraform-logs >/dev/null 2>&1 || echo "WARNING: Failed to push logs"
 
-  cd "$ROOT_DIR" || exit 1
+  cd "$ROOT_DIR" || return 0
   rm -rf "$TMP_DIR"
+  
+  echo "Log push attempt finished (non-blocking)."
+  
+  # Restore default error behavior
+  set -e
 }
 
 
