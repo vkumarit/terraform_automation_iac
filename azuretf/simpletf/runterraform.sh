@@ -155,7 +155,7 @@ elif [[ "$COMMAND" == "plan" ]]; then
   else
     echo "Backend reachable. Running terraform plan..."
   
-    terraform plan -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
+    terraform plan -no-color -detailed-exitcode -lock-timeout=5m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
     # -detailed-exitcode:
     #   0 → no changes
     #   1 → error
