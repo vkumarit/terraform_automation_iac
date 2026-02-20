@@ -925,6 +925,159 @@ XXXXXX -----            ---------XXXXXX
 XXXXXX -----            ---------XXXXXX
 --------------------------------------------------------------------------------------------------------------
 
+============================================================
+TERRAFORM ENTERPRISE PIPELINE FIX SUMMARY
+=========================================
+
+1. Increase Terraform Lock Timeout
+
+---
+
+Problem:
+State lock errors can occur if another process is using the backend.
+
+Fix:
+Increase lock timeout from 5 minutes to 10 minutes.
+
+Update runterraform.sh:
+
+Change:
+-lock-timeout=5m
+
+To:
+-lock-timeout=10m
+
+Apply to:
+
+* terraform init
+* terraform plan
+* terraform apply
+
+============================================================
+
+2. Add Backend Pre-Check Before Plan
+
+---
+
+Problem:
+Plan fails if backend is locked or unreachable.
+
+Fix:
+Add state access check before running plan.
+
+Add inside runterraform.sh (plan section):
+
+echo "Pre-check: verifying backend state access..."
+terraform state pull > /dev/null 2>&1
+
+if [[ $? -ne 0 ]]; then
+echo "ERROR: Cannot access remote state. Backend may be locked."
+TF_EXIT=1
+else
+terraform plan 
+-no-color 
+-detailed-exitcode 
+-lock-timeout=10m 
+-out=tfplan.binary
+fi
+
+This prevents unsafe force-unlock and fails cleanly.
+
+============================================================
+
+3. Prevent Concurrent Pipelines (Enterprise Fix)
+
+---
+
+Problem:
+Two pipelines running at same time cause state lock errors.
+
+Fix:
+Use Azure DevOps Deployment Job + Environment Lock.
+
+Update YAML job type:
+
+Replace:
+
+* - job: Terraform
+
+With:
+
+* - deployment: Terraform
+
+Add environment:
+
+environment: "terraform-prod"
+
+Move pool inside deployment job:
+
+pool:
+name: 'az-classic-pool'
+
+Full structure:
+
+* - deployment: Terraform
+    environment: "terraform-prod"
+    pool:
+      name: 'az-classic-pool'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          (existing steps)
+
+============================================================
+
+4. Create Environment in Azure DevOps
+
+---
+
+Go to:
+Pipelines → Environments
+
+Create new environment:
+terraform-prod
+
+Then:
+Open environment → Security
+Grant Build Service access
+OR re-run pipeline and click "Authorize"
+
+============================================================
+
+5. Enable Exclusive Lock (Recommended)
+
+---
+
+Open:
+Pipelines → Environments → terraform-prod
+
+Go to:
+Approvals and checks
+
+Add:
+Exclusive lock
+
+Result:
+Only ONE pipeline can deploy at a time.
+Prevents state corruption.
+
+============================================================
+
+## FINAL RESULT
+
+✔ Increased lock timeout (10m)
+✔ Backend pre-check before plan
+✔ Deployment job instead of normal job
+✔ Environment created and authorized
+✔ Exclusive lock enabled
+✔ No unsafe force-unlock required
+✔ Enterprise-grade Terraform pipeline
+
+============================================================
+
+# END OF SUMMARY
+
 --------------------------------------------------------------------------------------------------------------
 Terraform SSH Key Creation and Use with VM afterwards :
 
