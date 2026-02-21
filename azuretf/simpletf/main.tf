@@ -255,7 +255,7 @@ variable "github_token" {
   description = "GitHub token for Key Vault"
   
   validation {
-    condition     = length(var.github_token) > 20
+    condition     = var.github_token == null || length(var.github_token) > 20
     error_message = "GitHub token appears invalid."
   }
 }
