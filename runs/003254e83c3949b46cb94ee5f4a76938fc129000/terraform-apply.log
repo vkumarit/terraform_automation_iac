@@ -1,0 +1,8 @@
+Acquiring state lock. This may take a few moments...
+azurerm_key_vault_secret.github_token[0]: Destroying... [id=https://prodmyappkv.vault.azure.net/secrets/githubtoken-feb/d72cf05ab79f4e64a5fc760a0768b91a]
+azurerm_key_vault_secret.github_token[0]: Still destroying... [id=https://prodmyappkv.vault.azure.net/sec...n-feb/d72cf05ab79f4e64a5fc760a0768b91a, 00m10s elapsed]
+azurerm_key_vault_secret.github_token[0]: Still destroying... [id=https://prodmyappkv.vault.azure.net/sec...n-feb/d72cf05ab79f4e64a5fc760a0768b91a, 00m20s elapsed]
+azurerm_key_vault_secret.github_token[0]: Destruction complete after 27s
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 0 added, 0 changed, 1 destroyed.
