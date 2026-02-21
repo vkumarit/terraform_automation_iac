@@ -126,9 +126,10 @@ stages:
         chmod +x logsCommit.sh
         ./logsCommit.sh
       condition: always()
+      workingDirectory: azuretf/simpletf
+      displayName: Push Terraform Logs 
       env:
         GITHUB_TOKEN: $(githubtoken-feb)
-      displayName: Push Terraform Logs 
     
     # -----------------------------
     # Clean Terraform junk after every run

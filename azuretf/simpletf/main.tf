@@ -248,7 +248,7 @@ variable "github_token" {
   type      = string
   sensitive = true
   
-  #default   = ""              
+  default   = ""              
   # empty string allows env var to populate (takes variable from environment),
   # export value as `export TF_VAR_github_token=ghp_k7pt3nlRS6xxxxZFaYjcSjJpL02CN1rCmwl`
   
