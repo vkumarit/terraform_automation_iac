@@ -152,8 +152,59 @@ else
   exit 1
 fi
 
+# ------------------------------------------
+# Create summary file for logs
+# ------------------------------------------
+LOG_ROOT="${ROOT_DIR}/.terraform-run-logs/${COMMIT_SHA}"
+
+INIT_STATUS=$(cat "${LOG_ROOT}/init.status" 2>/dev/null || echo "INIT SKIPPED")
+PLAN_STATUS=$(cat "${LOG_ROOT}/plan.status" 2>/dev/null || echo "PLAN SKIPPED")
+APPLY_STATUS=$(cat "${LOG_ROOT}/apply.status" 2>/dev/null || echo "APPLY SKIPPED")
+
+{
+  echo "========================================="
+  echo "Terraform Run Summary"
+  echo "---------------------"
+  echo "Commit : ${COMMIT_SHA}"
+  echo ""
+  echo "INIT  : ${INIT_STATUS}"
+  echo "PLAN  : ${PLAN_STATUS}"
+  echo "APPLY : ${APPLY_STATUS}"
+  echo "========================================="
+} > "${LOG_ROOT}/summary.txt"
+
+echo "Summary file created."
+
+# ------------------------------------------
+# Commit and push logs
+# ------------------------------------------
+set +e   # temporarily disable exit-on-error
+
+TMP_DIR=$(mktemp -d)
+echo "Cloning terraform-logs branch..."
+
+git clone --branch terraform-logs \
+  "https://${GITHUB_TOKEN}@github.com/${REPO}.git" \
+  "$TMP_DIR" 2>/dev/null || {
+    git clone "https://${GITHUB_TOKEN}@github.com/${REPO}.git" "$TMP_DIR"
+    cd "$TMP_DIR"
+    git checkout -b terraform-logs
+  }
+
+cd "$TMP_DIR"
+
+mkdir -p "runs/${COMMIT_SHA}"
+cp -r "${LOG_ROOT}/"* "runs/${COMMIT_SHA}/"
+
+git add runs/
+git commit -m "Terraform full run logs for ${COMMIT_SHA}" >/dev/null 2>&1 || echo "Nothing to commit"
+git push origin terraform-logs
+
+rm -rf "$TMP_DIR"
+echo "Terraform logs pushed successfully."
+
+set -e   # re-enable strict error handling
+
 exit "$TF_EXIT"
 # Exit script with terraform’s actual exit code
 # This makes Azure DevOps mark pipeline correctly
-
-
