@@ -120,6 +120,17 @@ stages:
         GITHUB_TOKEN: $(githubtoken-feb)
         
     # -----------------------------
+    # Push ALL logs in one commit
+    # -----------------------------
+    - script: |
+        chmod +x logsCommit.sh
+        ./logsCommit.sh
+      condition: always()
+      env:
+        GITHUB_TOKEN: $(githubtoken-feb)
+      displayName: Push Terraform Logs 
+    
+    # -----------------------------
     # Clean Terraform junk after every run
     # -----------------------------    
     - script: |
@@ -127,6 +138,7 @@ stages:
         rm -f azuretf/simpletf/*.tfstate*
         rm -f azuretf/simpletf/.terraform.lock.hcl
         rm -f azuretf/simpletf/tfplan.binary
+        rm -rf .terraform-run-logs
       condition: always()
       displayName: "Cleanup Terraform workdir"
 

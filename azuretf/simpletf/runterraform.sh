@@ -35,7 +35,9 @@ CURRENT_BRANCH="$(git branch --show-current || true)"
 # Gets current branch name
 # || true prevents failure if in detached HEAD state
 
-LOG_FILE="terraform-${COMMAND}.log"
+LOG_ROOT="${ROOT_DIR}/.terraform-run-logs/${COMMIT_SHA}"
+mkdir -p "$LOG_ROOT"
+LOG_FILE="${LOG_ROOT}/terraform-${COMMAND}.log"
 # Log file name per command
 # Example: terraform-init.log
 
@@ -50,71 +52,6 @@ echo "Commit: ${COMMIT_SHA}"
 echo "Branch: ${CURRENT_BRANCH:-DETACHED}"
 echo "========================================="
 # Prints useful debug info in pipeline logs
-
-# ==========================================
-# ALWAYS PUSH LOGS FUNCTION
-# ==========================================
-push_logs() {
-# This function runs automatically when script exits
-# (because of trap below)
-
-  echo "Pushing logs safely..."
-
-  # Never allow logging failure to break Terraform result
-  set +e
-  
-  if [[ -z "$TOKEN" ]]; then
-    echo "ERROR: GITHUB_TOKEN not set"
-    return 0
-  fi
-  # Prevents weird git clone failures if token is empty.
-  
-  TMP_DIR=$(mktemp -d)
-  
-  # Clone repo and ensure terraform-logs branch exists
-  git clone --branch terraform-logs \
-    https://${TOKEN}@github.com/${REPO}.git "$TMP_DIR" \
-    2>/dev/null || {
-      git clone https://${TOKEN}@github.com/${REPO}.git "$TMP_DIR"
-      cd "$TMP_DIR" || exit 0
-      git checkout -b terraform-logs
-    }
-
-  # Move into the cloned repo
-  cd "$TMP_DIR" || return 0
-
-  mkdir -p "$TMP_DIR/runs/${COMMIT_SHA}/${COMMAND}"
-
-  cp "${WORK_DIR}/${LOG_FILE}" "$TMP_DIR/runs/${COMMIT_SHA}/${COMMAND}/terraform-${COMMAND}.log"
-
-  if [[ "$TF_EXIT" -ne 0 ]]; then
-    echo "${COMMAND} FAILED" > "$TMP_DIR/runs/${COMMIT_SHA}/${COMMAND}/summary.txt"
-  else
-    echo "${COMMAND} SUCCEEDED" > "$TMP_DIR/runs/${COMMIT_SHA}/${COMMAND}/summary.txt"
-  fi
-  
-  git add runs/
-  
-  # Commit safely — don't fail if nothing to commit
-  git commit -m "Terraform ${COMMAND} logs for ${COMMIT_SHA}" >/dev/null 2>&1 || echo "Nothing to commit"
-  
-  # Push safely — ignore any errors so Terraform result is not blocked
-  git push origin terraform-logs >/dev/null 2>&1 || echo "WARNING: Failed to push logs"
-
-  cd "$ROOT_DIR" || return 0
-  rm -rf "$TMP_DIR"
-  
-  echo "Log push attempt finished (non-blocking)."
-  
-  # Restore default error behavior
-  set -e
-}
-
-
-trap push_logs EXIT
-# VERY IMPORTANT:
-# Whenever the script exits (success OR failure),
-# automatically run push_logs()
 
 # ==========================================
 # RUN TERRAFORM
@@ -139,6 +76,13 @@ if [[ "$COMMAND" == "init" ]]; then
   TF_EXIT=${PIPESTATUS[0]}
   # Capture actual terraform exit code (not tee exit code)
 
+  if [[ "$TF_EXIT" -ne 0 ]]; then
+    echo "FAILED" > "${LOG_ROOT}/init.status"
+  else
+    echo "SUCCEEDED" > "${LOG_ROOT}/init.status"
+  fi
+  # .status writing
+  
   set -e
   # Re-enable strict error mode
 
@@ -148,8 +92,9 @@ elif [[ "$COMMAND" == "plan" ]]; then
 
   echo "Pre-check: verifying backend state access..."
   terraform state pull > /dev/null 2>&1
-
   if [[ $? -ne 0 ]]; then
+  #Or 
+  #if ! terraform state pull > /dev/null 2>&1; then
     echo "ERROR: Cannot access remote state. It may be locked or backend unreachable."
     TF_EXIT=1
   else
@@ -169,6 +114,13 @@ elif [[ "$COMMAND" == "plan" ]]; then
     fi
   fi
   
+  if [[ "$TF_EXIT" -ne 0 ]]; then
+    echo "FAILED" > "${LOG_ROOT}/plan.status"
+  else
+    echo "SUCCEEDED" > "${LOG_ROOT}/plan.status"
+  fi
+  # .status writing
+  
   set -e
 
 elif [[ "$COMMAND" == "apply" ]]; then
@@ -181,10 +133,17 @@ elif [[ "$COMMAND" == "apply" ]]; then
 
   TF_EXIT=${PIPESTATUS[0]}
 
+  if [[ "$TF_EXIT" -ne 0 ]]; then
+    echo "FAILED" > "${LOG_ROOT}/apply.status"
+  else
+    echo "SUCCEEDED" > "${LOG_ROOT}/apply.status"
+  fi
+  # .status writing
+  
   set -e
 
   if [[ "$TF_EXIT" -eq 0 ]]; then
-    terraform output -json > outputs.json 2>/dev/null || true
+    terraform output -json > "${LOG_ROOT}/outputs.json" 2>/dev/null || true
   fi
   # If apply succeeded, export outputs to JSON file
 
