@@ -652,6 +652,7 @@ Cloud      → actual state
 * Walk through a **multi-resource bulk import**
 * key vault/key visibility on dashboard - add private endpoint + firewall (portal visibility changes again there)
 * I can also help you redesign so logs go to Azure DevOps artifacts Or Azure Storage Or Log Analytics. Which removes GitHub dependency completely.
+* Advanced auto-rotation using Key Vault rotation policy , Full zero-trust model with Managed Identity only , Multi-environment enterprise structure (dev/test/prod isolation)
 ?????????
 -------------------------------------------------------------------------------------------------------------
 Scenario - Suppose we are doing terraform pipeline as SP not as user and we create key vault and key, then 

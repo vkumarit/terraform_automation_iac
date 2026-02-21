@@ -248,7 +248,7 @@ variable "github_token" {
   type      = string
   sensitive = true
   
-  default   = ""              
+  default   = null              
   # empty string allows env var to populate (takes variable from environment),
   # export value as `export TF_VAR_github_token=ghp_k7pt3nlRS6xxxxZFaYjcSjJpL02CN1rCmwl`
   
@@ -261,6 +261,7 @@ variable "github_token" {
 }
 
 resource "azurerm_key_vault_secret" "github_token" {
+  count        = var.github_token != null ? 1 : 0
   name         = "githubtoken-feb"
   value        = var.github_token         # var when exported TF_VAR_github_token to EC2/VM env vars
   
@@ -269,13 +270,11 @@ resource "azurerm_key_vault_secret" "github_token" {
   
   key_vault_id = azurerm_key_vault.prodmyapp.id
   
-  #content_type = "github-pat"
-  
-  lifecycle {
-    ignore_changes = [] # Allow rotation, available value will be taken
+#  lifecycle {
+#    ignore_changes = [] # Allow rotation, available value will be taken
 #    ignore_changes = [value]  # Never update the secret after first creation, freeze secret forever
 #    prevent_destroy = true  # Allows rotation, prevents accidental deletion
-  }
+#  }
   
   depends_on   = [azurerm_key_vault.prodmyapp]
 }
