@@ -251,21 +251,21 @@ variable "github_token" {
   type      = string
   sensitive = true
   
-  default   = null              
+  default   = ""              
   # empty string allows env var to populate (takes variable from environment),
   # export value as `export TF_VAR_github_token=ghp_k7pt3nlRS6xxxxZFaYjcSjJpL02CN1rCmwl`
   
   description = "GitHub token for Key Vault"
   
   validation {
-    condition     = var.github_token == null || length(var.github_token) > 20
+    condition     = length(var.github_token) > 20
     error_message = "GitHub token appears invalid."
   }
 }
 
 resource "azurerm_key_vault_secret" "github_token" {
   #count        = var.github_token != null ? 1 : 0
-  name         = "githubtoken-feb"
+  name         = "githubtoken"
   value        = var.github_token         # var when exported TF_VAR_github_token to EC2/VM env vars
   
   #value        = var.github_token != null ? var.github_token : azurerm_key_vault_secret.github_token.value
@@ -278,11 +278,11 @@ resource "azurerm_key_vault_secret" "github_token" {
 #  lifecycle {
 #    ignore_changes = [] # Allow rotation, available value will be taken
 
-#    ignore_changes = [value]  
+    ignore_changes = [value]  
      #Never update the secret after first creation, freeze secret forever
      #Used when not managing secret rotation using terraform, az cli used for secret rotation
 
-     #prevent_destroy = true  
+    prevent_destroy = true  
      #Allows rotation, prevents accidental deletion
      #Used not managing secret rotation using terraform, az cli used for secret rotation
 #  }
