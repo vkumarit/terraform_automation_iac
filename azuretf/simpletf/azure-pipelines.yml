@@ -52,10 +52,10 @@ stages:
     # -----------------------------
     # Make runterraform.sh executable
     # -----------------------------
-    #- script: |
-    #    chmod +x runterraform.sh
-    #  workingDirectory: azuretf/simpletf
-    #  displayName: "Make runterraform.sh executable"
+    - script: |
+        chmod +x runterraform.sh
+      workingDirectory: azuretf/simpletf
+      displayName: "Make runterraform.sh executable"
     
     # -----------------------------
     # Verify GITHUB_TOKEN
@@ -70,7 +70,7 @@ stages:
       workingDirectory: azuretf/simpletf
       displayName: "Check GITHUB_TOKEN"
       #env:
-        #GITHUB_TOKEN: $(githubtoken-feb)
+        #GITHUB_TOKEN: $(githubtoken)
 
     # -----------------------------
     # Debug directory
@@ -88,50 +88,37 @@ stages:
     # -----------------------------
     - script: |
         cd azuretf/simpletf
-        #./runterraform.sh init
-        terraform init
+        ./runterraform.sh init
+        #terraform init
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
       #env:
-        #GITHUB_TOKEN: $(githubtoken-feb)
+        #GITHUB_TOKEN: $(githubtoken)
 
     # -----------------------------
     # Terraform Plan
     # -----------------------------
     - script: |
         cd azuretf/simpletf
-        #./runterraform.sh plan
-        terraform plan -out=tfplan
+        ./runterraform.sh plan
+        #terraform plan -out=tfplan
     #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
       #env:
-        #GITHUB_TOKEN: $(githubtoken-feb)
+        #GITHUB_TOKEN: $(githubtoken)
 
     # -----------------------------
     # Terraform Apply
     # -----------------------------
     - script: |
         cd azuretf/simpletf
-        #./runterraform.sh apply
-        terraform apply -auto-approve tfplan
+        ./runterraform.sh apply
+        #terraform apply -auto-approve tfplan
     #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
       #env:
-        #GITHUB_TOKEN: $(githubtoken-feb)
+        #GITHUB_TOKEN: $(githubtoken)
         
-    # -----------------------------
-    # Push ALL logs in one commit
-    # -----------------------------
-    #- script: |
-    #    cd azuretf/simpletf
-    #    chmod +x logsCommit.sh
-    #    ./logsCommit.sh
-    #  condition: always()
-    #  #workingDirectory: azuretf/simpletf
-    #  displayName: Push Terraform Logs 
-    #  env:
-    #    GITHUB_TOKEN: $(githubtoken-feb)
-    
     # -----------------------------
     # Clean Terraform junk after every run
     # -----------------------------    
