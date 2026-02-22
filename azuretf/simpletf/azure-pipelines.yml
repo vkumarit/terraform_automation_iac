@@ -52,10 +52,10 @@ stages:
     # -----------------------------
     # Make runterraform.sh executable
     # -----------------------------
-    - script: |
-        chmod +x runterraform.sh
-      workingDirectory: azuretf/simpletf
-      displayName: "Make runterraform.sh executable"
+    #- script: |
+    #    chmod +x runterraform.sh
+    #  workingDirectory: azuretf/simpletf
+    #  displayName: "Make runterraform.sh executable"
     
     # -----------------------------
     # Verify GITHUB_TOKEN
@@ -69,8 +69,8 @@ stages:
         fi
       workingDirectory: azuretf/simpletf
       displayName: "Check GITHUB_TOKEN"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+      #env:
+        #GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Debug directory
@@ -88,36 +88,36 @@ stages:
     # -----------------------------
     - script: |
         cd azuretf/simpletf
-        ./runterraform.sh init
-        #terraform init
+        #./runterraform.sh init
+        terraform init
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+      #env:
+        #GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Plan
     # -----------------------------
     - script: |
         cd azuretf/simpletf
-        ./runterraform.sh plan
-        #terraform plan -out=tfplan
+        #./runterraform.sh plan
+        terraform plan -out=tfplan
     #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+      #env:
+        #GITHUB_TOKEN: $(githubtoken-feb)
 
     # -----------------------------
     # Terraform Apply
     # -----------------------------
     - script: |
         cd azuretf/simpletf
-        ./runterraform.sh apply
-        #terraform apply -auto-approve tfplan
+        #./runterraform.sh apply
+        terraform apply -auto-approve tfplan
     #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
-      env:
-        GITHUB_TOKEN: $(githubtoken-feb)
+      #env:
+        #GITHUB_TOKEN: $(githubtoken-feb)
         
     # -----------------------------
     # Push ALL logs in one commit
