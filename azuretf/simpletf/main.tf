@@ -268,7 +268,7 @@ resource "azurerm_key_vault_secret" "github_token" {
   name         = "githubtoken-feb"
   #value        = var.github_token         # var when exported TF_VAR_github_token to EC2/VM env vars
   
-  value        = var.github_token != null ? var.github_token : azurerm_key_vault_secret.github_token.value
+  value        = var.github_token != null ? var.github_token #: azurerm_key_vault_secret.github_token.value
   
   #value        = "placeholder"             
   #Used when not managing secret rotation using terraform, az cli used for secret rotation
