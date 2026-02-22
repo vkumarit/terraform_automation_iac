@@ -264,7 +264,7 @@ variable "github_token" {
 }
 
 resource "azurerm_key_vault_secret" "github_token" {
-  count        = var.github_token != null ? 1 : 0
+  #count        = var.github_token != null ? 1 : 0
   name         = "githubtoken-feb"
   value        = var.github_token         # var when exported TF_VAR_github_token to EC2/VM env vars
   
