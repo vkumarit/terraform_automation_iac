@@ -69,8 +69,8 @@ stages:
         fi
       workingDirectory: azuretf/simpletf
       displayName: "Check GITHUB_TOKEN"
-      #env:
-        #GITHUB_TOKEN: $(githubtoken)
+      env:
+        GITHUB_TOKEN: $(githubtoken)
 
     # -----------------------------
     # Debug directory
@@ -92,8 +92,8 @@ stages:
         #terraform init
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
-      #env:
-        #GITHUB_TOKEN: $(githubtoken)
+      env:
+        GITHUB_TOKEN: $(githubtoken)
 
     # -----------------------------
     # Terraform Plan
@@ -104,8 +104,8 @@ stages:
         #terraform plan -out=tfplan
     #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
-      #env:
-        #GITHUB_TOKEN: $(githubtoken)
+      env:
+        GITHUB_TOKEN: $(githubtoken)
 
     # -----------------------------
     # Terraform Apply
@@ -116,8 +116,8 @@ stages:
         #terraform apply -auto-approve tfplan
     #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
-      #env:
-        #GITHUB_TOKEN: $(githubtoken)
+      env:
+        GITHUB_TOKEN: $(githubtoken)
         
     # -----------------------------
     # Clean Terraform junk after every run
