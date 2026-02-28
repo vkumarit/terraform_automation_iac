@@ -158,7 +158,12 @@ terraform {
     resource_group_name  = "myTFResourceGroup"
     storage_account_name = "prodmyapptfstate01"
     container_name       = "mytfstate"
+    
     key                  = "terraform.tfstate"       # folder/file name/directory inside container
+    
+    #key = "${var.environment}/terraform.tfstate"    
+    #when keeping separate statefile for each environment
+    
     #use_azuread_auth     = true                      # When want to use entra id for authentication
     #use_cli              = true  
     # use_cli uses logged-in az cli context for authentication, comment out when switching to pipeline
@@ -264,11 +269,8 @@ variable "github_token" {
 }
 
 resource "azurerm_key_vault_secret" "github_token" {
-  #count        = var.github_token != null ? 1 : 0
   name         = "githubtoken"
   #value        = var.github_token         # var when exported TF_VAR_github_token to EC2/VM env vars
-  
-  #value        = var.github_token != null ? var.github_token : azurerm_key_vault_secret.github_token.value
   
   value        = "placeholder"             
   #Used when not managing secret rotation using terraform, az cli used for secret rotation
@@ -479,7 +481,7 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
   }
 }
 
-## Subnets w/ Network Security Group
+# Subnets w/ Network Security Group
 
 # public subnet (10.0.1.0/28) 
 resource "azurerm_subnet" "pub_subnet" {
@@ -527,13 +529,13 @@ resource "azurerm_public_ip" "prodmyapp_pub_ips" {
   }
 }
 
-# Network Interface (NSG & IP + VM)
+## Network Interface (NSG & IP + VM)
 resource "azurerm_network_interface" "prodmyapp_nic" {
   name                = "prodmyapp-nic1"
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
 
-  # ip_configurations can be multiple
+  # there can be multiple ip_configuration blocks
   ip_configuration {
     name                          = "ip_config_1"
     subnet_id                     = azurerm_subnet.pub_subnet.id  #public for internet facing VMs
@@ -556,7 +558,7 @@ resource "azurerm_network_interface_security_group_association" "nic_nsg_assn" {
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
 }
 
-# SSH Key Generation (tls provider block required)
+## SSH Key Generation (tls provider block required)
 
 # Creating Key
 resource "tls_private_key" "vm_ssh" {
@@ -567,51 +569,160 @@ resource "tls_private_key" "vm_ssh" {
 # Writing for SSH purpose
 #> Write the private key to a local file with secure permissions
 resource "local_sensitive_file" "private_key_pem" {
-  filename        = pathexpand("~/.ssh/prodmyapp-vm1.pem")
+  filename        = pathexpand("~/.ssh/prodmyapp_vm1.pem")
   content         = tls_private_key.vm_ssh.private_key_pem
   file_permission = "0400"           # Owner: read only (4) Group: no access  (0) Others: no access (0)
 }
 
 #> Write the public key to a local file (standard permissions)
 resource "local_file" "public_key_openssh" {
-  filename        = pathexpand("~/.ssh/prodmyapp-vm1.pub")
+  filename        = pathexpand("~/.ssh/prodmyapp_vm1.pub")
   content         = tls_private_key.vm_ssh.public_key_openssh
   file_permission = "0644"           # Owner: read+write (6) Group: read only  (4) Others: read only (4)
 }
 
 
-# VMs - linux/windows each 
+## VMs - linux/windows each 
+
 # Define variable for VM selection
+# Scalable approach avoids repeating validation lists
+variable "environment" {
+  description = "Deployment environment"
+  type        = string
 
+  validation {
+    condition     = contains(["dev", "test", "prod"], var.environment)
+    error_message = "Environment must be dev, test, or prod."
+  }
+}
 
+variable "size_alias" {
+  description = "Logical VM size"
+  type        = string
+
+  #validation {
+  #  condition     = contains(["small", "medium", "large"], var.size_alias)
+  #  error_message = "Size must be small, medium, or large."
+  #}
+}
+
+# VM size selection
+locals {
+  vm_sizes = {
+    dev = {
+      small  = "Standard_B2s" # cpu - 2, ram - 4, storage - data-2, local-4
+      medium = "Standard_D2s_v3" # cpu - 2, ram - 8, storage - data-4/local-16
+      large  = "Standard_D4s_v3" # cpu - 4, ram - 16, storage - data-8/local-32
+    }
+    # dev - cheap / burstable allowed
+
+    test = {
+      small  = "Standard_B2s"
+      medium = "Standard_D4s_v3" 
+      large  = "Standard_D8s_v3" # cpu - 8, ram - 32, storage - data-16/local-64
+    }
+    #test - closer to prod
+
+    prod = {
+      small  = "Standard_D4s_v6" # cpu - 4, ram - 16, storage - data-12/local-N/A
+      medium = "Standard_D8s_v6" # cpu - 8, ram - 32, storage - data-24/local-16
+      large  = "Standard_D16s_v6"
+    }
+    # prod - production-grade SKUs only
+  }
+  
+  # Scalable validation derived dynamically
+  valid_sizes = keys(local.vm_sizes[var.environment])
+  
+  # terraform crash safe lookup
+  selected_vm_size = try(
+    local.vm_sizes[var.environment][var.size_alias],
+    null
+  )
+  
+  # Hard validation at runtime / clean controlled human-readable error/failure
+  _validate_size = local.selected_vm_size != null ? true :
+    error("Allowed sizes for '${var.environment}' are: ${join(", ", local.valid_sizes)}")
+
+}
+
+# For creating VM, when we can't pass environment and size_alias like in below cmd,
+# $ terraform apply -var="environment=dev" -var="size_alias=xlarge"
+# We will export them as Environment variables (TF_VAR_*), most common in pipelines. Or,
+# Use TF_VAR_environment and TF_VAR_size_alias pipeline variables in pipeline yaml file
+
+# VM image selection w/ environment
+locals {
+  vm_images = {
+    dev = {
+      publisher = "Canonical"
+      offer     = "0001-com-ubuntu-server-focal"
+      sku       = "20_04-lts"
+      version   = "latest"
+    }
+    # Dev > latest
+    
+    test = {
+      publisher = "Canonical"
+      offer     = "0001-com-ubuntu-server-focal"
+      sku       = "20_04-lts"
+      version   = "20.04.202401220"
+    }
+    # Test > pinned
+    
+    prod = {
+      publisher = "Canonical"
+      offer     = "0001-com-ubuntu-server-focal"
+      sku       = "20_04-lts"
+      version   = "20.04.202401220"
+    }
+    # Prod > pinned and controlled
+  }
+}
 
 #Linux VM
-/*
+
 resource "azurerm_linux_virtual_machine" "linux_vm" {
   name                = "linux_vm_1"
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
   #size                = "Standard_DS1_v2"
-  size                = var.vm_size ???
-  
+  size = local.selected_vm_size
   admin_username      = "adminuser"
-  network_interface_ids = [azurerm_network_interface.prodmyapp_nic.id]
-
+  
   admin_ssh_key {
     username   = "adminuser"
     public_key = tls_private_key.vm_ssh.public_key_openssh
   }
+  
+  network_interface_ids = [azurerm_network_interface.prodmyapp_nic.id]
+  encryption_at_host_enabled      = true
+  disable_password_authentication = true
 
   os_disk {
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
+  # works for test/dev
+  
+  #os_disk {
+    #name                 = "linuxvm_osdisk"
+    #caching              = "ReadWrite"
+    #storage_account_type = "Premium_LRS"
+    #disk_size_gb         = 128
+  #}
+  # works for prod
+  
+  #In production - 
+  #Premium_LRS > High performance (most common)
+  #Premium_ZRS > Zone redundant
+  #StandardSSD_LRS > Balanced cost/performance
 
   source_image_reference {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-focal"
-    sku       = "20_04-lts"
-    version   = "latest"
+    publisher = local.vm_images[var.environment].publisher
+    offer     = local.vm_images[var.environment].offer
+    sku       = local.vm_images[var.environment].sku
+    version   = local.vm_images[var.environment].version
   }
   
   # Configure specific timeouts for the VM resource operations
@@ -623,6 +734,6 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     # Read/Update timeouts remain default
   #}
 }
-*/
+
 
 # Deployment of resources in different regions using loop

@@ -14,6 +14,11 @@ variables:
 - group: az-classic-kv-var
 - name: serviceConnection
   value: 'az-classic-conn'
+- name: ENVIRONMENT
+  value: dev
+  #value: $(Build.SourceBranchName) #for environment-specific (dev/prod/test/staging) pipeline runs
+- name: SIZE_ALIAS
+  value: small
 
 
 pool:
@@ -106,6 +111,8 @@ stages:
       displayName: "Terraform Plan"
       env:
         GITHUB_TOKEN: $(githubtoken)
+        TF_VAR_environment: $(ENVIRONMENT)
+        TF_VAR_size_alias: $(SIZE_ALIAS)
 
     # -----------------------------
     # Terraform Apply
@@ -118,6 +125,8 @@ stages:
       displayName: "Terraform Apply"
       env:
         GITHUB_TOKEN: $(githubtoken)
+        TF_VAR_environment: $(ENVIRONMENT)
+        TF_VAR_size_alias: $(SIZE_ALIAS)
         
     # -----------------------------
     # Clean Terraform junk after every run
