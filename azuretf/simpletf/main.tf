@@ -641,8 +641,7 @@ locals {
   )
   
   # Hard validation at runtime / clean controlled human-readable error/failure
-  _validate_size = local.selected_vm_size != null ? true :
-    error("Allowed sizes for '${var.environment}' are: ${join(", ", local.valid_sizes)}")
+  _validate_size = local.selected_vm_size != null ? true : error("Allowed sizes for '${var.environment}' are: ${join(", ", local.valid_sizes)}")
 
 }
 
