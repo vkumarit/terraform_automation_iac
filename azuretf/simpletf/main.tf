@@ -631,17 +631,23 @@ locals {
     # prod - production-grade SKUs only
   }
   
+  /*
   # Scalable validation derived dynamically
   valid_sizes = keys(local.vm_sizes[var.environment])
-  
   # terraform crash safe lookup
   selected_vm_size = try(
     local.vm_sizes[var.environment][var.size_alias],
     null
-  )
-  
+  )  
   # Hard validation at runtime / clean controlled human-readable error/failure
   _validate_size = local.selected_vm_size != null ? true : error("Allowed sizes for '${var.environment}' are: ${join(", ", local.valid_sizes)}")
+  */
+  #Instead, we do
+  selected_vm_size = lookup(
+    local.vm_sizes[var.environment],
+    var.size_alias,
+    error("Allowed sizes for '${var.environment}' are: ${join(", ", keys(local.vm_sizes[var.environment]))}")
+  )
 
 }
 
