@@ -196,6 +196,10 @@ resource "azurerm_key_vault" "prodmyapp" {
 # Secrets as code (version controlled) - Secret rotation 
 # Update ARM_CLIENT_SECRET env var > terraform apply > Key Vault updates automatically.
 
+# Use Terraform only to create Key Vault. 
+# Immediately use Azure CLI to inject secret.
+# Avoid storing secret in state
+
 # Get current authenticated principal details automatically from 
 # data "azurerm_client_config" "current" {} , mentioned above in code
 
@@ -600,6 +604,14 @@ variable "environment" {
 variable "size_alias" {
   description = "Logical VM size"
   type        = string
+  
+  validation {
+    condition = contains(
+      keys(local.vm_sizes[var.environment]),
+      var.size_alias
+    )
+    error_message = "Invalid size_alias for selected environment."
+  }
 }
 
 # VM size selection
@@ -627,24 +639,7 @@ locals {
     # prod - production-grade SKUs only
   }
   
-  /*
-  # Scalable validation derived dynamically
-  valid_sizes = keys(local.vm_sizes[var.environment])
-  # terraform crash safe lookup
-  selected_vm_size = try(
-    local.vm_sizes[var.environment][var.size_alias],
-    null
-  )  
-  # Hard validation at runtime / clean controlled human-readable error/failure
-  _validate_size = local.selected_vm_size != null ? true : error("Allowed sizes for '${var.environment}' are: ${join(", ", local.valid_sizes)}")
-  */
-  #Instead, we do
-  selected_vm_size = lookup(
-    local.vm_sizes[var.environment],
-    var.size_alias,
-    error("Allowed sizes for '${var.environment}' are: ${join(", ", keys(local.vm_sizes[var.environment]))}")
-  )
-
+  selected_vm_size = local.vm_sizes[var.environment][var.size_alias]  
 }
 
 # For creating VM, when we can't pass environment and size_alias like in below cmd,

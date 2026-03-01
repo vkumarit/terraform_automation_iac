@@ -1674,4 +1674,8 @@ PIPELINE CODE:
 #              environmentServiceNameAzureRM: '$(serviceConnection)'
 #              commandOptions: 'tfplan'
 # -------------------------------------------------------------------------------------------------------------
-
+??? TO DOs ???
+-How to estimate VM size mathematically
+-How to design for 10k+ concurrent users
+-How to implement autoscaling in Terraform properly
+-How real enterprise teams do capacity planning
