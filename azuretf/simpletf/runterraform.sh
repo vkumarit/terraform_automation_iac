@@ -66,7 +66,7 @@ if [[ "$COMMAND" == "init" ]]; then
   # Temporarily disable exit-on-error
   # So we can capture terraform exit code manually
 
-  terraform init -parallelism=5 -no-color -lock-timeout=5m 2>&1 | tee "$LOG_FILE"
+  terraform init -no-color -lock-timeout=5m 2>&1 | tee "$LOG_FILE"
   # Run terraform init
   # -parallelism=5 > reduce memory usage
   # -no-color removes ANSI colors
