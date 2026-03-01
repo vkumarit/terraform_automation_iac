@@ -66,8 +66,9 @@ if [[ "$COMMAND" == "init" ]]; then
   # Temporarily disable exit-on-error
   # So we can capture terraform exit code manually
 
-  terraform init -no-color -lock-timeout=5m 2>&1 | tee "$LOG_FILE"
+  terraform init -parallelism=5 -no-color -lock-timeout=5m 2>&1 | tee "$LOG_FILE"
   # Run terraform init
+  # -parallelism=5 > reduce memory usage
   # -no-color removes ANSI colors
   # -lock-timeout waits up to 5 minutes for backend lock
   # 2>&1 sends stderr to stdout
@@ -100,11 +101,12 @@ elif [[ "$COMMAND" == "plan" ]]; then
   else
     echo "Backend reachable. Running terraform plan..."
   
-    terraform plan -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
+    terraform plan -parallelism=5 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
+    # -parallelism=5 > reduce memory usage
     # -detailed-exitcode:
-    #   0 → no changes
-    #   1 → error
-    #   2 → changes present
+    #   0 > no changes
+    #   1 > error
+    #   2 > changes present
 
     TF_EXIT=${PIPESTATUS[0]}
 
@@ -127,7 +129,8 @@ elif [[ "$COMMAND" == "apply" ]]; then
 
   set +e
 
-  terraform apply -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
+  terraform apply -parallelism=5 -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
+  # -parallelism=5 > reduce memory usage
   # -auto-approve skips confirmation
   # Uses previously generated plan file
 

@@ -1679,3 +1679,4 @@ PIPELINE CODE:
 -How to design for 10k+ concurrent users
 -How to implement autoscaling in Terraform properly
 -How real enterprise teams do capacity planning
+-clean up your Key Vault secret pattern to make it fully enterprise-safe without leaking anything to state.
