@@ -1427,13 +1427,22 @@ Production Deployment Checklist:
 - One-click agent bootstrap
 - Calculate the optimal parallelism for your EC2 size
 - Show how to auto-detect RAM and set parallelism dynamically
-- Provide a hardened RunTerraform.sh v3
+- 
 
 -----------------
-git branch -r
-git branch -a 
-git branch -all
+#List only local branches:
+$ git branch
+#List only remote branches:
+$ git branch -r
+#List all branches (local + remote):
+$ git branch -a 
+#Show branches with more detail (upstream and latest commit):
+$ git branch -vv
+# Go to another branch:
+$ git switch <branch-name> Or,
+$ git checkout <branch-name>
 -----------------
+
 # ------------------------------------------------------------------------------------------------------------
 # Install jq - command-line JSON processor (required for GitHub Checks)
 # -----------------------------

@@ -586,6 +586,7 @@ resource "local_file" "public_key_openssh" {
 
 # Define variable for VM selection
 # Scalable approach avoids repeating validation lists
+# Will create for dev environment & small size mentioned below in code 
 variable "environment" {
   description = "Deployment environment"
   type        = string
@@ -599,11 +600,6 @@ variable "environment" {
 variable "size_alias" {
   description = "Logical VM size"
   type        = string
-
-  #validation {
-  #  condition     = contains(["small", "medium", "large"], var.size_alias)
-  #  error_message = "Size must be small, medium, or large."
-  #}
 }
 
 # VM size selection
@@ -660,10 +656,10 @@ locals {
 locals {
   vm_images = {
     dev = {
-      publisher = "Canonical"
-      offer     = "0001-com-ubuntu-server-focal"
-      sku       = "20_04-lts"
-      version   = "latest"
+      publisher = "cognosys"
+      offer     = "centos-8-3-free"
+      sku       = "centos-8-3-free"
+      version   = "1.2019.0810"
     }
     # Dev > latest
     
@@ -701,8 +697,13 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   }
   
   network_interface_ids = [azurerm_network_interface.prodmyapp_nic.id]
+  
   encryption_at_host_enabled      = true
+  #OS disk, Data disks, Temporary disk are encrypted at the physical host level before 
+  #data is written to storage. It allows logins only via ssh -i private_key.pem adminuser@vm-ip .
+  
   disable_password_authentication = true
+  #enables login using ssh key but disables login with password using defined `admin_ssh_key` block.
 
   os_disk {
     caching              = "ReadWrite"

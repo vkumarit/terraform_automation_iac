@@ -37,3 +37,57 @@ az keyvault secret set \
   --vault-name myvault \
   --name githubtoken-feb \
   --value NEW_TOKEN
+ 
+## selection of source_image_reference 
+--------------------------------------
+#List Publishers
+az vm image list-publishers \
+  --location <region> \
+  --output table
+
+eg: az vm image list-publishers --location australiaeast --output table
+  
+#List Offers For Publisher
+az vm image list-offers \
+  --location <region> \
+  --publisher <publishers_name> \
+  --output table
+
+eg: az vm image list-offers --location australiaeast --publisher cognosys --output table
+
+#List SKUs
+az vm image list-skus \
+  --location <region> \
+  --publisher <publishers_name> \
+  --offer <publishers_name> \
+  --output table
+
+eg: 
+az vm image list-skus --location australiaeast --publisher cognosys --offer centos-8-3-free \
+  --output table
+  
+#List Versions (IMPORTANT)
+az vm image list \
+  --location <region> \
+  --publisher <publishers_name> \
+  --offer <publishers_name> \
+  --sku <chosen sku> \
+  --all \
+  --output table
+
+Example:
+az vm image list \
+  --location australiaeast \
+  --publisher cognosys \
+  --offer centos-8-3-free \
+  --sku centos-8-3-free \
+  --all \
+  --output table
+will get,
+Architecture    Offer            Publisher    Sku              Urn                                                   Version
+--------------  ---------------  -----------  ---------------  ----------------------------------------------------  -----------
+x64             centos-8-3-free  cognosys     centos-8-3-free  cognosys:centos-8-3-free:centos-8-3-free:1.2019.0810  1.2019.0810
+
+--------------------------------------
+
+
