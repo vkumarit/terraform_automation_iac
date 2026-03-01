@@ -1,0 +1,18 @@
+Acquiring state lock. This may take a few moments...
+local_file.public_key_openssh: Destroying... [id=ef769e7d437e35cfc54efad2fab95746b91649a5]
+local_sensitive_file.private_key_pem: Destroying... [id=a70b04f6f86174d4edb4e9279305475fed74d30b]
+local_file.public_key_openssh: Destruction complete after 1s
+local_sensitive_file.private_key_pem: Destruction complete after 1s
+local_sensitive_file.private_key_pem: Creating...
+local_file.public_key_openssh: Creating...
+local_sensitive_file.private_key_pem: Creation complete after 1s [id=a70b04f6f86174d4edb4e9279305475fed74d30b]
+local_file.public_key_openssh: Creation complete after 1s [id=ef769e7d437e35cfc54efad2fab95746b91649a5]
+azurerm_linux_virtual_machine.linux_vm: Creating...
+
+Error: unable to assume default computer name "computer_name" cannot contain the special characters: `\/"[]:|<>+=;,?*@&~!#$%^()_{}'` Please adjust the "name", or specify an explicit "computer_name"
+
+  with azurerm_linux_virtual_machine.linux_vm,
+  on main.tf line 684, in resource "azurerm_linux_virtual_machine" "linux_vm":
+ 684: resource "azurerm_linux_virtual_machine" "linux_vm" {
+
+Releasing state lock. This may take a few moments...
