@@ -1,0 +1,12 @@
+Acquiring state lock. This may take a few moments...
+Releasing state lock. This may take a few moments...
+
+Error: Call to unknown function
+
+  on main.tf line 645, in locals:
+ 645:     error("Allowed sizes for '${var.environment}' are: ${join(", ", keys(local.vm_sizes[var.environment]))}")
+    ├────────────────
+    │ local.vm_sizes is object with 3 attributes
+    │ var.environment is a string
+
+There is no function named "error".
