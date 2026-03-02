@@ -1,0 +1,12 @@
+Acquiring state lock. This may take a few moments...
+azurerm_linux_virtual_machine.linux_vm: Creating...
+
+Error: creating Linux Virtual Machine (Subscription: "2b2f02f7-dde2-47db-974c-47d2182721ae"
+Resource Group Name: "myTFResourceGroup"
+Virtual Machine Name: "linux_vm_01"): performing CreateOrUpdate: unexpected status 400 (400 Bad Request) with error: InvalidParameter: The property 'securityProfile.encryptionAtHost' is not valid because the 'Microsoft.Compute/EncryptionAtHost' feature is not enabled for this subscription.
+
+  with azurerm_linux_virtual_machine.linux_vm,
+  on main.tf line 686, in resource "azurerm_linux_virtual_machine" "linux_vm":
+ 686: resource "azurerm_linux_virtual_machine" "linux_vm" {
+
+Releasing state lock. This may take a few moments...
