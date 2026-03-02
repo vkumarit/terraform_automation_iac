@@ -681,8 +681,11 @@ locals {
 
 #Linux VM
 
+# Creating VM by exporting variables ENVIRONMENT dev and SIZE_ALIAS small from pipeline yaml file.
+
 resource "azurerm_linux_virtual_machine" "linux_vm" {
-  name                = "linux_vm_1"
+  name                = "linux_vm_01"   # use no underscores, special characters, spaces or use computer_name
+  computer_name       = "linuxvmdev01"
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
   #size                = "Standard_DS1_v2"

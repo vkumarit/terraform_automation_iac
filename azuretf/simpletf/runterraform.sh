@@ -68,7 +68,6 @@ if [[ "$COMMAND" == "init" ]]; then
 
   terraform init -no-color -lock-timeout=5m 2>&1 | tee "$LOG_FILE"
   # Run terraform init
-  # -parallelism=5 > reduce memory usage
   # -no-color removes ANSI colors
   # -lock-timeout waits up to 5 minutes for backend lock
   # 2>&1 sends stderr to stdout
@@ -102,7 +101,7 @@ elif [[ "$COMMAND" == "plan" ]]; then
     echo "Backend reachable. Running terraform plan..."
   
     terraform plan -parallelism=5 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
-    # -parallelism=5 > reduce memory usage
+    # -parallelism=5 (only with plan & apply) > reduce memory usage 
     # -detailed-exitcode:
     #   0 > no changes
     #   1 > error
@@ -130,7 +129,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
   set +e
 
   terraform apply -parallelism=5 -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
-  # -parallelism=5 > reduce memory usage
+  # -parallelism=5 (only with plan & apply) > reduce memory usage
   # -auto-approve skips confirmation
   # Uses previously generated plan file
 
