@@ -1,0 +1,16 @@
+Acquiring state lock. This may take a few moments...
+azurerm_disk_encryption_set.prod_des: Creating...
+azurerm_disk_encryption_set.prod_des: Still creating... [00m10s elapsed]
+azurerm_disk_encryption_set.prod_des: Still creating... [00m20s elapsed]
+azurerm_disk_encryption_set.prod_des: Creation complete after 22s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/diskEncryptionSets/prod-des]
+azurerm_linux_virtual_machine.linux_vm: Creating...
+
+Error: creating Linux Virtual Machine (Subscription: "2b2f02f7-dde2-47db-974c-47d2182721ae"
+Resource Group Name: "myTFResourceGroup"
+Virtual Machine Name: "linux_vm_01"): performing CreateOrUpdate: unexpected status 400 (400 Bad Request) with error: KeyVaultAccessForbidden: Unable to access key vault resource 'https://prodmyappkv.vault.azure.net/keys/my-storage-cmk/51e0da2d9d5a4b53bfedce7faa0471cc' to enable encryption at rest. Please grant get, wrap and unwrap key permissions to disk encryption set 'prod-des'. Please visit https://aka.ms/keyvaultaccessssecmk for more information.
+
+  with azurerm_linux_virtual_machine.linux_vm,
+  on main.tf line 709, in resource "azurerm_linux_virtual_machine" "linux_vm":
+ 709: resource "azurerm_linux_virtual_machine" "linux_vm" {
+
+Releasing state lock. This may take a few moments...
