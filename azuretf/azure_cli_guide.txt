@@ -90,4 +90,23 @@ x64             centos-8-3-free  cognosys     centos-8-3-free  cognosys:centos-8
 
 --------------------------------------
 
+# Enable `encryption_at_host_enabled` at subscription level when using it in VM creation,
+----------------------------------------------------------------------------------------
+#Check Current Status
+az feature show \
+  --namespace Microsoft.Compute \
+  --name EncryptionAtHost \
+  --query properties.state
+
+#Register Feature
+az feature register \
+  --namespace Microsoft.Compute \
+  --name EncryptionAtHost
+  
+#Refresh Compute Provider
+az provider register --namespace Microsoft.Compute
+
+#Re-run the pipeline
+
+----xxx----
 

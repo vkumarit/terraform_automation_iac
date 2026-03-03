@@ -635,7 +635,8 @@ locals {
     #test - closer to prod
 
     prod = {
-      small  = "Standard_D4s_v6" # cpu - 4, ram - 16, storage - data-12/local-N/A
+      small  = "Standard_B2s" # cpu - 2, ram - 4, storage - data-2, local-4
+      #small  = "Standard_D4s_v6" # cpu - 4, ram - 16, storage - data-12/local-N/A
       medium = "Standard_D8s_v6" # cpu - 8, ram - 32, storage - data-24/local-16
       large  = "Standard_D16s_v6"
     }
@@ -670,16 +671,38 @@ locals {
     # Test > pinned
     
     prod = {
-      publisher = "Canonical"
-      offer     = "0001-com-ubuntu-server-focal"
-      sku       = "20_04-lts"
-      version   = "20.04.202401220"
+      publisher = "cognosys"
+      offer     = "centos-8-3-free"
+      sku       = "centos-8-3-free"
+      version   = "1.2019.0810"
     }
     # Prod > pinned and controlled
   }
 }
 
 #Linux VM
+
+# Azure Disk Encryption (CMK-backed disks) (Prod VMs) 
+# (Optional to `encryption_at_host_enabled` at needs to be enabled at subscription level)
+# 1) Create a Disk Encryption Set and Link it to Key Vault CMK
+resource "azurerm_disk_encryption_set" "prod_des" {
+  name                = "prod-des"
+  resource_group_name = azurerm_resource_group.prodmyapp.name
+  location            = azurerm_resource_group.prodmyapp.location
+  key_vault_key_id    = azurerm_key_vault_key.prodmyapp_key.id
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+# and,
+
+# 2) Attach it to the VM OS disk
+#os_disk {
+#  ...
+#  disk_encryption_set_id = azurerm_disk_encryption_set.prod_des.id
+#}
 
 # Creating VM by exporting variables ENVIRONMENT dev and SIZE_ALIAS small from pipeline yaml file.
 
@@ -699,7 +722,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   
   network_interface_ids = [azurerm_network_interface.prodmyapp_nic.id]
   
-  encryption_at_host_enabled      = true
+  #encryption_at_host_enabled      = true
   #OS disk, Data disks, Temporary disk are encrypted at the physical host level before 
   #data is written to storage. It allows logins only via ssh -i private_key.pem adminuser@vm-ip .
   
@@ -709,6 +732,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   os_disk {
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
+    disk_encryption_set_id = azurerm_disk_encryption_set.prod_des.id
   }
   # works for test/dev
   

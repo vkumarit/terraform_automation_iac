@@ -15,7 +15,7 @@ variables:
 - name: serviceConnection
   value: 'az-classic-conn'
 - name: ENVIRONMENT
-  value: dev
+  value: prod
   #value: $(Build.SourceBranchName) #for environment-specific (dev/prod/test/staging) pipeline runs
 - name: SIZE_ALIAS
   value: small
