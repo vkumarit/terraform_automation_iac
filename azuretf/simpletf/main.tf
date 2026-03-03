@@ -776,6 +776,13 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     version   = local.vm_images[var.environment].version
   }
   
+  plan {
+    name      = local.vm_images[var.environment].sku
+    product   = local.vm_images[var.environment].offer
+    publisher = local.vm_images[var.environment].publisher
+  }
+  # `plan{},` block is for third party images other than canonical and microsoft.
+  
   # Configure specific timeouts for the VM resource operations
   #timeouts {
     # Increase create timeout from default (often 30 mins) to 45 mins
