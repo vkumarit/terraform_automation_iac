@@ -704,6 +704,26 @@ resource "azurerm_disk_encryption_set" "prod_des" {
 #  disk_encryption_set_id = azurerm_disk_encryption_set.prod_des.id
 #}
 
+#Disk Encryption Set identity must be granted an RBAC role on the Key Vault.
+resource "azurerm_role_assignment" "des_kv_crypto" {
+  scope                = azurerm_key_vault.prodmyapp.id
+  role_definition_name = "Key Vault Crypto Service Encryption User"
+  principal_id         = azurerm_disk_encryption_set.prod_des.identity[0].principal_id
+}
+
+#FLOW: Create Key Vault (RBAC enabled) > Create Key > Create Disk Encryption Set (SystemAssigned identity) >
+# > Assign DES identity to KV role > Wait 60 seconds > Create VM using DES
+
+#Flow looks like, VM > OS Disk > Disk Encryption Set > Key Vault Key
+# So needs `Key Vault Crypto Service Encryption User` role
+
+resource "time_sleep" "wait_for_des_rbac" {
+  create_duration = "60s"
+  depends_on = [
+    azurerm_role_assignment.des_kv_crypto
+  ]
+}
+
 # Creating VM by exporting variables ENVIRONMENT dev and SIZE_ALIAS small from pipeline yaml file.
 
 resource "azurerm_linux_virtual_machine" "linux_vm" {
@@ -764,6 +784,10 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   #  delete = "30m"
     # Read/Update timeouts remain default
   #}
+  
+  depends_on = [
+    azurerm_role_assignment.des_kv_crypto
+  ]
 }
 
 
