@@ -1,0 +1,10 @@
+Acquiring state lock. This may take a few moments...
+azurerm_linux_virtual_machine.linux_vm: Creating...
+
+Error: A resource with the ID "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/linux_vm_01" already exists - to be managed via Terraform this resource needs to be imported into the State. Please see the resource documentation for "azurerm_linux_virtual_machine" for more information.
+
+  with azurerm_linux_virtual_machine.linux_vm,
+  on main.tf line 729, in resource "azurerm_linux_virtual_machine" "linux_vm":
+ 729: resource "azurerm_linux_virtual_machine" "linux_vm" {
+
+Releasing state lock. This may take a few moments...
