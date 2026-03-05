@@ -1,0 +1,33 @@
+
+Initializing the backend...
+Terraform encountered problems during initialisation, including problems
+with the configuration, described below.
+
+The Terraform configuration must be valid before initialization so that
+Terraform can determine which modules and providers need to be installed.
+
+Error: Unsupported argument
+
+  on main.tf line 168, in terraform:
+ 168:     use_cli              = false  
+
+An argument named "use_cli" is not expected here. Did you mean "use_msi"?
+
+
+Error: Invalid reference in variable validation
+
+  on main.tf line 613, in variable "size_alias":
+ 613:       keys(local.vm_sizes[var.environment]),
+
+The condition for variable "size_alias" can only refer to the variable
+itself, using var.size_alias.
+
+
+Error: Invalid reference in variable validation
+
+  on main.tf line 613, in variable "size_alias":
+ 613:       keys(local.vm_sizes[var.environment]),
+
+The condition for variable "size_alias" can only refer to the variable
+itself, using var.size_alias.
+
