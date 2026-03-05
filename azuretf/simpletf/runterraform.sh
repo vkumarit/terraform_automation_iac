@@ -216,6 +216,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
     terraform output -json > "${LOG_ROOT}/outputs.json" 2>/dev/null || true
   fi
   # If apply succeeded, export outputs to JSON file
+fi
 
 # ------------------------------------------
 # Create summary file for logs
