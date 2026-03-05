@@ -1,0 +1,34 @@
+
+Initializing the backend...
+Terraform encountered problems during initialisation, including problems
+with the configuration, described below.
+
+The Terraform configuration must be valid before initialization so that
+Terraform can determine which modules and providers need to be installed.
+
+Error: Error building ARM Config: Authenticating using the Azure CLI is only supported as a User (not a Service Principal).
+
+To authenticate to Azure using a Service Principal, you can use the separate 'Authenticate using a Service Principal'
+auth method - instructions for which can be found here: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_client_secret
+
+Alternatively you can authenticate using the Azure CLI by using a User Account.
+
+
+
+Error: Invalid reference in variable validation
+
+  on main.tf line 613, in variable "size_alias":
+ 613:       keys(local.vm_sizes[var.environment]),
+
+The condition for variable "size_alias" can only refer to the variable
+itself, using var.size_alias.
+
+
+Error: Invalid reference in variable validation
+
+  on main.tf line 613, in variable "size_alias":
+ 613:       keys(local.vm_sizes[var.environment]),
+
+The condition for variable "size_alias" can only refer to the variable
+itself, using var.size_alias.
+
