@@ -793,7 +793,8 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   #}
   
   depends_on = [
-    azurerm_role_assignment.des_kv_crypto
+    azurerm_role_assignment.des_kv_crypto,
+    time_sleep.wait_for_des_rbac
   ]
 }
 

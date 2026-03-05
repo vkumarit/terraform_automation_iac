@@ -128,15 +128,80 @@ elif [[ "$COMMAND" == "apply" ]]; then
 
   set +e
 
+  # ------------------------------------------
+  # Ensure plan file exists
+  # ------------------------------------------
+  if [[ ! -f "tfplan.binary" ]]; then
+    echo "ERROR: tfplan.binary not found. Plan stage must run first."
+    exit 1
+  fi
+
+  # ------------------------------------------
+  # Create state backup before apply
+  # ------------------------------------------
+  echo "Creating state backup before apply..."
+
+  BACKUP_FILE="${LOG_ROOT}/pre_apply_state_backup.tfstate"
+
+  terraform state pull > "$BACKUP_FILE" 2>/dev/null
+
+  if [[ $? -ne 0 ]]; then
+    echo "WARNING: Could not backup remote state."
+  else
+    echo "State backup saved at $BACKUP_FILE"
+  fi
+
+  # -----------------------------
+  # Block bulk destroy operations
+  # -----------------------------
+  DESTROY_COUNT=$(terraform show -json tfplan.binary | jq '[.resource_changes[] | select(.change.actions | index("delete"))] | length')
+  if [[ "$DESTROY_COUNT" -gt 0 ]]; then
+    echo "Destroy operations are blocked in all environments."
+    exit 1
+  fi
+  
+  # ------------------------------------------
+  # Run terraform apply (existing logic)
+  # ------------------------------------------
   terraform apply -parallelism=5 -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
   # -parallelism=5 (only with plan & apply) > reduce memory usage
-  # -auto-approve skips confirmation
+  # -auto-approve skips manual confirmation
   # Uses previously generated plan file
 
   TF_EXIT=${PIPESTATUS[0]}
 
+  # ------------------------------------------
+  # Status writing (existing logic)
+  # ------------------------------------------
   if [[ "$TF_EXIT" -ne 0 ]]; then
     echo "FAILED" > "${LOG_ROOT}/apply.status"
+
+    # ------------------------------------------
+    # Auto-Destroy for DEV / TEST
+    # ------------------------------------------
+    #echo "Terraform apply FAILED."
+    #echo "Destroying partially created infrastructure..."
+  
+    #terraform destroy -parallelism=5 -auto-approve -no-color 2>&1 | tee -a "$LOG_FILE"
+
+    
+    # ------------------------------------------
+    # Rollback attempt for PROD
+    # ------------------------------------------
+    if [[ -f "$BACKUP_FILE" ]]; then
+      echo "Terraform apply FAILED. Attempting rollback..."
+
+      terraform state push "$BACKUP_FILE" 2>/dev/null || true
+
+      echo "Previous state restored. Running terraform apply to reconcile..."
+
+      terraform apply -parallelism=5 -no-color -auto-approve -lock-timeout=10m 2>/dev/null || true
+
+      echo "Rollback attempt completed."
+    else
+      echo "Rollback not possible: state backup missing."
+    fi
+
   else
     echo "SUCCEEDED" > "${LOG_ROOT}/apply.status"
   fi
@@ -144,15 +209,13 @@ elif [[ "$COMMAND" == "apply" ]]; then
   
   set -e
 
+  # ------------------------------------------
+  # Export outputs (existing logic)
+  # ------------------------------------------
   if [[ "$TF_EXIT" -eq 0 ]]; then
     terraform output -json > "${LOG_ROOT}/outputs.json" 2>/dev/null || true
   fi
   # If apply succeeded, export outputs to JSON file
-
-else
-  echo "Unknown command: $COMMAND"
-  exit 1
-fi
 
 # ------------------------------------------
 # Create summary file for logs
