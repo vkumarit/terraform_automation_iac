@@ -164,8 +164,8 @@ terraform {
     #key = "${var.environment}/terraform.tfstate"    
     #when keeping separate statefile for each environment
     
-    #use_azuread_auth     = true                      # When want to use entra id for authentication
-    #use_cli              = true  
+    use_azuread_auth     = false                      # When want to use entra id for authentication
+    use_cli              = false  
     # use_cli uses logged-in az cli context for authentication, comment out when switching to pipeline
   }
 }
