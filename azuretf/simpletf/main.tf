@@ -608,13 +608,13 @@ variable "size_alias" {
   description = "Logical VM size"
   type        = string
   
-  validation {
-    condition = contains(
-      keys(local.vm_sizes[var.environment]),
-      var.size_alias
-    )
-    error_message = "Invalid size_alias for selected environment."
-  }
+  #validation {
+  #  condition = contains(
+  #    keys(local.vm_sizes[var.environment]),
+  #    var.size_alias
+  #  )
+  #  error_message = "Invalid size_alias for selected environment."
+  #}
 }
 
 # VM size selection
@@ -643,7 +643,25 @@ locals {
     # prod - production-grade SKUs only
   }
   
+  # validation helper
+  valid_size_alias = contains(
+    keys(local.vm_sizes[var.environment]),
+    var.size_alias
+  )
+  
+  # final selected VM size
   selected_vm_size = local.vm_sizes[var.environment][var.size_alias]  
+}
+
+# Validation Resource (to help validate size)
+resource "null_resource" "validate_vm_size" {
+
+  lifecycle {
+    precondition {
+      condition     = local.valid_size_alias
+      error_message = "Invalid size_alias '${var.size_alias}' for environment '${var.environment}'."
+    }
+  }
 }
 
 # For creating VM, when we can't pass environment and size_alias like in below cmd,
