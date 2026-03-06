@@ -98,6 +98,10 @@ stages:
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
       env:
+        ARM_CLIENT_ID: $(sp-client-id)
+        ARM_CLIENT_SECRET: $(sp-client-secret)
+        ARM_TENANT_ID: $(sp-tenant-id)
+        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
         GITHUB_TOKEN: $(githubtoken)
 
     # -----------------------------
@@ -110,6 +114,10 @@ stages:
     #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
       env:
+        ARM_CLIENT_ID: $(sp-client-id)
+        ARM_CLIENT_SECRET: $(sp-client-secret)
+        ARM_TENANT_ID: $(sp-tenant-id)
+        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
         GITHUB_TOKEN: $(githubtoken)
         TF_VAR_environment: $(ENVIRONMENT)
         TF_VAR_size_alias: $(SIZE_ALIAS)
@@ -124,6 +132,10 @@ stages:
     #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
       env:
+        ARM_CLIENT_ID: $(sp-client-id)
+        ARM_CLIENT_SECRET: $(sp-client-secret)
+        ARM_TENANT_ID: $(sp-tenant-id)
+        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
         GITHUB_TOKEN: $(githubtoken)
         TF_VAR_environment: $(ENVIRONMENT)
         TF_VAR_size_alias: $(SIZE_ALIAS)

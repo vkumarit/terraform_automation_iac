@@ -451,6 +451,47 @@ $ terraform force-unlock 7d0f5123-6d43-3eac-6acb-352879a60005
 
 ----End-Error-handling----
 
+----situation-handling----
+
+Initially, did use_cli=true in tf file, az login SP and exported ARM_SUBSCRIPTION_ID on ec2 az-agent.
+Terraform backend initialized > we ran `terraform init` > Terraform created the backend and 
+stored metadata in `.terraform/`. This includes:
+*backend config cache, 
+*provider configuration,
+*resolved authentication context
+Because of this cache, Terraform did not fully re-evaluate authentication every run.
+
+So, our pipeline also used same
+*CLI context from the agent
+*exported ARM_SUBSCRIPTION_ID
+*use_cli sometimes commented
+Because the backend was already initialized, Terraform kept using the previously resolved auth method.
+So it continued working.
+
+Now, when we ran `terraform init -reconfigure`. Terraform did this:
+*delete backend cache
+*reload backend config
+*reinitialize providers
+*re-evaluate authentication
+at this point, the AzureRM provider 4.x authentication rules were applied fresh.
+
+And, When pipeline ran `terraform init`, provider logic roughly became:
+1. Check ARM_* environment variables
+2. Check Managed Identity
+3. Check Azure CLI
+But:
+*only ARM_SUBSCRIPTION_ID existed on ec2 env
+*CLI login was Service Principal
+So the provider rejected it and produced `Authenticating using the Azure CLI is only supported as a User`.
+
+Now when it comes to pipeline, configure yaml to export the AzureRM environment variables: 
+
+and keep provider simple as:
+
+provider "azurerm" {
+  features {}
+}
+
 -------------------------------------------------------------------------------------------------------------
 How to use `terraform import` in both **Azure** and **AWS** contexts, either from a **CI/CD pipeline** or **locally**. 
 

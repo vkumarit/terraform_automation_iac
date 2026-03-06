@@ -1,6 +1,6 @@
 
 
-Login to azure using Azure CLI:
+Service Principal Login to azure using Azure CLI:
 $ az login --service-principal --username <-subscription id-> --password <-p. a. token-> --tenant <-tenant id->
 
 Use command to find available names for storage account:
