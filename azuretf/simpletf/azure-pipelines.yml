@@ -57,10 +57,10 @@ stages:
     # -----------------------------
     # Make runterraform.sh executable
     # -----------------------------
-    - script: |
-        chmod +x runterraform.sh
-      workingDirectory: azuretf/simpletf
-      displayName: "Make runterraform.sh executable"
+    #- script: |
+    #    chmod +x runterraform.sh
+    #  workingDirectory: azuretf/simpletf
+    #  displayName: "Make runterraform.sh executable"
     
     # -----------------------------
     # Verify GITHUB_TOKEN
@@ -111,9 +111,9 @@ stages:
     # Terraform Init
     # -----------------------------
     - script: |
-        cd azuretf/simpletf
-        ./runterraform.sh init
-        #terraform init
+        #cd azuretf/simpletf
+        #./runterraform.sh init
+        terraform init
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
       env:
@@ -127,9 +127,9 @@ stages:
     # Terraform Plan
     # -----------------------------
     - script: |
-        cd azuretf/simpletf
-        ./runterraform.sh plan
-        #terraform plan -out=tfplan
+        #cd azuretf/simpletf
+        #./runterraform.sh plan
+        terraform plan -out=tfplan
     #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
       env:
@@ -145,9 +145,9 @@ stages:
     # Terraform Apply
     # -----------------------------
     - script: |
-        cd azuretf/simpletf
-        ./runterraform.sh apply
-        #terraform apply -auto-approve tfplan
+        #cd azuretf/simpletf
+        #./runterraform.sh apply
+        terraform apply -auto-approve tfplan
     #  workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
       env:
