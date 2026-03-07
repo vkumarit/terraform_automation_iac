@@ -111,7 +111,7 @@ stages:
     # Terraform Init
     # -----------------------------
     - script: |
-        #cd azuretf/simpletf
+        cd azuretf/simpletf
         #./runterraform.sh init
         terraform init
       #workingDirectory: azuretf/simpletf
@@ -127,7 +127,7 @@ stages:
     # Terraform Plan
     # -----------------------------
     - script: |
-        #cd azuretf/simpletf
+        cd azuretf/simpletf
         #./runterraform.sh plan
         terraform plan -out=tfplan
     #  workingDirectory: azuretf/simpletf
@@ -145,7 +145,7 @@ stages:
     # Terraform Apply
     # -----------------------------
     - script: |
-        #cd azuretf/simpletf
+        cd azuretf/simpletf
         #./runterraform.sh apply
         terraform apply -auto-approve tfplan
     #  workingDirectory: azuretf/simpletf
