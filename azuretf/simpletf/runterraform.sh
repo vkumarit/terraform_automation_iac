@@ -66,7 +66,7 @@ if [[ "$COMMAND" == "init" ]]; then
   # Temporarily disable exit-on-error
   # So we can capture terraform exit code manually
 
-  terraform init -no-color -lock-timeout=5m 2>&1 | tee "$LOG_FILE"
+  terraform init -reconfigure -no-color -lock-timeout=5m 2>&1 | tee "$LOG_FILE"
   # Run terraform init
   # -no-color removes ANSI colors
   # -lock-timeout waits up to 5 minutes for backend lock

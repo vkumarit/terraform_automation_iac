@@ -97,7 +97,6 @@ stages:
         echo "DEBUG: ARM_TENANT_ID present: ${ARM_TENANT_ID:+yes}"
         echo "DEBUG: ARM_SUBSCRIPTION_ID present: ${ARM_SUBSCRIPTION_ID:+yes}"
         terraform version
-        terraform providers
       workingDirectory: azuretf/simpletf
       displayName: "Debug Terraform Environment"
       env:
