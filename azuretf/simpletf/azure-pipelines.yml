@@ -52,7 +52,7 @@ stages:
     # -----------------------------
     - task: TerraformInstaller@0
       inputs:
-        terraformVersion: '1.6.6' #  for prod and 'latest' for dev/test/staging
+        terraformVersion: '1.14.6' #  for prod and 'latest' for dev/test/staging
 
     # -----------------------------
     # Make runterraform.sh executable
@@ -65,17 +65,17 @@ stages:
     # -----------------------------
     # Verify GITHUB_TOKEN
     # -----------------------------
-    - script: |
-        echo "---- DEBUG GITHUB_TOKEN ----"
-        if [[ -z "${GITHUB_TOKEN:-}" ]]; then
-          echo "GITHUB_TOKEN is empty!"
-        else
-          echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
-        fi
-      workingDirectory: azuretf/simpletf
-      displayName: "Check GITHUB_TOKEN"
-      env:
-        GITHUB_TOKEN: $(githubtoken)
+    #- script: |
+    #    echo "---- DEBUG GITHUB_TOKEN ----"
+    #    if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+    #      echo "GITHUB_TOKEN is empty!"
+    #    else
+    #      echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
+    #    fi
+    #  workingDirectory: azuretf/simpletf
+    #  displayName: "Check GITHUB_TOKEN"
+    #  env:
+    #    GITHUB_TOKEN: $(githubtoken)
 
     # -----------------------------
     # Debug directory
@@ -89,21 +89,23 @@ stages:
       displayName: "Debug directory"
     
     # -----------------------------
-    # Debug secret injection
+    # Debug Secret Injection
     # -----------------------------
     - script: |
         echo "DEBUG: ARM_CLIENT_ID length: ${#ARM_CLIENT_ID}"
         echo "DEBUG: ARM_CLIENT_SECRET length: ${#ARM_CLIENT_SECRET}"
         echo "DEBUG: ARM_TENANT_ID present: ${ARM_TENANT_ID:+yes}"
         echo "DEBUG: ARM_SUBSCRIPTION_ID present: ${ARM_SUBSCRIPTION_ID:+yes}"
+        echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"#
         terraform version
       workingDirectory: azuretf/simpletf
-      displayName: "Debug Terraform Environment"
+      displayName: "Debug Terraform Environment variables"
       env:
         ARM_CLIENT_ID: $(sp-client-id)
         ARM_CLIENT_SECRET: $(sp-client-secret)
         ARM_TENANT_ID: $(sp-tenant-id)
-        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)    
+        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+        GITHUB_TOKEN: $(githubtoken)        
     
     # -----------------------------
     # Terraform Init
