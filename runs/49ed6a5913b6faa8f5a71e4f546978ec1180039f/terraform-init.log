@@ -1,0 +1,6 @@
+
+Initializing the backend...
+
+Error: Error building ARM Config: obtain subscription(2b2f02f7-dde2-47db-974c-47d2182721ae) from Azure CLI: parsing json result from the Azure CLI: waiting for the Azure CLI: exit status 1: ERROR: Please run 'az login' to setup account.
+
+
