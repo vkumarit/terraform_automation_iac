@@ -89,6 +89,24 @@ stages:
       displayName: "Debug directory"
     
     # -----------------------------
+    # Debug secret injection
+    # -----------------------------
+    - script: |
+        echo "DEBUG: ARM_CLIENT_ID length: ${#ARM_CLIENT_ID}"
+        echo "DEBUG: ARM_CLIENT_SECRET length: ${#ARM_CLIENT_SECRET}"
+        echo "DEBUG: ARM_TENANT_ID present: ${ARM_TENANT_ID:+yes}"
+        echo "DEBUG: ARM_SUBSCRIPTION_ID present: ${ARM_SUBSCRIPTION_ID:+yes}"
+        terraform version
+        terraform providers
+      workingDirectory: azuretf/simpletf
+      displayName: "Debug Terraform Environment"
+      env:
+        ARM_CLIENT_ID: $(sp-client-id)
+        ARM_CLIENT_SECRET: $(sp-client-secret)
+        ARM_TENANT_ID: $(sp-tenant-id)
+        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)    
+    
+    # -----------------------------
     # Terraform Init
     # -----------------------------
     - script: |
