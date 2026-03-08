@@ -14,7 +14,7 @@ COMMAND="${1:-}"
 # First argument passed to script (init|plan|apply)
 # ${1:-} means: use $1, or empty if not provided
 
-TOKEN="${GITHUB_TOKEN:-}"
+#TOKEN="${GITHUB_TOKEN:-}"
 # Reads GitHub token from environment variable
 # If not set, becomes empty
 
@@ -137,12 +137,15 @@ elif [[ "$COMMAND" == "apply" ]]; then
   fi
 
   # ------------------------------------------
-  # Create state backup before apply
+  # Create state backup before apply DON"T PUSH TFSTATE TO REPO KEEP ON VM
   # ------------------------------------------
   echo "Creating state backup before apply..."
 
-  BACKUP_FILE="${LOG_ROOT}/pre_apply_state_backup.tfstate"
+  STATE_BACKUP_DIR="/var/terraform-state-backups"
+  mkdir -p "$STATE_BACKUP_DIR"
 
+  BACKUP_FILE="${STATE_BACKUP_DIR}/${COMMIT_SHA}_pre_apply_backup.tfstate"
+  
   terraform state pull > "$BACKUP_FILE" 2>/dev/null
 
   if [[ $? -ne 0 ]]; then
@@ -154,7 +157,8 @@ elif [[ "$COMMAND" == "apply" ]]; then
   # -----------------------------
   # Block bulk destroy operations
   # -----------------------------
-  DESTROY_COUNT=$(terraform show -json tfplan.binary | jq '[.resource_changes[] | select(.change.actions | index("delete"))] | length')
+  DESTROY_COUNT=$(terraform show -json tfplan.binary | jq '[.resource_changes[] | select(.change.actions[] == "delete")] | length')
+  
   if [[ "$DESTROY_COUNT" -gt 0 ]]; then
     echo "Destroy operations are blocked in all environments."
     exit 1
@@ -184,26 +188,36 @@ elif [[ "$COMMAND" == "apply" ]]; then
   
     #terraform destroy -parallelism=5 -auto-approve -no-color 2>&1 | tee -a "$LOG_FILE"
 
-    
     # ------------------------------------------
     # Rollback attempt for PROD
     # ------------------------------------------
     if [[ -f "$BACKUP_FILE" ]]; then
-      echo "Terraform apply FAILED. Attempting rollback..."
+      echo "Terraform apply FAILED. Attempting state rollback..."
 
-      terraform state push "$BACKUP_FILE" 2>/dev/null || true
+      if ! terraform state push "$BACKUP_FILE" >/dev/null 2>&1; then
+        echo "WARNING: State rollback failed."
+      else
+        echo "State rollback completed."
+      fi
 
       echo "Previous state restored. Running terraform apply to reconcile..."
 
       terraform apply -parallelism=5 -no-color -auto-approve -lock-timeout=10m 2>/dev/null || true
 
       echo "Rollback attempt completed."
+      
+      rm -f "$BACKUP_FILE"
     else
       echo "Rollback not possible: state backup missing."
     fi
 
   else
     echo "SUCCEEDED" > "${LOG_ROOT}/apply.status"
+
+    if [[ -f "$BACKUP_FILE" ]]; then
+      rm -f "$BACKUP_FILE"
+      echo "State backup removed after successful apply."
+    fi
   fi
   # .status writing
   
@@ -260,14 +274,40 @@ git clone --branch terraform-logs \
 cd "$TMP_DIR"
 
 mkdir -p "runs/${COMMIT_SHA}"
-cp -r "${LOG_ROOT}/"* "runs/${COMMIT_SHA}/"
+
+# --------------------------------------------------
+# Copy logs but NEVER copy terraform state files
+# --------------------------------------------------
+rsync -av \
+  --exclude="*.tfstate" \
+  --exclude="*.tfstate.backup" \
+  --exclude="*.tfplan*" \
+  --exclude=".terraform*" \
+  "${LOG_ROOT}/" "runs/${COMMIT_SHA}/"
+
+# Extra protection in case tfstate tfplan still there
+find runs/ -type f -name "*.tfstate*" -delete
+find runs/ -type f -name "*.tfplan*" -delete
 
 git add runs/
+
 git commit -m "Terraform full run logs for ${COMMIT_SHA}" >/dev/null 2>&1 || echo "Nothing to commit"
+
 git push origin terraform-logs
 
 rm -rf "$TMP_DIR"
+
 echo "Terraform logs pushed successfully."
+
+# --------------------------------------------------
+# FINAL SAFETY CLEANUP
+# If backup state still exists (unexpected case),
+# remove it so secrets never remain on the agent
+# --------------------------------------------------
+if [[ -n "${BACKUP_FILE:-}" && -f "${BACKUP_FILE}" ]]; then
+  rm -f "$BACKUP_FILE"
+  echo "Final cleanup: removed temporary Terraform state backup."
+fi
 
 set -e   # re-enable strict error handling
 
