@@ -5,5 +5,5 @@ Commit : a9bf04ea85581984d76cbe3dbe53619cdb146994
 
 INIT  : SUCCEEDED
 PLAN  : SUCCEEDED
-APPLY : APPLY SKIPPED
+APPLY : SUCCEEDED
 =========================================
