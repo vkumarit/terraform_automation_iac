@@ -141,7 +141,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
   # ------------------------------------------
   echo "Creating state backup before apply..."
 
-  STATE_BACKUP_DIR="/var/terraform-state-backups"
+  STATE_BACKUP_DIR="/tmp/terraform-state-backups"
   mkdir -p "$STATE_BACKUP_DIR"
 
   BACKUP_FILE="${STATE_BACKUP_DIR}/${COMMIT_SHA}_pre_apply_backup.tfstate"
