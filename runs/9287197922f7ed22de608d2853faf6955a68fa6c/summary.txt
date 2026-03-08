@@ -5,5 +5,5 @@ Commit : 9287197922f7ed22de608d2853faf6955a68fa6c
 
 INIT  : SUCCEEDED
 PLAN  : SUCCEEDED
-APPLY : APPLY SKIPPED
+APPLY : SUCCEEDED
 =========================================
