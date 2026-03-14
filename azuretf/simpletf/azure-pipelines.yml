@@ -82,7 +82,7 @@ stages:
 
           echo "jq installed successfully: $(jq --version)"
         fi
-        displayName: "Ensure jq is installed"
+      displayName: "Ensure jq is installed"
       
     # -----------------------------
     # Debug directory
