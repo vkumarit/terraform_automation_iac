@@ -967,6 +967,70 @@ XXXXXX -----            ---------XXXXXX
 
 XXXXXX -----            ---------XXXXXX
 --------------------------------------------------------------------------------------------------------------
+# When terraform step apply fails inbetween, ends-up creating broken infra and fails
+1. Backup current Terraform state
+   terraform state pull > backup.tfstate
+
+2. terraform apply
+   ├─ Success:
+   │     └─ Delete backup.tfstate
+   └─ Failure:
+         ├─ Log failure
+         ├─ Run terraform refresh-only
+         │     # Updates tfstate with partially created resources
+         ├─ Terraform plan
+         │     # Detects configuration problems (e.g., OS provisioning)
+         ├─ Decide:
+         │     ├─ If retryable → retry apply
+         │     └─ If config change needed → fix code
+         └─ Optional targeted destroy:
+               terraform destroy -target=<partially-created-resource>
+--- 
+Key Features - 
+*State backup: Always safe, so you can rollback if needed.
+*Refresh-only: Makes Terraform aware of existing resources without touching them.
+*Retry logic: You can retry apply if temporary issues caused failure.
+*Preconditions + lifecycle (optional): Can prevent misconfigured resources from being left in Azure.
+*Targeted destroy: Only deletes resources that were partially created in that run.
+
+The idea is:
+Define a precondition on the resource that checks a key property (like VM provisioning state).
+If the precondition fails, Terraform fails the plan.
+Use create_before_destroy so that next apply will destroy & recreate the resource safely.
+This ensures VM is recreated if provisioning fails, without touching other resources.
+
+--
+lifecycle {
+    create_before_destroy = true
+    prevent_destroy       = false
+  }
+
+  # 🚨 precondition ensures VM is healthy
+  dynamic "precondition" {
+    for_each = var.enable_vm_health_check ? [1] : []
+    content {
+      condition     = can(azurerm_linux_virtual_machine.linux_vm.provisioning_state) && azurerm_linux_virtual_machine.linux_vm.provisioning_state == "Succeeded"
+      error_message = "VM provisioning failed! Resource will be recreated on next apply."
+    }
+  }
+==
+
+How This Works -
+1) During terraform apply:
+  -If VM is partially created and provisioning_state != "Succeeded":
+    *Precondition fails plan.
+    *Pipeline shows a clear error: VM provisioning failed! Resource will be recreated on next apply.
+2) On the next apply:
+  -Terraform sees the VM exists in state (after refresh), but precondition fails again.
+  -With create_before_destroy = true, Terraform recreates VM safely:
+    *New VM is created
+    *Old (broken) VM is destroyed
+3) No Azure CLI, tags, or manual imports needed.
+
+
+--------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------
 
 ============================================================
 TERRAFORM ENTERPRISE PIPELINE FIX SUMMARY
