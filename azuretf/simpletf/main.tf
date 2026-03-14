@@ -764,7 +764,7 @@ resource "time_sleep" "wait_for_des_rbac" {
 }
 
 # Creating VM by exporting variables ENVIRONMENT dev and SIZE_ALIAS small from pipeline yaml file.
-/*
+
 resource "azurerm_linux_virtual_machine" "linux_vm" {
   name                = "linux_vm_01"   # use no underscores, special characters, spaces or use computer_name
   computer_name       = "linuxvmdev01"
@@ -822,6 +822,20 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   }
   # `plan{},` block is for third party images other than canonical and microsoft.
   
+  lifecycle {
+    create_before_destroy = true
+    prevent_destroy       = false
+  }
+  
+  # Precondition ensures VM is healthy
+  dynamic "precondition" {
+    for_each = var.enable_vm_health_check ? [1] : []
+    content {
+      condition     = can(azurerm_linux_virtual_machine.linux_vm.provisioning_state) && azurerm_linux_virtual_machine.linux_vm.provisioning_state == "Succeeded"
+      error_message = "VM provisioning failed! Resource will be recreated on next apply."
+    }
+  }
+  
   # Configure specific timeouts for the VM resource operations
   #timeouts {
     # Increase create timeout from default (often 30 mins) to 45 mins
@@ -836,6 +850,6 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     time_sleep.wait_for_des_rbac
   ]
 }
-*/
+
 
 # Deployment of resources in different regions using loop
