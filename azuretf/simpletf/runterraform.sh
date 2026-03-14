@@ -100,7 +100,7 @@ elif [[ "$COMMAND" == "plan" ]]; then
   else
     echo "Backend reachable. Running terraform plan..."
   
-    terraform plan -parallelism=5 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
+    terraform plan -input=false -parallelism=5 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
     # -parallelism=5 (only with plan & apply) > reduce memory usage 
     # -detailed-exitcode:
     #   0 > no changes
@@ -136,24 +136,6 @@ elif [[ "$COMMAND" == "apply" ]]; then
     exit 1
   fi
 
-  # ------------------------------------------
-  # Create state backup before apply DON"T PUSH TFSTATE TO REPO KEEP ON VM
-  # ------------------------------------------
-  echo "Creating state backup before apply..."
-
-  STATE_BACKUP_DIR="/tmp/terraform-state-backups"
-  mkdir -p "$STATE_BACKUP_DIR"
-
-  BACKUP_FILE="${STATE_BACKUP_DIR}/${COMMIT_SHA}_pre_apply_backup.tfstate"
-  
-  terraform state pull > "$BACKUP_FILE" 2>/dev/null
-
-  if [[ $? -ne 0 ]]; then
-    echo "WARNING: Could not backup remote state."
-  else
-    echo "State backup saved at $BACKUP_FILE"
-  fi
-
   # -----------------------------
   # Block bulk destroy operations
   # -----------------------------
@@ -167,7 +149,8 @@ elif [[ "$COMMAND" == "apply" ]]; then
   # ------------------------------------------
   # Run terraform apply (existing logic)
   # ------------------------------------------
-  terraform apply -parallelism=5 -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
+  terraform apply -input=false -parallelism=5 -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
+  # -input=false 
   # -parallelism=5 (only with plan & apply) > reduce memory usage
   # -auto-approve skips manual confirmation
   # Uses previously generated plan file
@@ -187,39 +170,35 @@ elif [[ "$COMMAND" == "apply" ]]; then
     #echo "Destroying partially created infrastructure..."
   
     #terraform destroy -parallelism=5 -auto-approve -no-color 2>&1 | tee -a "$LOG_FILE"
+  
+    echo "Terraform apply failed." | tee -a "$LOG_FILE"
+    echo "Detecting failed Terraform resource..." | tee -a "$LOG_FILE"
 
-    # ------------------------------------------
-    # Rollback attempt for PROD
-    # ------------------------------------------
-    if [[ -f "$BACKUP_FILE" ]]; then
-      echo "Terraform apply FAILED. Attempting state rollback..."
+    FAILED_RESOURCE=$(grep -E "Error: .*" "$LOG_FILE" | tail -1)
+    FAILED_ADDRESS=$(grep -E "^with " "$LOG_FILE" | tail -1 | sed -E 's/with ([^ ]+).*/\1/')
 
-      if ! terraform state push "$BACKUP_FILE" >/dev/null 2>&1; then
-        echo "WARNING: State rollback failed."
-      else
-        echo "State rollback completed."
-      fi
-
-      echo "Previous state restored. Running terraform apply to reconcile..."
-
-      terraform apply -parallelism=5 -no-color -auto-approve -lock-timeout=10m 2>/dev/null || true
-
-      echo "Rollback attempt completed."
-      
-      rm -f "$BACKUP_FILE"
-    else
-      echo "Rollback not possible: state backup missing."
+    if [[ -n "$FAILED_ADDRESS" ]]; then
+      echo "=====================================" | tee -a "$LOG_FILE"
+      echo "Failed Terraform Resource:" | tee -a "$LOG_FILE"
+      echo "Resource Address : $FAILED_ADDRESS" | tee -a "$LOG_FILE"
+      echo "Error Message    : $FAILED_RESOURCE" | tee -a "$LOG_FILE"
+      echo "=====================================" | tee -a "$LOG_FILE"
     fi
+    
+    echo "===== Terraform Recovery Phase ====="
+    echo "Synchronizing Terraform state with Azure..."
+   
+    # Only read the real infrastructure and update the state file with -refresh-only.
+    # Do NOT create, modify, or destroy infrastructure.
+    terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color 2>&1 | tee -a "$LOG_FILE" || true
 
+    echo "Running reconciliation plan..."
+    terraform plan -input=false -parallelism=5 -no-color -lock-timeout=10m 2>&1 | tee -a "$LOG_FILE"
+
+    echo "Apply failed. Decide manually if configuration fix is needed or retry is safe."
   else
     echo "SUCCEEDED" > "${LOG_ROOT}/apply.status"
-
-    if [[ -f "$BACKUP_FILE" ]]; then
-      rm -f "$BACKUP_FILE"
-      echo "State backup removed after successful apply."
-    fi
   fi
-  # .status writing
   
   set -e
 
@@ -299,15 +278,7 @@ rm -rf "$TMP_DIR"
 
 echo "Terraform logs pushed successfully."
 
-# --------------------------------------------------
-# FINAL SAFETY CLEANUP
-# If backup state still exists (unexpected case),
-# remove it so secrets never remain on the agent
-# --------------------------------------------------
-if [[ -n "${BACKUP_FILE:-}" && -f "${BACKUP_FILE}" ]]; then
-  rm -f "$BACKUP_FILE"
-  echo "Final cleanup: removed temporary Terraform state backup."
-fi
+
 
 set -e   # re-enable strict error handling
 
