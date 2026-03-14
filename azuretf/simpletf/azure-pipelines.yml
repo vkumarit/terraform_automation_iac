@@ -63,20 +63,27 @@ stages:
       displayName: "Make runterraform.sh executable"
     
     # -----------------------------
-    # Verify GITHUB_TOKEN
+    # Ensure jq is installed
     # -----------------------------
-    #- script: |
-    #    echo "---- DEBUG GITHUB_TOKEN ----"
-    #    if [[ -z "${GITHUB_TOKEN:-}" ]]; then
-    #      echo "GITHUB_TOKEN is empty!"
-    #    else
-    #      echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
-    #    fi
-    #  workingDirectory: azuretf/simpletf
-    #  displayName: "Check GITHUB_TOKEN"
-    #  env:
-    #    GITHUB_TOKEN: $(githubtoken)
+    - script: |
+        echo "Checking jq installation..."
 
+        if command -v jq >/dev/null 2>&1; then
+          echo "jq already installed: $(jq --version)"
+        else
+          echo "jq not found. Installing jq..."
+
+          if command -v yum >/dev/null 2>&1; then
+            sudo yum install -y jq
+          else
+            echo "ERROR: Unsupported package manager. Install jq manually."
+            exit 1
+          fi
+
+          echo "jq installed successfully: $(jq --version)"
+        fi
+        displayName: "Ensure jq is installed"
+      
     # -----------------------------
     # Debug directory
     # -----------------------------
@@ -130,7 +137,7 @@ stages:
         cd azuretf/simpletf
         ./runterraform.sh plan
         #terraform plan -out=tfplan
-    #  workingDirectory: azuretf/simpletf
+      #workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
       env:
         ARM_CLIENT_ID: $(sp-client-id)
@@ -148,7 +155,7 @@ stages:
         cd azuretf/simpletf
         ./runterraform.sh apply
         #terraform apply -auto-approve tfplan
-    #  workingDirectory: azuretf/simpletf
+      #workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
       env:
         ARM_CLIENT_ID: $(sp-client-id)
