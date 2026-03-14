@@ -1,0 +1,18 @@
+Acquiring state lock. This may take a few moments...
+Releasing state lock. This may take a few moments...
+
+Error: Unsupported block type
+
+  on main.tf line 831, in resource "azurerm_linux_virtual_machine" "linux_vm":
+ 831:   dynamic "precondition" {
+
+Blocks of type "precondition" are not expected here.
+
+Error: Reference to undeclared input variable
+
+  on main.tf line 832, in resource "azurerm_linux_virtual_machine" "linux_vm":
+ 832:     for_each = var.enable_vm_health_check ? [1] : []
+
+An input variable with the name "enable_vm_health_check" has not been
+declared. This variable can be declared with a variable
+"enable_vm_health_check" {} block.
