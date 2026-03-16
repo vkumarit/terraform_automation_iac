@@ -44,9 +44,9 @@ LOG_FILE="${LOG_ROOT}/terraform-${COMMAND}.log"
 # Use pipeline run ID to delete orphaned resources,
 # if terraform crashed after creating resources but not recorded by state before crash.
 RUN_ID="${RUN_ID:-}"
-# Verify env var
-if [[ -z "$RUN_ID" ]]; then
-  echo "ERROR: RUN_ID environment variable not set"
+# Verify 
+if [[ "$COMMAND" != "init" && -z "$RUN_ID" ]]; then
+  echo "ERROR: RUN_ID environment variable not set (required for plan/apply)"
   exit 1
 fi
 
