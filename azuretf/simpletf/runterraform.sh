@@ -41,6 +41,15 @@ LOG_FILE="${LOG_ROOT}/terraform-${COMMAND}.log"
 # Log file name per command
 # Example: terraform-init.log
 
+# Use pipeline run ID to delete orphaned resources,
+# if terraform crashed after creating resources but not recorded by state before crash.
+RUN_ID="${RUN_ID:-}"
+# Verify env var
+if [[ -z "$RUN_ID" ]]; then
+  echo "ERROR: RUN_ID environment variable not set"
+  exit 1
+fi
+
 WORK_DIR="$(pwd)"
 # Capture original working directory.
 TF_EXIT=0
@@ -147,7 +156,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
   fi
   
   # ------------------------------------------
-  # Run terraform apply (existing logic)
+  # Run terraform apply 
   # ------------------------------------------
   terraform apply -input=false -parallelism=5 -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
   # -input=false 
@@ -158,11 +167,11 @@ elif [[ "$COMMAND" == "apply" ]]; then
   TF_EXIT=${PIPESTATUS[0]}
 
   # ------------------------------------------
-  # Status writing (existing logic)
+  # Status writing 
   # ------------------------------------------
   if [[ "$TF_EXIT" -ne 0 ]]; then
     echo "FAILED" > "${LOG_ROOT}/apply.status"
-
+    
     # ------------------------------------------
     # Auto-Destroy for DEV / TEST
     # ------------------------------------------
@@ -170,40 +179,108 @@ elif [[ "$COMMAND" == "apply" ]]; then
     #echo "Destroying partially created infrastructure..."
   
     #terraform destroy -parallelism=5 -auto-approve -no-color 2>&1 | tee -a "$LOG_FILE"
-  
+
     echo "Terraform apply failed." | tee -a "$LOG_FILE"
-    echo "Detecting failed Terraform resource..." | tee -a "$LOG_FILE"
+    echo "===== Terraform Recovery Phase =====" | tee -a "$LOG_FILE"
 
-    FAILED_RESOURCE=$(grep -E "Error: .*" "$LOG_FILE" | tail -1)
-    FAILED_ADDRESS=$(grep -E "^with " "$LOG_FILE" | tail -1 | sed -E 's/with ([^ ]+).*/\1/')
-
-    if [[ -n "$FAILED_ADDRESS" ]]; then
-      echo "=====================================" | tee -a "$LOG_FILE"
-      echo "Failed Terraform Resource:" | tee -a "$LOG_FILE"
-      echo "Resource Address : $FAILED_ADDRESS" | tee -a "$LOG_FILE"
-      echo "Error Message    : $FAILED_RESOURCE" | tee -a "$LOG_FILE"
-      echo "=====================================" | tee -a "$LOG_FILE"
-    fi
-    
-    echo "===== Terraform Recovery Phase ====="
     echo "Synchronizing Terraform state with Azure..."
-   
+    
     # Only read the real infrastructure and update the state file with -refresh-only.
     # Do NOT create, modify, or destroy infrastructure.
     terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color 2>&1 | tee -a "$LOG_FILE" || true
 
-    echo "Running reconciliation plan..."
-    terraform plan -input=false -parallelism=5 -no-color -lock-timeout=10m 2>&1 | tee -a "$LOG_FILE"
+    # ------------------------------------------
+    # Auto-detect and clean partially created resources
+    # ------------------------------------------
+    echo "Detecting partially created/broken resources..."
+    
+    PLAN_OUT="tfplan.recovery"
+    terraform plan -input=false -parallelism=5 -lock-timeout=10m -no-color -out="$PLAN_OUT" -detailed-exitcode || true
+    terraform show -json "$PLAN_OUT" > tfplan.recovery.json
 
-    echo "Apply failed. Decide manually if configuration fix is needed or retry is safe."
+    BROKEN_RESOURCES=$(jq -r '
+      .resource_changes[]
+      | select(.change.actions == ["create"])
+      | select(
+          (.change.after.provisioning_state? != "Succeeded")
+          or (.change.after? == null)
+        )
+      | .address
+    ' tfplan.recovery.json)
+
+    if [[ -n "$BROKEN_RESOURCES" ]]; then
+        COUNT=$(printf '%s\n' "$BROKEN_RESOURCES" | sed '/^$/d' | wc -l)
+        echo "Broken resources detected: $COUNT"
+        
+        echo "Detected partially created/broken resources:"
+        printf '%s\n' "$BROKEN_RESOURCES"
+
+        for res in $BROKEN_RESOURCES; do
+            echo "Destroying $res in Azure..."
+            terraform destroy -target="$res" -auto-approve -parallelism=5 -lock-timeout=10m -no-color || true
+
+            echo "Removing $res from Terraform state..."
+            terraform state rm "$res" || true
+        done
+    else
+        echo "No broken resources detected. Recovery complete."
+    fi
+
+    echo "Scanning Azure for orphan resources created during this pipeline run..."
+
+    # --------------------------------------------------
+    # OPTION 1: Azure CLI resource listing
+    # --------------------------------------------------
+    #ORPHAN_IDS=$(az resource list \
+    #  --tag terraform_run="$RUN_ID" \
+    #  --query "[].id" -o tsv 2>/dev/null || true)
+
+    # --------------------------------------------------
+    # OPTION 2: Azure Resource Graph (faster for large environments)
+    # --------------------------------------------------
+    ORPHAN_IDS=$(az graph query -q "
+    Resources
+    | where resourceGroup == 'myTFResourceGroup'
+    | where tags.terraform_run == '$RUN_ID'
+    | project id
+    " --query "data[].id" -o tsv 2>/dev/null || true)
+    # " | where resourceGroup == 'myTFResourceGroup' " - scoped orphaned resources scan search to RG,
+    # instead of entire subscription.
+
+    if [[ -n "$ORPHAN_IDS" ]]; then
+        echo "Orphan Azure resources detected:"
+        printf '%s\n' "$ORPHAN_IDS"
+
+        echo "Building Terraform state resource ID list..."
+
+        STATE_IDS=$(terraform state list | while read r; do
+          terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty'
+        done)
+        
+        for id in $ORPHAN_IDS; do
+            
+            if echo "$STATE_IDS" | grep -q "$id"; then
+                echo "Skipping managed resource: $id"
+                continue
+            fi
+            
+            echo "Deleting orphan resource: $id"
+            az resource delete --ids "$id" || true
+        done
+    else
+        echo "No orphan Azure resources found."
+    fi
+    
+    echo "Recovery finished. Pipeline ready for next run after code/config fix."
+
   else
     echo "SUCCEEDED" > "${LOG_ROOT}/apply.status"
   fi
-  
-  set -e
+
+  set -e 
 
   # ------------------------------------------
-  # Export outputs (existing logic)
+  # Export outputs 
   # ------------------------------------------
   if [[ "$TF_EXIT" -eq 0 ]]; then
     terraform output -json > "${LOG_ROOT}/outputs.json" 2>/dev/null || true
