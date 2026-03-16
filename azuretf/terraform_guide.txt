@@ -967,66 +967,800 @@ XXXXXX -----            ---------XXXXXX
 
 XXXXXX -----            ---------XXXXXX
 --------------------------------------------------------------------------------------------------------------
-# When terraform step apply fails inbetween, ends-up creating broken infra and fails
-1. Backup current Terraform state
-   terraform state pull > backup.tfstate
 
-2. terraform apply
-   ├─ Success:
-   │     └─ Delete backup.tfstate
-   └─ Failure:
-         ├─ Log failure
-         ├─ Run terraform refresh-only
-         │     # Updates tfstate with partially created resources
-         ├─ Terraform plan
-         │     # Detects configuration problems (e.g., OS provisioning)
-         ├─ Decide:
-         │     ├─ If retryable → retry apply
-         │     └─ If config change needed → fix code
-         └─ Optional targeted destroy:
-               terraform destroy -target=<partially-created-resource>
---- 
-Key Features - 
-*State backup: Always safe, so you can rollback if needed.
-*Refresh-only: Makes Terraform aware of existing resources without touching them.
-*Retry logic: You can retry apply if temporary issues caused failure.
-*Preconditions + lifecycle (optional): Can prevent misconfigured resources from being left in Azure.
-*Targeted destroy: Only deletes resources that were partially created in that run.
+---
 
-The idea is:
-Define a precondition on the resource that checks a key property (like VM provisioning state).
-If the precondition fails, Terraform fails the plan.
-Use create_before_destroy so that next apply will destroy & recreate the resource safely.
-This ensures VM is recreated if provisioning fails, without touching other resources.
+Terraform Pipeline Failure Recovery Architecture / Terraform Failure-Resilient Deployment Pipeline
+==================================================================================================
+Overview
 
---
-lifecycle {
-    create_before_destroy = true
-    prevent_destroy       = false
-  }
+This Terraform pipeline is designed to ensure reliable infrastructure provisioning even when a Terraform apply operation fails. The pipeline includes mechanisms to detect and clean partially created Terraform resources, resources created in Azure but not recorded in Terraform state, and broken infrastructure caused by failed provisioning.
 
-  # 🚨 precondition ensures VM is healthy
-  dynamic "precondition" {
-    for_each = var.enable_vm_health_check ? [1] : []
-    content {
-      condition     = can(azurerm_linux_virtual_machine.linux_vm.provisioning_state) && azurerm_linux_virtual_machine.linux_vm.provisioning_state == "Succeeded"
-      error_message = "VM provisioning failed! Resource will be recreated on next apply."
-    }
-  }
-==
+The main goal is to ensure that every pipeline run produces deterministic infrastructure based on Terraform code, without requiring manual cleanup.
 
-How This Works -
-1) During terraform apply:
-  -If VM is partially created and provisioning_state != "Succeeded":
-    *Precondition fails plan.
-    *Pipeline shows a clear error: VM provisioning failed! Resource will be recreated on next apply.
-2) On the next apply:
-  -Terraform sees the VM exists in state (after refresh), but precondition fails again.
-  -With create_before_destroy = true, Terraform recreates VM safely:
-    *New VM is created
-    *Old (broken) VM is destroyed
-3) No Azure CLI, tags, or manual imports needed.
+---
 
+High Level Pipeline Flow
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Terraform Init
+↓
+Terraform Plan
+↓
+Terraform Apply
+      │
+      ├─ SUCCESS → Pipeline ends
+      │
+      └─ FAILURE
+            ↓
+      terraform apply -refresh-only
+            ↓
+      detect partially created Terraform resources
+            ↓
+      destroy broken resources + remove from Terraform state
+            ↓
+      scan Azure for orphan resources (tag: terraform_run)
+            ↓
+      delete orphan resources
+            ↓
+      pipeline ends
+            ↓
+      next pipeline run recreates infrastructure cleanly
+---
+Goal
+----
+
+Ensure Terraform deployments remain deterministic and self-healing even when
+a `terraform apply` fails.
+
+The pipeline automatically:
+
+• Detects partially created resources
+• Synchronizes Terraform state with Azure infrastructure
+• Cleans broken infrastructure
+• Detects Azure orphan resources
+• Deletes unmanaged resources
+• Ensures the next pipeline run starts from a clean environment
+
+
+--------------------------------------------------------------------
+
+Normal Deployment Flow
+----------------------
+
+Step 1 – Terraform Init
+-----------------------
+
+Terraform initialization prepares the working directory for Terraform operations.
+
+Responsibilities of `terraform init`:
+
+• Download required provider plugins
+• Initialize backend configuration
+• Configure remote state storage
+• Download Terraform modules
+• Prepare the working directory
+
+Example command:
+
+terraform init -reconfigure -lock-timeout=5m
+
+What happens internally:
+
+1. Terraform reads backend configuration.
+2. It connects to remote state storage.
+3. Provider plugins (such as AzureRM) are downloaded.
+4. Required modules are downloaded.
+5. Terraform prepares the working directory.
+
+Result:
+
+Terraform is ready to communicate with Azure and the remote state backend.
+
+
+--------------------------------------------------------------------
+
+Step 2 – Terraform Plan
+-----------------------
+
+Terraform plan determines what infrastructure changes are required.
+
+Responsibilities:
+
+• Compare Terraform configuration with Terraform state
+• Compare Terraform state with real Azure infrastructure
+• Determine required resource changes
+
+Example command:
+
+terraform plan \
+-input=false \
+-parallelism=5 \
+-lock-timeout=10m \
+-no-color \
+-out=tfplan.binary
+
+Terraform compares three things:
+
+1. Terraform configuration (your .tf files)
+2. Terraform state (stored in backend)
+3. Actual Azure infrastructure
+
+Plan results:
+
+Exit code 0 → No changes  
+Exit code 2 → Changes detected  
+Exit code 1 → Error
+
+The plan is saved as a binary file:
+
+tfplan.binary
+
+Purpose of saving plan:
+
+Ensures the exact reviewed plan is executed during apply.
+
+
+--------------------------------------------------------------------
+
+Step 3 – Terraform Apply
+------------------------
+
+Terraform apply executes the plan generated in the previous step.
+
+Example command:
+
+terraform apply \
+-input=false \
+-auto-approve \
+-parallelism=5 \
+-lock-timeout=10m \
+tfplan.binary
+
+Terraform performs:
+
+• Resource creation
+• Resource modification
+• Resource deletion (if needed)
+• Dependency graph execution
+• Terraform state updates
+
+If everything succeeds:
+
+• Terraform state is updated
+• Azure infrastructure matches Terraform configuration
+• Pipeline ends successfully
+
+
+--------------------------------------------------------------------
+
+Failure Scenario
+----------------
+
+Failures can occur during the apply stage.
+
+Common causes:
+
+• Marketplace image terms not accepted
+• VM provisioning failures
+• Azure quota limits
+• Insufficient permissions
+• Azure API failures
+• Network interruptions
+• Provider crashes
+
+Example failure scenario:
+
+1. Network interface created
+2. Disk created
+3. Virtual machine created
+4. OS provisioning fails
+5. Terraform apply stops
+
+Result:
+
+Partially created infrastructure remains in Azure.
+
+
+--------------------------------------------------------------------
+
+Failure Recovery Flow
+---------------------
+
+If `terraform apply` fails, the pipeline enters recovery mode.
+
+
+--------------------------------------------------------------------
+
+Step 4 – Refresh Terraform State
+--------------------------------
+
+After a failure the pipeline runs:
+
+terraform apply \
+-refresh-only \
+-auto-approve \
+-lock-timeout=10m
+
+Purpose:
+
+Synchronize Terraform state with the real Azure infrastructure.
+
+Important behavior:
+
+• Does NOT create resources
+• Does NOT destroy resources
+• Only updates Terraform state
+
+What this fixes:
+
+If Terraform created resources before failure but never recorded them in state,
+refresh-only detects them and updates the state file.
+
+
+--------------------------------------------------------------------
+
+Step 5 – Generate Recovery Plan
+-------------------------------
+
+Purpose:
+
+Detect partially created or broken Terraform resources.
+
+Commands:
+
+terraform plan \
+-input=false \
+-parallelism=5 \
+-lock-timeout=10m \
+-out=tfplan.recovery
+
+terraform show -json tfplan.recovery > tfplan.recovery.json
+
+The JSON output is analyzed to detect broken resources.
+
+
+Indicators of broken resources:
+
+• Resource scheduled for creation again
+• Incomplete provisioning state
+• Missing attributes
+• Provider failure during creation
+
+
+These resources are considered partially created Terraform resources.
+
+
+--------------------------------------------------------------------
+
+Step 6 – Destroy Broken Terraform Resources
+-------------------------------------------
+
+Broken resources must be removed so Terraform can recreate them correctly.
+
+Destroy resource in Azure:
+
+terraform destroy \
+-target=<resource_address> \
+-auto-approve \
+-parallelism=5
+
+Example:
+
+terraform destroy -target=azurerm_linux_virtual_machine.vm
+
+
+Purpose:
+
+Remove partially created infrastructure from Azure.
+
+
+--------------------------------------------------------------------
+
+Step 7 – Remove Broken Resources From Terraform State
+-----------------------------------------------------
+
+Remove failed resources from Terraform state.
+
+Command:
+
+terraform state rm <resource_address>
+
+Example:
+
+terraform state rm azurerm_linux_virtual_machine.vm
+
+Result:
+
+Terraform will treat the resource as new during the next run.
+
+
+--------------------------------------------------------------------
+
+Step 8 – Detect Azure Orphan Resources
+--------------------------------------
+
+Sometimes Azure resources exist but Terraform never records them in state.
+
+Possible causes:
+
+• Terraform provider crash
+• Network interruption
+• State update failure
+• Pipeline crash
+• Terraform process killed
+
+These resources are called orphan resources.
+
+
+To detect them, all Terraform resources are tagged with a pipeline run identifier.
+
+Example tag:
+
+terraform_run = <pipeline_run_id>
+
+Example:
+
+terraform_run = 4521
+
+
+Azure Resource Graph query detects resources with this tag.
+
+Command:
+
+az graph query -q "
+Resources
+| where tags.terraform_run == '<run_id>'
+| project id
+" --query "data[].id" -o tsv
+
+
+This query returns all resources created during the failed run.
+
+
+--------------------------------------------------------------------
+
+Step 9 – Delete Orphan Azure Resources
+--------------------------------------
+
+If a resource:
+
+• Has the terraform_run tag
+• Does not exist in Terraform state
+
+Then it is considered orphan infrastructure.
+
+Delete command:
+
+az resource delete --ids <resource_id>
+
+Example:
+
+az resource delete --ids \
+/subscriptions/xxxx/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1
+
+
+Purpose:
+
+Ensure no unmanaged infrastructure remains in Azure.
+
+
+--------------------------------------------------------------------
+
+Step 10 – Pipeline Ends After Cleanup
+-------------------------------------
+
+After cleanup completes:
+
+• Terraform state becomes consistent
+• Azure infrastructure is cleaned
+• Broken resources removed
+• Orphan resources deleted
+
+The pipeline stops.
+
+Automatic retry is avoided because failures may require
+code changes or configuration fixes.
+
+
+--------------------------------------------------------------------
+
+Step 11 – Next Pipeline Run
+---------------------------
+
+After fixing configuration issues or external problems,
+the pipeline runs again.
+
+Execution flow:
+
+terraform init -reconfigure
+
+terraform plan -out=tfplan.binary
+
+terraform apply tfplan.binary
+
+
+Since broken and orphan resources were removed earlier,
+Terraform detects missing infrastructure and recreates it cleanly.
+
+
+--------------------------------------------------------------------
+
+Key Design Principles
+---------------------
+
+Deterministic Infrastructure
+
+Every pipeline run must produce the same infrastructure
+from the Terraform code.
+
+Manual infrastructure changes are not trusted.
+
+
+Automatic Cleanup
+
+Partially created resources can break dependency graphs.
+Automated cleanup prevents cascading failures.
+
+
+Accurate Terraform State
+
+Terraform state must always match the real infrastructure.
+State inconsistencies must be repaired before the next run.
+
+
+No Unmanaged Infrastructure
+
+Azure resources must never remain unmanaged.
+Tag-based detection ensures cleanup.
+
+
+--------------------------------------------------------------------
+
+Advantages of This Architecture
+-------------------------------
+
+Reliable infrastructure provisioning
+
+Even if provisioning fails, the system cleans itself
+before the next run.
+
+
+Automated recovery
+
+Most failures are handled automatically
+without manual intervention.
+
+
+Drift prevention
+
+Azure infrastructure always matches Terraform configuration.
+
+
+Safe CI/CD infrastructure deployment
+
+The pipeline becomes resilient to common Terraform failures.
+
+
+--------------------------------------------------------------------
+
+Summary
+-------
+
+This pipeline implements a failure-resilient Terraform deployment workflow.
+
+Key capabilities:
+
+• Detect partially created Terraform resources
+• Synchronize Terraform state with Azure infrastructure
+• Remove broken infrastructure
+• Detect orphan Azure resources
+• Delete unmanaged resources
+• Ensure clean deployments on next run
+
+
+By combining Terraform state reconciliation with Azure
+resource scanning, the pipeline guarantees that every
+deployment begins from a clean and consistent
+infrastructure state.
+
+---------------------------------------------------------------------------------------------------------------
+---
+
+Terraform Failure Classes and How the Pipeline Handles Them
+
+Goal
+
+Terraform deployments can fail in multiple ways. A robust CI/CD pipeline must detect each failure type and recover automatically where possible.
+
+This document describes six common Terraform failure scenarios and the recovery mechanism implemented in the pipeline.
+
+---
+
+Failure Type 1 – Terraform Apply Failure Before Resource Creation
+
+Example causes:
+
+Invalid Terraform configuration
+Syntax errors
+Provider validation failure
+Invalid resource parameters
+
+Example:
+
+Invalid VM size
+Invalid subnet reference
+Wrong variable value
+
+What happens:
+
+Terraform stops before creating any infrastructure.
+
+Infrastructure state:
+
+No Azure resources created
+Terraform state remains unchanged
+
+Pipeline behavior:
+
+Terraform apply fails
+Pipeline exits
+No recovery steps needed
+
+Next run:
+
+Fix configuration and run pipeline again.
+
+---
+
+Failure Type 2 – Partial Resource Creation
+
+Example scenario:
+
+Terraform creates some resources but fails before finishing.
+
+Example:
+
+NIC created
+Disk created
+VM created
+OS provisioning fails
+
+Infrastructure state:
+
+Some resources exist in Azure
+Terraform state may contain incomplete data
+
+Pipeline recovery process:
+
+Run terraform apply -refresh-only
+
+This synchronizes Terraform state with Azure infrastructure.
+
+Then run recovery plan and detect partially created resources.
+
+Broken resources are destroyed:
+
+terraform destroy -target=<resource>
+
+Then removed from state:
+
+terraform state rm <resource>
+
+Next pipeline run recreates them cleanly.
+
+---
+
+Failure Type 3 – Azure Resource Created but Not Recorded in Terraform State
+
+Example causes:
+
+Provider crash
+Network interruption during state update
+Pipeline crash after resource creation
+
+Example:
+
+Azure VM created successfully
+Terraform crashes before writing state
+
+Infrastructure state:
+
+Azure resource exists
+Terraform state does not contain the resource
+
+This is called an orphan resource.
+
+Pipeline recovery process:
+
+All Terraform resources include a tag:
+
+terraform_run = <pipeline_run_id>
+
+Pipeline scans Azure using Azure Resource Graph.
+
+Example query:
+
+Resources
+| where tags.terraform_run == '<run_id>'
+
+If resource is found but not present in Terraform state:
+
+Delete resource using:
+
+az resource delete --ids <resource_id>
+
+Next pipeline run recreates the resource normally.
+
+---
+
+Failure Type 4 – Terraform State Drift
+
+Example scenario:
+
+Infrastructure is modified outside Terraform.
+
+Examples:
+
+Manual Azure portal changes
+Manual CLI modifications
+Accidental resource updates
+
+Infrastructure state:
+
+Azure infrastructure differs from Terraform state.
+
+Pipeline behavior:
+
+Terraform plan detects drift.
+
+Example plan result:
+
+Resource update required
+Resource replacement required
+
+Terraform apply reconciles infrastructure with Terraform configuration.
+
+---
+
+Failure Type 5 – Dependency Graph Failure
+
+Example scenario:
+
+Terraform dependency chain breaks during apply.
+
+Example:
+
+VM depends on NIC
+NIC depends on subnet
+
+If subnet creation fails:
+
+NIC fails
+VM fails
+
+Infrastructure state:
+
+Some dependency resources may exist
+Other resources fail to create
+
+Pipeline recovery:
+
+Partial resources detected during recovery plan.
+
+Broken resources are destroyed and removed from state.
+
+Next pipeline run rebuilds dependency chain correctly.
+
+---
+
+Failure Type 6 – Azure API or Provisioning Failures
+
+Example causes:
+
+Azure service outage
+Quota exceeded
+Region capacity issues
+Marketplace image agreement not accepted
+
+Example:
+
+VM provisioning fails after creation request.
+
+Infrastructure state:
+
+Some resources may exist but remain unusable.
+
+Pipeline recovery:
+
+Refresh Terraform state
+
+Detect failed resources using recovery plan
+
+Destroy broken resources
+
+Remove them from Terraform state
+
+Scan Azure for orphan resources
+
+Delete them
+
+Next pipeline run recreates infrastructure after issue is fixed.
+
+---
+
+Pipeline Self-Healing Architecture
+
+Normal flow:
+
+Terraform Init
+Terraform Plan
+Terraform Apply
+
+If apply succeeds:
+
+Pipeline completes successfully.
+
+If apply fails:
+
+Terraform refresh-only
+Detect partially created resources
+Destroy broken resources
+Remove resources from Terraform state
+Scan Azure for orphan resources using terraform_run tag
+Delete orphan resources
+
+Pipeline ends.
+
+Next pipeline run recreates infrastructure cleanly.
+
+---
+
+Benefits of This Architecture
+
+Handles partial infrastructure failures automatically
+Prevents infrastructure drift
+Prevents orphan Azure resources
+Maintains consistent Terraform state
+Ensures deterministic infrastructure deployments
+
+---
+
+End Result
+
+The pipeline becomes a self-healing infrastructure system that automatically recovers from common Terraform deployment failures and ensures that infrastructure always matches the Terraform configuration.
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+----------------------------------------X
+For accepting the terms for subscription of third party OS not managed by Microsoft/Canonical
+
+resource "azurerm_marketplace_agreement" "centos" {
+  publisher = "cognosys"
+  offer     = "centos-8-3-free"
+  plan      = "centos-8-3-free"
+}
+
+resource "azurerm_linux_virtual_machine" "linux_vm" {
+
+  # existing config
+
+  depends_on = [
+    azurerm_marketplace_agreement.centos,
+    time_sleep.wait_for_des_rbac
+  ]
+}
+----------------------------------------X
 
 --------------------------------------------------------------------------------------------------------------
 
