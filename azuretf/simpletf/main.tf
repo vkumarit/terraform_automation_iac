@@ -69,6 +69,16 @@ provider "azurerm" {
   if needed, after exporting id explicitly reference as a variable and call it in provider block,
   #subscription_id  = var.subscription_id   
   */
+  
+  default_tags {
+    tags = {
+      environment   = var.environment
+      terraform_run = var.run_id
+      managed_by    = "terraform"
+    }
+  }
+  # Instead of writing tags everywhere, with every resource, we can define provider-level default tags.
+  # This is a feature of the **Terraform Azure provider. Now every resource automatically gets the tag.
 }
 
 ## Resource Group
@@ -763,10 +773,25 @@ resource "time_sleep" "wait_for_des_rbac" {
   ]
 }
 
+# a resource to accept Marketplace terms for subscription and OS usage for VMs.
+resource "azurerm_marketplace_agreement" "centos" {
+  publisher = "cognosys"
+  offer     = "centos-8-3-free"
+  plan      = "centos-8-3-free"
+}
+
+# Dynamic precondition for VM Health check
+variable "enable_vm_health_check" {
+  type    = bool
+  default = false
+}
+
 # Creating VM by exporting variables ENVIRONMENT dev and SIZE_ALIAS small from pipeline yaml file.
 
 resource "azurerm_linux_virtual_machine" "linux_vm" {
-  name                = "linux_vm_01"   # use no underscores, special characters, spaces or use computer_name
+  name                = "linux_vm_01"   
+  # use no underscores, special characters, spaces /or use `computer_name`
+  
   computer_name       = "linuxvmdev01"
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
@@ -846,6 +871,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   #}
   
   depends_on = [
+    azurerm_marketplace_agreement.centos,
     azurerm_role_assignment.des_kv_crypto,
     time_sleep.wait_for_des_rbac
   ]
