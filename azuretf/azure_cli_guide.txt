@@ -18,6 +18,13 @@ $ az role assignment create \
   --assignee usrlsothdevops@gmail.com \
   --scope /subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv
 
+# Rotate secret value like github token
+az keyvault secret set \
+  --vault-name myvault \
+  --name githubtoken-feb \
+  --value NEW_TOKEN
+
+-----------------------------------------------------------------------------------------------------------------
 OS Lookup for VMs: 
 
 # All os images in location
@@ -32,13 +39,7 @@ $ az vm image list --publisher Canonical --location "Australia East" --all --out
 # Filter by offer/SKU (e.g., Ubuntu Jammy 22.04 LTS)
 $ az vm image list --publisher Canonical --offer 0001-com-ubuntu-server-jammy --sku 22_04-lts --location "Australia East" --output table
 
-# Rotate secret value like github token
-az keyvault secret set \
-  --vault-name myvault \
-  --name githubtoken-feb \
-  --value NEW_TOKEN
- 
-## selection of source_image_reference 
+# selection of source_image_reference 
 --------------------------------------
 #List Publishers
 az vm image list-publishers \
@@ -88,10 +89,9 @@ Architecture    Offer            Publisher    Sku              Urn              
 --------------  ---------------  -----------  ---------------  ----------------------------------------------------  -----------
 x64             centos-8-3-free  cognosys     centos-8-3-free  cognosys:centos-8-3-free:centos-8-3-free:1.2019.0810  1.2019.0810
 
---------------------------------------
-
+-----------------------------------------------------------------------------------------------------------------
 # Enable `encryption_at_host_enabled` at subscription level when using it in VM creation,
-----------------------------------------------------------------------------------------
+
 #Check Current Status
 az feature show \
   --namespace Microsoft.Compute \
@@ -108,5 +108,11 @@ az provider register --namespace Microsoft.Compute
 
 #Re-run the pipeline
 
-----xxx----
+-----------------------------------------------------------------------------------------------------------------
+# Scans the entire subscription for resources and can be slow.
+az resource list
 
+# Scans resources uses Azure's indexed resource graph engine and returns results much faster.
+az graph query
+
+-----------------------------------------------------------------------------------------------------------------
