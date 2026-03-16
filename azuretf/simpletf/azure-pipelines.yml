@@ -55,6 +55,39 @@ stages:
         terraformVersion: '1.14.6' #  for prod and 'latest' for dev/test/staging
 
     # -----------------------------
+    # Azure CLI Login (needed for orphan cleanup)
+    # -----------------------------
+    - task: AzureCLI@2
+      displayName: "Azure CLI Login"
+      inputs:
+        azureSubscription: $(serviceConnection)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "Logging into Azure..."
+          az account show
+          echo "Azure login successful."
+
+    # -----------------------------
+    # Ensure jq is installed
+    # -----------------------------
+    - script: |
+        echo "Checking jq installation..."
+        if command -v jq >/dev/null 2>&1; then
+          echo "jq already installed: $(jq --version)"
+        else
+          echo "jq not found. Installing jq..."
+          if command -v yum >/dev/null 2>&1; then
+            sudo yum install -y jq
+          else
+            echo "ERROR: Unsupported package manager. Install jq manually."
+            exit 1
+          fi
+          echo "jq installed successfully: $(jq --version)"
+        fi
+      displayName: "Ensure jq is installed"
+      
+    # -----------------------------
     # Make runterraform.sh executable
     # -----------------------------
     - script: |
@@ -62,28 +95,6 @@ stages:
       workingDirectory: azuretf/simpletf
       displayName: "Make runterraform.sh executable"
     
-    # -----------------------------
-    # Ensure jq is installed
-    # -----------------------------
-    - script: |
-        echo "Checking jq installation..."
-
-        if command -v jq >/dev/null 2>&1; then
-          echo "jq already installed: $(jq --version)"
-        else
-          echo "jq not found. Installing jq..."
-
-          if command -v yum >/dev/null 2>&1; then
-            sudo yum install -y jq
-          else
-            echo "ERROR: Unsupported package manager. Install jq manually."
-            exit 1
-          fi
-
-          echo "jq installed successfully: $(jq --version)"
-        fi
-      displayName: "Ensure jq is installed"
-      
     # -----------------------------
     # Debug directory
     # -----------------------------
@@ -94,7 +105,7 @@ stages:
         ls -la
       workingDirectory: azuretf/simpletf
       displayName: "Debug directory"
-    
+        
     # -----------------------------
     # Debug Secret Injection
     # -----------------------------
@@ -112,7 +123,7 @@ stages:
         ARM_CLIENT_SECRET: $(sp-client-secret)
         ARM_TENANT_ID: $(sp-tenant-id)
         ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-        GITHUB_TOKEN: $(githubtoken)        
+        GITHUB_TOKEN: $(githubtoken)
     
     # -----------------------------
     # Terraform Init
@@ -147,6 +158,8 @@ stages:
         GITHUB_TOKEN: $(githubtoken)
         TF_VAR_environment: $(ENVIRONMENT)
         TF_VAR_size_alias: $(SIZE_ALIAS)
+        TF_VAR_run_id: $(Build.BuildId)
+        RUN_ID: $(Build.BuildId)
 
     # -----------------------------
     # Terraform Apply
@@ -165,6 +178,8 @@ stages:
         GITHUB_TOKEN: $(githubtoken)
         TF_VAR_environment: $(ENVIRONMENT)
         TF_VAR_size_alias: $(SIZE_ALIAS)
+        TF_VAR_run_id: $(Build.BuildId)              #for terraform env
+        RUN_ID: $(Build.BuildId)                     #for .sh
         
     # -----------------------------
     # Clean Terraform junk after every run
@@ -174,6 +189,7 @@ stages:
         rm -f azuretf/simpletf/*.tfstate*
         rm -f azuretf/simpletf/.terraform.lock.hcl
         rm -f azuretf/simpletf/tfplan.binary
+        rm -f azuretf/simpletf/tfplan.recovery*
         rm -rf .terraform-run-logs
       condition: always()
       displayName: "Cleanup Terraform workdir"
