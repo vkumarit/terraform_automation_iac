@@ -1768,7 +1768,7 @@ deployment failures and ensures that infrastructure always matches the Terraform
 
 ---------------------------------------------------------------------------------------------------------------
 There are two caches -
-1)
+1) under .terraform folder and ?
 2)
 Terraform also caches provider plugins in a global CLI plugin cache (for example ~/.terraform.d/plugin-cache 
 or ~/.terraform.d/plugins). On self-hosted agents, this cache persists across pipeline runs. That means even
@@ -1883,6 +1883,7 @@ Goal is to keep the same pipeline and infrastructure but allow Terraform to auto
 
 ----------------------------------------X
 For accepting the terms for subscription of third party OS not managed by Microsoft/Canonical
+We don't use resource block, as below 
 
 resource "azurerm_marketplace_agreement" "centos" {
   publisher = "cognosys"
@@ -1899,6 +1900,13 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     time_sleep.wait_for_des_rbac
   ]
 }
+
+and We use azure cli command, ex - centos 8.3 free
+
+az vm image terms accept \
+  --publisher cognosys \
+  --offer centos-8-3-free \
+  --plan centos-8-3-free
 ----------------------------------------X
 
 --------------------------------------------------------------------------------------------------------------
