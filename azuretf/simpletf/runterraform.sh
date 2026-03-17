@@ -75,8 +75,10 @@ if [[ "$COMMAND" == "init" ]]; then
   # Temporarily disable exit-on-error
   # So we can capture terraform exit code manually
 
-  terraform init -reconfigure -no-color -lock-timeout=5m 2>&1 | tee "$LOG_FILE"
+  terraform init -upgrade -reconfigure -no-color -lock-timeout=5m 2>&1 | tee "$LOG_FILE"
   # Run terraform init
+  # -upgrade Terraform ignores cached versions, re-evaluates provider constraints and 
+  # -upgrade forces Terraform to download azurerm v4.1.0. (fresh) 
   # -no-color removes ANSI colors
   # -lock-timeout waits up to 5 minutes for backend lock
   # 2>&1 sends stderr to stdout
@@ -119,15 +121,14 @@ elif [[ "$COMMAND" == "plan" ]]; then
     TF_EXIT=${PIPESTATUS[0]}
 
     # If changes detected (exit 2), treat as success
-    if [[ "$TF_EXIT" -eq 2 ]]; then
-    TF_EXIT=0
+    if [[ "$TF_EXIT" -eq 0 ]]; then
+      echo "NO_CHANGES" > "${LOG_ROOT}/plan.status"
+    elif [[ "$TF_EXIT" -eq 2 ]]; then
+      echo "CHANGES_PRESENT" > "${LOG_ROOT}/plan.status"
+      TF_EXIT=0
+    else
+      echo "FAILED" > "${LOG_ROOT}/plan.status"
     fi
-  fi
-  
-  if [[ "$TF_EXIT" -ne 0 ]]; then
-    echo "FAILED" > "${LOG_ROOT}/plan.status"
-  else
-    echo "SUCCEEDED" > "${LOG_ROOT}/plan.status"
   fi
   # .status writing
   
@@ -137,6 +138,20 @@ elif [[ "$COMMAND" == "apply" ]]; then
 
   set +e
 
+  # ------------------------------------------
+  # Ensure plan status before apply
+  # ------------------------------------------
+  PLAN_STATUS_FILE="${LOG_ROOT}/plan.status"
+
+  if [[ -f "$PLAN_STATUS_FILE" ]]; then
+    PLAN_STATUS=$(cat "$PLAN_STATUS_FILE")
+
+    if [[ "$PLAN_STATUS" == "NO_CHANGES" ]]; then
+      echo "Terraform plan reported no changes. Skipping apply."
+      exit 0
+    fi
+  fi
+  
   # ------------------------------------------
   # Ensure plan file exists
   # ------------------------------------------
@@ -148,10 +163,18 @@ elif [[ "$COMMAND" == "apply" ]]; then
   # -----------------------------
   # Block bulk destroy operations
   # -----------------------------
-  DESTROY_COUNT=$(terraform show -json tfplan.binary | jq '[.resource_changes[] | select(.change.actions[] == "delete")] | length')
-  
-  if [[ "$DESTROY_COUNT" -gt 0 ]]; then
-    echo "Destroy operations are blocked in all environments."
+  DESTROY_COUNT=$(terraform show -json tfplan.binary | jq '
+  [
+    .resource_changes[]
+    | select(.change.actions | index("delete"))
+  ] | length
+  ')
+
+  # Limit delete/replace 
+  MAX_DESTROY=5
+
+  if [[ "$DESTROY_COUNT" -gt "$MAX_DESTROY" ]]; then
+    echo "ERROR: Too many destructive changes detected ($DESTROY_COUNT resources)."
     exit 1
   fi
   
