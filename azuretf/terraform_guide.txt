@@ -1,6 +1,28 @@
 Terraform 
 ---------
 
+**
+Terraform IaC
+↓
+Azure DevOps pipeline
+↓
+Self-hosted agent
+↓
+Key Vault secrets
+↓
+Encrypted storage
+↓
+CMK disk encryption
+↓
+RBAC propagation handling
+↓
+Terraform crash recovery
+↓
+Orphan resource cleanup
+↓
+Marketplace automation
+**
+
 # Azure Authentication #
 
 >>> Server-side/backend Alternatives for Terraform Authentication <<<
@@ -786,9 +808,11 @@ terraform init -reconfigure or init > terraform import > terraform plan > terraf
 ## Rotate secrets regularly and enable alerting
 
 A) Rotation:
-	1) Manually: Periodically update the secret value in Key Vault (new SP secret/password, DB password, 		etc.). Each update creates a new secret version; update the downstream system (e.g., SP or DB) to use the new value.
+	1) Manually: Periodically update the secret value in Key Vault (new SP secret/password, DB password, 		
+    etc.). Each update creates a new secret version; update the downstream system (e.g., SP or DB) to use the new value.
 	2) Automated: Use: 
-		a) Event Grid + Azure Function / Logic App that listens for “SecretNearExpiry” events and 			rotates the secret (creates new value, writes to Key Vault, updates the dependent resource).
+		a) Event Grid + Azure Function / Logic App that listens for “SecretNearExpiry” events and 			
+        rotates the secret (creates new value, writes to Key Vault, updates the dependent resource).
 		b) For keys, use key rotation policies configured on Key Vault keys.
 ​
 B) Alerting:
@@ -797,7 +821,8 @@ B) Alerting:
 		b) “SecretNearExpiry” events, unauthorized access attempts, or abnormal access patterns.
 	2) Route alerts to email, Teams, or incident tools.
 
-​> Secret Rotation: When rotating secrets, update both Key Vault and credentials used by automation/bots running Terraform.
+​> Secret Rotation: When rotating secrets, update both Key Vault and credentials used by automation/bots 
+running Terraform.
 -------------------------------------------------------------------------------------------------------------
 *** Use artifact 'tfplan' method for production with approval gates ***
 
@@ -815,9 +840,12 @@ Pipeline stops at the gate → person approves/rejects → pipeline continues/st
 Methods to Add Approval Gates:
 
 Method 1: Environments (Recommended for YAML) - 
-Goto Organization > Project > Pipelines > Environments > Create environment > Name 'prod' > Description 'Production environment for Terraform deployments' > Resource 'None'> Create > Approvals and checks > Approvals > Select Approver/Add email > Control options > Timeout > Create. 
+Goto Organization > Project > Pipelines > Environments > Create environment > Name 'prod' > 
+Description 'Production environment for Terraform deployments' > Resource 'None'> Create > 
+Approvals and checks > Approvals > Select Approver/Add email > Control options > Timeout > Create. 
 
-*Pipeline runs > Plan completes & Pipeline pauses > Go to Environments > prod shows "Waiting for approval" > Click Approve > Apply runs
+*Pipeline runs > Plan completes & Pipeline pauses > Go to Environments > prod shows "Waiting for approval" > 
+Click Approve > Apply runs
 
 Add YAML Code under 'jobs:' as
 
@@ -843,7 +871,9 @@ Method 2: Manual Approval Check (No environments/dashboard usage needed)
  Plan > Approval > Apply
 
 Pipeline Flow - 
-Plan completes > publishes tfplan artifact > Approval stage > **PAUSES** at "ManualValidation" > sends emails > I/team review plan >Click pipeline > "Approval stage" > click **Approve** or **Reject** buttons > if approved - Apply 
+Plan completes > publishes tfplan artifact > Approval stage > **PAUSES** at "ManualValidation" > sends emails >
+I/team review plan >Click pipeline > "Approval stage" > click **Approve** or **Reject** buttons > 
+if approved - Apply 
 
 Perfect for quick production gates without environment setup.
 
@@ -974,9 +1004,12 @@ Terraform Pipeline Failure Recovery Architecture / Terraform Failure-Resilient D
 ==================================================================================================
 Overview
 
-This Terraform pipeline is designed to ensure reliable infrastructure provisioning even when a Terraform apply operation fails. The pipeline includes mechanisms to detect and clean partially created Terraform resources, resources created in Azure but not recorded in Terraform state, and broken infrastructure caused by failed provisioning.
+This Terraform pipeline is designed to ensure reliable infrastructure provisioning even when a Terraform apply 
+operation fails. The pipeline includes mechanisms to detect and clean partially created Terraform resources, 
+resources created in Azure but not recorded in Terraform state, and broken infrastructure caused by failed provisioning.
 
-The main goal is to ensure that every pipeline run produces deterministic infrastructure based on Terraform code, without requiring manual cleanup.
+The main goal is to ensure that every pipeline run produces deterministic infrastructure based on Terraform code, 
+without requiring manual cleanup.
 
 ---
 
@@ -1471,9 +1504,11 @@ Terraform Failure Classes and How the Pipeline Handles Them
 
 Goal
 
-Terraform deployments can fail in multiple ways. A robust CI/CD pipeline must detect each failure type and recover automatically where possible.
+Terraform deployments can fail in multiple ways. A robust CI/CD pipeline must detect each failure type and 
+recover automatically where possible.
 
-This document describes six common Terraform failure scenarios and the recovery mechanism implemented in the pipeline.
+This document describes six common Terraform failure scenarios and the recovery mechanism implemented in the
+pipeline.
 
 ---
 
@@ -1728,12 +1763,116 @@ Ensures deterministic infrastructure deployments
 
 End Result
 
-The pipeline becomes a self-healing infrastructure system that automatically recovers from common Terraform deployment failures and ensures that infrastructure always matches the Terraform configuration.
+The pipeline becomes a self-healing infrastructure system that automatically recovers from common Terraform 
+deployment failures and ensures that infrastructure always matches the Terraform configuration.
 
 ---------------------------------------------------------------------------------------------------------------
+There are two caches -
+1)
+2)
+Terraform also caches provider plugins in a global CLI plugin cache (for example ~/.terraform.d/plugin-cache 
+or ~/.terraform.d/plugins). On self-hosted agents, this cache persists across pipeline runs. That means even
+if .terraform in the working directory is deleted, Terraform may reuse an older cached provider from the 
+global cache. For example, Run 1 downloads azurerm v3.x into the cache; in Run 2 Terraform reuses that cached
+version, whose schema does not support the default_tags block, resulting in the error 
+“Unsupported block type: default_tags” even though the local .terraform directory was removed.
 
+Running terraform init -upgrade fixes this because Terraform ignores cached provider selections and 
+re-evaluates the version constraints defined in the configuration. It then downloads the correct version
+(for example azurerm v4.1.0), which supports the default_tags feature, allowing the configuration to work
+correctly.
 ---------------------------------------------------------------------------------------------------------------
+Advanced Terraform Pattern To Implement
 
+Goal: Convert the current single VM Terraform design into a scalable multi-VM role-based architecture similar to what is used in production environments.
+
+Currently the infrastructure creates:
+1 VM
+1 NIC
+1 Public IP
+
+We want Terraform to support multiple VM roles and automatically scale the number of machines.
+
+Example target architecture:
+
+prod
+
+bastion (1 VM, public IP)
+
+web (2 VMs, private)
+
+app (2 VMs, private)
+
+db (1 VM, private)
+
+The number of VMs should be controlled by configuration rather than adding new Terraform resources.
+
+Implementation pattern:
+
+Create a role definition map inside locals called vm_roles. Each role defines:
+
+count (how many VMs to create)
+
+whether it needs a public IP
+
+which image to use
+
+Example roles:
+bastion → count 1, public IP true, ubuntu image
+web → count 2, public IP false, ubuntu image
+app → count 2, public IP false, ubuntu image
+
+Terraform will then use loops (for_each) to dynamically create:
+
+Public IPs
+
+Network Interfaces
+
+Virtual Machines
+
+VM names should automatically expand like:
+bastion-01
+web-01
+web-02
+app-01
+app-02
+
+Expected benefits:
+
+automatic VM scaling by changing the count value
+
+support for multiple VM roles
+
+same Terraform code across environments
+
+production-style infrastructure design
+
+easier to add new roles later (db nodes, build agents, bastion, etc.)
+
+Constraints:
+Existing components should remain unchanged:
+
+Azure DevOps pipeline
+
+runterraform.sh
+
+Terraform backend
+
+networking resources
+
+disk encryption
+
+tagging strategy
+
+Only the following Terraform resources should be refactored to use the role-based pattern:
+
+azurerm_public_ip
+
+azurerm_network_interface
+
+azurerm_linux_virtual_machine
+
+Goal is to keep the same pipeline and infrastructure but allow Terraform to automatically deploy multiple VMs based on configuration.
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------
