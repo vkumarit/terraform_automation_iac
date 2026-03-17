@@ -38,6 +38,17 @@ terraform {
 # using azcli and/or env vars for SP terraform azure authentication on ec2.
 # Perform init plan apply.
 
+# Adds run_id to every resource automatically
+variable "run_id" {
+  description = "Pipeline run identifier"
+  type        = string
+  
+  default     = "manual" 
+  # a fallback value for local runs when variable from CLI, environment variable, or tfvars isn't recieved,
+  # helps when someone runs Terraform locally. 
+  # Prevents error - `The argument "run_id" is required but no definition was found.`
+}
+
 ## Configure the Microsoft Azure Provider
 
 provider "azurerm" {
@@ -60,7 +71,7 @@ provider "azurerm" {
   
   ## B) Add key value as below required by version >= 4.1.0 for azure authentication.
   #subscription_id = "2b2f02f7-xxxx-47db-xxxx-47d2182721ae"
-  subscription_id  = "2b2f02f7-dde2-47db-974c-47d2182721ae"
+  #subscription_id  = "2b2f02f7-dde2-47db-974c-47d2182721ae"
   /*  
   OR,
   ## Export subscription_id to env vars, it will be auto-read by terraform for authentication,
@@ -588,6 +599,10 @@ resource "azurerm_network_interface" "prodmyapp_nic" {
     #primary                      = true                  
     # true if multiple blocks and this is first/primary ip_configurations 
   }
+  
+  depends_on = [
+    azurerm_public_ip.prodmyapp_pub_ips
+  ]
 }
 
 # Network Interface & Security Group Association
@@ -767,17 +782,10 @@ resource "azurerm_role_assignment" "des_kv_crypto" {
 # So needs `Key Vault Crypto Service Encryption User` role
 
 resource "time_sleep" "wait_for_des_rbac" {
-  create_duration = "60s"
+  create_duration = "180s"
   depends_on = [
     azurerm_role_assignment.des_kv_crypto
   ]
-}
-
-# a resource to accept Marketplace terms for subscription and OS usage for VMs.
-resource "azurerm_marketplace_agreement" "centos" {
-  publisher = "cognosys"
-  offer     = "centos-8-3-free"
-  plan      = "centos-8-3-free"
 }
 
 # Dynamic precondition for VM Health check
@@ -849,7 +857,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   
   lifecycle {
     create_before_destroy = true
-    prevent_destroy       = false
+    prevent_destroy       = false  # `true` for prod, protection against `terraform destroy`
   }
   
   # Precondition ensures VM is healthy
@@ -871,7 +879,6 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   #}
   
   depends_on = [
-    azurerm_marketplace_agreement.centos,
     azurerm_role_assignment.des_kv_crypto,
     time_sleep.wait_for_des_rbac
   ]
