@@ -49,6 +49,19 @@ variable "run_id" {
   # Prevents error - `The argument "run_id" is required but no definition was found.`
 }
 
+# Tagging Resources
+locals {
+  common_tags = {
+    environment   = var.environment
+    terraform_run = var.run_id
+    managed_by    = "terraform"
+  }
+}
+
+tags = merge(local.common_tags, {
+  Name = "resource-name"
+})
+
 ## Configure the Microsoft Azure Provider
 
 provider "azurerm" {
@@ -80,16 +93,6 @@ provider "azurerm" {
   if needed, after exporting id explicitly reference as a variable and call it in provider block,
   #subscription_id  = var.subscription_id   
   */
-  
-  default_tags {
-    tags = {
-      environment   = var.environment
-      terraform_run = var.run_id
-      managed_by    = "terraform"
-    }
-  }
-  # Instead of writing tags everywhere, with every resource, we can define provider-level default tags.
-  # This is a feature of the **Terraform Azure provider. Now every resource automatically gets the tag.
 }
 
 ## Resource Group
@@ -112,6 +115,10 @@ resource "azurerm_resource_group" "prodmyapp" {
   #  update = "30m"  # Override the default update timeout
   #  delete = "45m"  # Override the default delete timeout (useful if the RG contains many resources)
   #}
+  
+  tags = merge(local.common_tags, {
+    Name = "rg-prodmyapp"
+  })
 }
 
 ## Storage Account
@@ -124,6 +131,10 @@ resource "azurerm_storage_account" "prodmyapp" {
   account_tier        = "Standard"
   account_replication_type = "LRS"
   allow_nested_items_to_be_public = false
+  
+  tags = merge(local.common_tags, {
+    Name = "st-tfstate"
+  })
 }
 
 /*
@@ -210,6 +221,10 @@ resource "azurerm_key_vault" "prodmyapp" {
   enable_rbac_authorization = true         # enabled RBAC (not using access polices)
   
   sku_name = "standard"
+  
+  tags = merge(local.common_tags, {
+    Name = "kv-prodmyapp"
+  })
 
 }
 
@@ -369,6 +384,10 @@ resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   name                = "my-storage-identity"
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
+  
+  tags = merge(local.common_tags, {
+    Name = "identity-storage"
+  })
 }
 
 resource "azurerm_role_assignment" "storage_kv_crypto" {
@@ -407,6 +426,10 @@ resource "azurerm_storage_account" "prodmyapp_cmk" {
       customer_managed_key
     ]
   }
+  
+  tags = merge(local.common_tags, {
+    Name = "st-cmk"
+  })
 }
 
 # Create key with explicit rotation policy
@@ -437,6 +460,10 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
     azurerm_key_vault.prodmyapp,
     time_sleep.wait_for_kv_rbac
   ]
+  
+  tags = merge(local.common_tags, {
+    Name = "kv-key-cmk"
+  })
 }
 
 resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
@@ -503,9 +530,9 @@ resource "azurerm_network_security_group" "prodmyapp_sg" {
     destination_address_prefix = "*"
   }
   
-  tags = {
-    environment = "Production"
-  }
+  tags = merge(local.common_tags, {
+    Name = "nsg-open"
+  })
 }
 
 # VNET
@@ -525,9 +552,9 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
   # CRITICAL: Explicitly empty to force deletion
   #subnet = []
   
-  tags = {
-    environment = "Production"
-  }
+  tags = merge(local.common_tags, {
+    Name = "vnet-prod"
+  })
 }
 
 # Subnets w/ Network Security Group
@@ -573,12 +600,12 @@ resource "azurerm_public_ip" "prodmyapp_pub_ips" {
   # Dynamic - allotted after IP attached to a VM/Resource. An IP is automatically assigned during creation.
   # Can use data block `azurerm_public_ip` to obtain IP Address also.
 
-  tags = {
-    environment = "Production"
-  }
+  tags = merge(local.common_tags, {
+    Name = "pip-prod"
+  })
 }
 
-## Network Interface (NSG & IP + VM)
+## Network Interface (NIC) (NSG & IP + VM)
 resource "azurerm_network_interface" "prodmyapp_nic" {
   name                = "prodmyapp-nic1"
   location            = azurerm_resource_group.prodmyapp.location
@@ -603,6 +630,10 @@ resource "azurerm_network_interface" "prodmyapp_nic" {
   depends_on = [
     azurerm_public_ip.prodmyapp_pub_ips
   ]
+  
+  tags = merge(local.common_tags, {
+    Name = "nic-prod"
+  })
 }
 
 # Network Interface & Security Group Association
@@ -758,6 +789,10 @@ resource "azurerm_disk_encryption_set" "prod_des" {
   identity {
     type = "SystemAssigned"
   }
+  
+  tags = merge(local.common_tags, {
+    Name = "des-prod"
+  })
 }
 
 # and,
@@ -882,6 +917,10 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     azurerm_role_assignment.des_kv_crypto,
     time_sleep.wait_for_des_rbac
   ]
+  
+  tags = merge(local.common_tags, {
+    Name = "vm-linux"
+  })
 }
 
 

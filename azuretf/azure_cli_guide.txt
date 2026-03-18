@@ -18,11 +18,14 @@ $ az role assignment create \
   --assignee usrlsothdevops@gmail.com \
   --scope /subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv
 
-# Rotate secret value like github token
+Rotate secret value like github token
 az keyvault secret set \
   --vault-name myvault \
   --name githubtoken-feb \
   --value NEW_TOKEN
+
+List resources under a resource group in tabled format
+$ az resource list --resource-group myTFResourceGroup -o table
 
 -----------------------------------------------------------------------------------------------------------------
 OS Lookup for VMs: 
