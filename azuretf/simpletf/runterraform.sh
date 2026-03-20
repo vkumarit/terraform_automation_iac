@@ -264,43 +264,122 @@ elif [[ "$COMMAND" == "apply" ]]; then
     ORPHAN_IDS=$(az graph query -q "
     Resources
     | where resourceGroup == 'myTFResourceGroup'
+    | where tags.managed_by == 'terraform'
     | where tags.terraform_run == '$RUN_ID'
-    | project id
-    " --query "data[].id" -o tsv 2>/dev/null || true)
+    | project id, type
+    " --query "data" -o json 2>/dev/null || echo "[]")
     # " | where resourceGroup == 'myTFResourceGroup' " - scoped orphaned resources scan search to RG,
+    # ``` "data[].id" -o tsv ``` - outputs only IDs as text.
+    # ``` "data" -o json ``` - outputs ID + TYPE as json.
+    # ``` echo "[]" ``` - if query fails, prevents script crash and gives valid json
     # instead of entire subscription.
 
-    if [[ -n "$ORPHAN_IDS" ]]; then
-        echo "Orphan Azure resources detected:"
-        printf '%s\n' "$ORPHAN_IDS"
-
-        echo "Building Terraform state resource ID list..."
-
-        STATE_IDS=$(terraform state list | while read r; do
-          terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty'
-        done)
-        
-        for id in $ORPHAN_IDS; do
-            
-            if echo "$STATE_IDS" | grep -q "$id"; then
-                echo "Skipping managed resource: $id"
-                continue
-            fi
-            
-            echo "Deleting orphan resource: $id"
-            az resource delete --ids "$id" || true
-        done
+    if [[ -n "$ORPHAN_IDS" && "$ORPHAN_IDS" != "[]" ]]; then
+        ORPHAN_ID_LIST=$(echo "$ORPHAN_IDS" | jq -r '.[].id')
     else
-        echo "No orphan Azure resources found."
+        ORPHAN_ID_LIST=""
     fi
     
+    echo "Building Terraform state resource ID list..."
+
+    STATE_IDS=$(terraform state list | while read r; do
+      terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty'
+    done)
+    
+    STATE_IDS_SET=$(echo "$STATE_IDS" | sort -u)
+    
+    if [[ -n "$ORPHAN_IDS" && "$ORPHAN_IDS" != "[]" ]]; then
+        echo "Orphan Azure resources detected:"
+        echo "$ORPHAN_IDS" | jq .
+
+        # ------------------------------------------
+        # Function: delete safely by type
+        # ------------------------------------------
+        delete_by_type() {
+            TYPE_FILTER=$1
+            echo "$ORPHAN_IDS" | jq -c ".[] | select(.type | test(\"$TYPE_FILTER\"))" | while read res; do
+
+                ID=$(echo "$res" | jq -r '.id')
+
+                if printf '%s\n' "$STATE_IDS_SET" | grep -Fxq "$ID"; then
+                    # grep -Fxq "$ID" - avoids partial matches, accidental deletes
+                    echo "Skipping managed resource: $ID"
+                    continue
+                fi
+                
+                echo "Deleting [$TYPE_FILTER]: $ID"
+                az resource delete --ids "$ID" || true
+            done
+        }
+
+        # ------------------------------------------
+        # Dependency-aware deletion
+        # ------------------------------------------
+
+        delete_by_type "virtualMachines"
+        delete_by_type "networkInterfaces"
+        delete_by_type "disks"
+        delete_by_type "publicIPAddresses"
+        delete_by_type "networkSecurityGroups"
+        delete_by_type "virtualNetworks"
+
+        # ------------------------------------------
+        # Fallback: delete remaining
+        # ------------------------------------------
+        echo "$ORPHAN_IDS" | jq -c '.[]' | while read res; do
+
+            ID=$(echo "$res" | jq -r '.id')
+
+            if printf '%s\n' "$STATE_IDS_SET" | grep -Fxq "$ID"; then
+                echo "Skipping managed resource: $ID"
+                continue
+            fi
+
+            echo "Deleting remaining resource: $ID"
+            az resource delete --ids "$ID" || true
+
+        done
+
+    else
+        echo "No tagged orphan Azure resources found."
+    fi
+    
+    # ------------------------------------------
+    # Untagged: orphaned resources cleanup (safety net)
+    # ------------------------------------------
+    echo "Scanning for UNTAGGED orphan resources (safety net)..."
+
+    ALL_RESOURCES=$(az resource list \
+      --resource-group myTFResourceGroup \
+      --query "[].id" -o tsv 2>/dev/null || true)
+
+    echo "$ALL_RESOURCES" | grep -v '^$' | while read -r ID; do
+
+        # Skip if managed in Terraform state
+        if printf '%s\n' "$STATE_IDS_SET" | grep -Fxq "$ID"; then
+            echo "Skipping managed resource: $ID"
+            continue
+        fi
+
+        # Skip if already handled as tagged orphan
+        if [[ -n "$ORPHAN_ID_LIST" ]] && printf '%s\n' "$ORPHAN_ID_LIST" | grep -Fxq "$ID"; then
+            echo "Skipping already processed tagged orphan: $ID"
+            continue
+        fi
+
+        # Delete remaining untagged orphan
+        echo "Deleting UNTAGGED orphan: $ID"
+        az resource delete --ids "$ID" || true
+
+    done
+    
     echo "Recovery finished. Pipeline ready for next run after code/config fix."
+    
+    set -e
 
   else
     echo "SUCCEEDED" > "${LOG_ROOT}/apply.status"
-  fi
-
-  set -e 
+  fi 
 
   # ------------------------------------------
   # Export outputs 

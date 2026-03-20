@@ -58,10 +58,6 @@ locals {
   }
 }
 
-tags = merge(local.common_tags, {
-  Name = "resource-name"
-})
-
 ## Configure the Microsoft Azure Provider
 
 provider "azurerm" {
