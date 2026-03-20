@@ -889,19 +889,6 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   lifecycle {
     create_before_destroy = true
     prevent_destroy       = false  # `true` for prod, protection against `terraform destroy`
-    
-    # Precondition ensures VM is healthy
-    precondition {
-      condition = (
-        !var.enable_vm_health_check ||
-        (
-          can(self.provisioning_state) &&
-          self.provisioning_state == "Succeeded"
-        )
-      )
-      error_message = "VM provisioning failed! Resource will be recreated on next apply."
-    }
-
   }
   
   # Configure specific timeouts for the VM resource operations

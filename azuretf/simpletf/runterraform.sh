@@ -459,10 +459,6 @@ fi
 
 rm -rf "$TMP_DIR"
 
-echo "Terraform logs pushed successfully."
-
-
-
 set -e   # re-enable strict error handling
 
 exit "$TF_EXIT"

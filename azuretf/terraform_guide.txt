@@ -2141,7 +2141,13 @@ az vm image terms accept \
 ----------------------------------------X
 
 --------------------------------------------------------------------------------------------------------------
+Best practice, This is exactly how teams handle:
 
+*Use Terraform → create secret
+*Use az keyvault secret set → update value
+*Use pipeline → consume it
+
+goes with GitHub tokens, API keys, DB passwords
 --------------------------------------------------------------------------------------------------------------
 
 ============================================================
