@@ -451,7 +451,11 @@ git add runs/
 
 git commit -m "Terraform full run logs for ${COMMIT_SHA}" >/dev/null 2>&1 || echo "Nothing to commit"
 
-git push origin terraform-logs
+if git push origin terraform-logs; then
+  echo "Terraform logs pushed successfully."
+else
+  echo "WARNING: Failed to push Terraform logs."
+fi
 
 rm -rf "$TMP_DIR"
 

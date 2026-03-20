@@ -1874,6 +1874,237 @@ azurerm_linux_virtual_machine
 
 Goal is to keep the same pipeline and infrastructure but allow Terraform to automatically deploy multiple VMs based on configuration.
 ---------------------------------------------------------------------------------------------------------------
+### Terraform Tagging Strategy – Final Implementation Notes
+
+#### 🎯 Objective
+
+Implement a consistent tagging strategy in Terraform to:
+
+* Track resources created per pipeline run
+* Detect and clean up orphaned resources
+* Standardize metadata across all Azure resources
+* Ensure safe recovery from failed Terraform executions
+
+---
+
+### 🧠 Core Design
+
+We introduced a centralized tagging mechanism using `locals`:
+
+```hcl
+locals {
+  common_tags = {
+    environment   = var.environment
+    terraform_run = var.run_id
+    managed_by    = "terraform"
+  }
+}
+```
+
+#### Purpose of each tag:
+
+* **environment** → identifies environment (dev/test/prod)
+* **terraform_run** → uniquely identifies pipeline run (used for orphan cleanup)
+* **managed_by** → ensures only Terraform-managed resources are targeted
+
+---
+
+### ⚠️ Correction Applied
+
+Removed invalid global block:
+
+```hcl
+tags = merge(local.common_tags, {
+  Name = "resource-name"
+})
+```
+
+(This is NOT valid at the root level in Terraform and must only be used inside resources.)
+
+---
+
+### 🛠️ How Tagging is Applied
+
+We use Terraform’s `merge()` function to combine:
+
+* global/common tags
+* resource-specific tags
+
+```hcl
+tags = merge(local.common_tags, {
+  Name = "<resource-name>"
+})
+```
+
+#### Why `merge()`?
+
+* Prevents duplication
+* Allows per-resource customization
+* Ensures `terraform_run` is always present (critical for cleanup)
+
+---
+
+### ✅ Taggable Resources (Implemented)
+
+Tags were added to all Azure resources that support tagging:
+
+#### Core Infrastructure
+
+* azurerm_resource_group
+* azurerm_storage_account (standard + CMK)
+* azurerm_key_vault
+
+#### Identity & Encryption
+
+* azurerm_user_assigned_identity
+* azurerm_disk_encryption_set
+* azurerm_key_vault_key
+
+#### Networking
+
+* azurerm_virtual_network
+* azurerm_network_security_group
+* azurerm_public_ip
+* azurerm_network_interface
+
+#### Compute
+
+* azurerm_linux_virtual_machine
+
+Each resource includes:
+
+```hcl
+tags = merge(local.common_tags, {
+  Name = "<logical-resource-name>"
+})
+```
+
+---
+
+### ❌ Non-Taggable Resources (Skipped)
+
+These resources do NOT support tags in Azure and were intentionally skipped:
+
+* azurerm_storage_container
+* azurerm_subnet
+* azurerm_role_assignment
+* azurerm_key_vault_secret
+* tls_private_key
+* local_file / local_sensitive_file
+* null_resource
+* time_sleep
+
+---
+
+### 🔄 Handling Existing Resources
+
+* If a resource already exists **and is in Terraform state**:
+  → Tags are added via **in-place update (safe, no recreation)**
+
+* If a resource exists but is **NOT in state (orphaned)**:
+  → Terraform cannot tag it
+  → Must be handled via:
+
+  * Azure CLI tagging
+  * Manual cleanup
+  * Terraform import
+
+---
+
+### ⚠️ Standardization Fix
+
+Replaced inconsistent tagging like:
+
+```hcl
+environment = "Production"
+```
+
+With:
+
+```hcl
+environment = var.environment
+```
+
+Pipeline sets:
+
+```yaml
+TF_VAR_environment = prod
+```
+
+✔ Ensures consistent values across all resources
+
+---
+
+### 🔗 Pipeline Integration
+
+Tags are dynamically populated via pipeline variables:
+
+```yaml
+TF_VAR_environment = prod
+TF_VAR_run_id = $(Build.BuildId)
+```
+
+Ensures every run generates:
+
+```hcl
+terraform_run = <pipeline-run-id>
+```
+
+---
+
+### 🔥 Integration with Cleanup Logic
+
+The tagging strategy directly supports orphan cleanup:
+
+```bash
+where tags.terraform_run == RUN_ID
+```
+
+This guarantees:
+
+* Only resources from the current failed run are targeted
+* No cross-run accidental deletions
+* Reliable identification of orphaned resources
+
+---
+
+### 🧩 Naming Convention
+
+Each resource includes a `Name` tag for readability and traceability:
+
+Examples:
+
+```hcl
+Name = "vnet-prod"
+Name = "vm-linux"
+Name = "kv-prodmyapp"
+```
+
+---
+
+### 🏁 Final Outcome
+
+✔ Centralized tagging via `locals`
+✔ Consistent tagging across all supported resources
+✔ Zero duplication using `merge()`
+✔ Pipeline-driven dynamic tagging
+✔ Safe updates (no resource recreation)
+✔ Reliable orphan detection using `terraform_run`
+✔ Strong foundation for automated cleanup and recovery
+
+---
+
+---
+
+### 🚀 Next Step
+
+Enhance cleanup script to:
+
+* handle non-taggable resources (like subnets, containers etc)
+* safely delete dependency chains
+* avoid accidental deletions
+
+---
 
 ---------------------------------------------------------------------------------------------------------------
 
@@ -1901,7 +2132,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   ]
 }
 
-and We use azure cli command, ex - centos 8.3 free
+and We use azure cli command and may run it via script from pipeline yaml, ex - centos 8.3 free
 
 az vm image terms accept \
   --publisher cognosys \
