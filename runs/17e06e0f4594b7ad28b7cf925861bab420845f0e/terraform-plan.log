@@ -1,0 +1,25 @@
+Acquiring state lock. This may take a few moments...
+Releasing state lock. This may take a few moments...
+
+Error: Unknown variable
+
+  on main.tf line 896, in resource "azurerm_linux_virtual_machine" "linux_vm":
+ 896:         !var.enable_vm_health_check ||
+
+There is no variable named "var".
+
+Error: Invalid "self" reference
+
+  on main.tf line 898, in resource "azurerm_linux_virtual_machine" "linux_vm":
+ 898:           can(self.provisioning_state) &&
+
+The "self" object is not available in this context. This object can be used
+only in resource provisioner, connection, and postcondition blocks.
+
+Error: Invalid "self" reference
+
+  on main.tf line 899, in resource "azurerm_linux_virtual_machine" "linux_vm":
+ 899:           self.provisioning_state == "Succeeded"
+
+The "self" object is not available in this context. This object can be used
+only in resource provisioner, connection, and postcondition blocks.
