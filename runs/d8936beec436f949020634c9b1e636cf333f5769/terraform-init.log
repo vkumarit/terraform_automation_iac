@@ -1,0 +1,6 @@
+Initializing the backend...
+
+Error: retrieving Storage Account (Subscription: "2b2f02f7-dde2-47db-974c-47d2182721ae"
+Resource Group Name: "myTFResourceGroup"
+Storage Account Name: "prodmyapptfstate01"): authorizing request: clientCredentialsToken: received HTTP status 401 with response: {"error":"invalid_client","error_description":"AADSTS7000215: Invalid client secret provided. Ensure the secret being sent in the request is the client secret value, not the client secret ID, for a secret added to app '04b07795-8ddb-461a-bbee-02f9e1bf7b46'. Trace ID: e609b8ac-ef42-41dc-aa5a-479e209a3c00 Correlation ID: a61fb398-1719-4257-adef-136064d65888 Timestamp: 2026-03-20 14:57:00Z","error_codes":[7000215],"timestamp":"2026-03-20 14:57:00Z","trace_id":"e609b8ac-ef42-41dc-aa5a-479e209a3c00","correlation_id":"a61fb398-1719-4257-adef-136064d65888","error_uri":"https://login.microsoftonline.com/error?code=7000215"}
+
