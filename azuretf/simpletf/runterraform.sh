@@ -66,6 +66,14 @@ echo "========================================="
 # RUN TERRAFORM
 # ==========================================
 
+#xxx
+echo "DEBUG: ARM_CLIENT_SECRET length: ${#ARM_CLIENT_SECRET}"
+az login --service-principal \
+   --username "$ARM_CLIENT_ID" \
+   --password "$ARM_CLIENT_SECRET" \
+   --tenant "$ARM_TENANT_ID" --output none && echo "SP login OK"
+#xxx
+
 #cd azuretf/simpletf - remove if pipeline working good
 # Move into Terraform working directory
 
