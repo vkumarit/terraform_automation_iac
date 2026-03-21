@@ -132,8 +132,7 @@ stages:
     # -----------------------------
     - script: |
         echo "DEBUG: ARM_CLIENT_ID length: ${#ARM_CLIENT_ID}"
-        echo "DEBUG: ARM_CLIENT_SECRET length: ${#ARM_CLIENT_SECRET}" 
-        echo "NEW DEBUG: first 5 chars: ${sp_client_secret:0:5}"
+        echo "DEBUG: ARM_CLIENT_SECRET length: ${#ARM_CLIENT_SECRET}; first 5 chars: ${ARM_CLIENT_SECRET:0:5}"
         echo "DEBUG: ARM_TENANT_ID present: ${ARM_TENANT_ID:+yes}"
         echo "DEBUG: ARM_SUBSCRIPTION_ID present: ${ARM_SUBSCRIPTION_ID:+yes}"
         echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"

@@ -265,7 +265,8 @@ variable "arm_client_secret" {
 
 resource "azurerm_key_vault_secret" "sp_client_secret" {
   name         = "sp-client-secret"
-  value        = var.arm_client_secret          # var when exported ARM_CLIENT_SECRET to EC2/VM env vars
+  #value        = var.arm_client_secret          # var when exported ARM_CLIENT_SECRET to EC2/VM env vars
+  value        = "placeholder"
   
   # Secrets as code (version controlled) - Secret rotation 
   # Update ARM_CLIENT_SECRET env var > terraform apply > Key Vault updates automatically.
