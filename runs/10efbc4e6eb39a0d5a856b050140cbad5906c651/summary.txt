@@ -1,0 +1,9 @@
+=========================================
+Terraform Run Summary
+---------------------
+Commit : 10efbc4e6eb39a0d5a856b050140cbad5906c651
+
+INIT  : FAILED
+PLAN  : PLAN SKIPPED
+APPLY : APPLY SKIPPED
+=========================================
