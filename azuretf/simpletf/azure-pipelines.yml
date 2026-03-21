@@ -11,7 +11,7 @@ trigger:
       - terraform-logs
 
 variables:
-- group: az-classic-kv-var
+#- group: az-classic-kv-var
 - name: serviceConnection
   value: 'az-classic-conn'
 - name: ENVIRONMENT
@@ -46,6 +46,17 @@ stages:
 
     - checkout: self
       #persistCredentials: true
+    
+    # ================================
+    # ADD THIS NEW TASK FIRST
+    # ================================
+    - task: AzureKeyVault@2
+      displayName: 'Download Key Vault Secrets'
+      inputs:
+        azureSubscription: $(serviceConnection)
+        KeyVaultName: 'prodmyappkv'
+        SecretsFilter: 'sp-client-id,sp-client-secret,sp-tenant-id,sp-subscription-id,githubtoken'
+        RunAsPreJob: true
     
     # -----------------------------
     # Install Terraform
