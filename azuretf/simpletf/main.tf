@@ -171,7 +171,29 @@ resource "azurerm_storage_container" "prodmyapp" {
   depends_on = [azurerm_storage_account.prodmyapp]  # ensures storage account creates first
 }
 
+## Backend Access Role
+data "azuread_service_principal" "prodmyapp" {
+  display_name  = "az-classic-app"
+  #Or,
+  #object_id      = "52f32d06-bfbe-464b-bc9b-77ff908d68ef"
+  #Or,
+  #application_id = "52f32d06-bfbe-464b-bc9b-77ff908d68ef"  (Client ID)
+}
 
+resource "azurerm_role_assignment" "terraform_backend_storage_access" {
+  scope                = azurerm_storage_container.prodmyapp.resource_manager_id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = data.azuread_service_principal.prodmyapp.object_id
+  
+  depends_on = [
+    azurerm_storage_account.prodmyapp,
+    azurerm_storage_container.prodmyapp
+  ]
+  
+  #lifecycle {
+  #  prevent_destroy = true
+  #}
+}
 
 
 ###               PHASE-II               ###
