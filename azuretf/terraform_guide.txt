@@ -2820,6 +2820,17 @@ remove \r\n in pipelines
 
 Even invisible characters can break authentication.
 
+## Updating the client secret via terraform
+# 1. Export ONLY client secret
+export TF_VAR_arm_client_secret="1J58Q~ux51JOtxxxx-GIrYF4vWdiUeHNdjd1mcQU"
+
+# 2. Test Terraform picks it up
+cd azuretf/simpletf
+terraform plan
+
+then, Verify locally 
+az keyvault secret show --vault-name prodmyappkv --name sp-client-secret --query value -o tsv
+
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------
