@@ -2618,6 +2618,223 @@ This is exactly how large enterprises run Terraform on self-hosted agents:
 xxxxxxxxxx 
 
 --------------------------------------------------------------------------------------------------------------
+# Terraform Pipeline Failure – Client Secret Error (Root Cause & Fix)
+
+## Error Observed
+
+During `terraform init` in Azure DevOps pipeline:
+
+```id="err1"
+AADSTS7000215: Invalid client secret provided.
+Ensure the secret being sent in the request is the client secret value, not the client secret ID
+```
+
+---
+
+## What We Checked
+
+### 1. Verified secret is present in pipeline
+
+Debug output showed:
+
+```id="dbg1"
+ARM_CLIENT_SECRET length: 40
+```
+
+So:
+
+* Secret is being injected 
+* Not empty 
+
+---
+
+### 2. Manually tested Service Principal login
+
+```id="test1"
+az login --service-principal \
+  -u "<client-id>" \
+  -p "<client-secret>" \
+  --tenant "<tenant-id>"
+```
+
+Result:
+
+* Login successful
+
+So:
+
+* Client ID correct 
+* Client Secret correct 
+* Tenant correct 
+
+---
+
+## Deep Debug (Critical Step)
+
+Dumped raw bytes of the secret:
+
+By using below in yaml pipeline,
+```
+# -----------------------------
+# Comparing secrets
+# -----------------------------
+- script: |
+    echo "Comparing secrets..."
+
+    echo "$ARM_CLIENT_SECRET" | od -c
+  displayName: "Dump Secret Raw Bytes"
+  env:
+    ARM_CLIENT_SECRET: $(sp-client-secret)
+```
+
+```id="dbg2"
+echo "$ARM_CLIENT_SECRET" | od -c
+```
+
+Output:
+
+```
+ ##[section]Starting: Dump Secret Raw Bytes
+ ==============================================================================
+ Task         : Command line
+ Description  : Run a command line script using Bash on Linux and macOS and cmd.exe on Windows
+ Version      : 2.268.0
+ Author       : Microsoft Corporation
+ Help         : https://docs.microsoft.com/azure/devops/pipelines/tasks/utility/command-line
+ ==============================================================================
+ Generating script.
+ ========================== Starting Command Output ===========================
+ [command]/usr/bin/bash --noprofile --norc /opt/agent/_work/_temp/0c4b1540-85af-47c8-9ba7-57a1d1e684a9.sh
+ Comparing secrets...
+ 0000000   1   J   5   8   Q   ~   u   x   5   1   J   O   t   8   J   m
+ 0000020   q   -   G   I   r   Y   F   4   v   W   d   i   U   e   H   N
+ 0000040   d   j   d   1   m   c   Q   U  \n
+ 0000051
+ 
+ ##[section]Finishing: Dump Secret Raw Bytes
+```
+
+```id="out1"
+... Q   U  \n
+```
+
+> Found **trailing newline (`\n`) inside the secret**
+
+---
+
+## Root Cause
+
+The Service Principal secret stored in Key Vault contained a **trailing newline character (`\n`)**.
+
+This happened because:
+
+* Secret was passed into Terraform during creation
+* Input contained a newline (likely from copy/paste or file read)
+* Terraform stored the value **exactly as-is**
+* Key Vault preserved it exactly
+
+---
+
+## Why This Causes Failure
+
+Azure authentication requires an **exact match** of the client secret.
+
+Actual value used by pipeline:
+
+```id="val1"
+"actual-secret\n"
+```
+
+Expected:
+
+```id="val2"
+"actual-secret"
+```
+
+> Even one extra character = authentication failure
+
+---
+
+## Fix Applied
+
+### 1. Trim secret in Terraform
+
+```id="fix1"
+value = trimspace(var.arm_client_secret)
+```
+
+---
+
+### 2. Re-applied Terraform
+
+```id="fix2"
+terraform apply
+```
+
+> Updated Key Vault with clean secret (no newline)
+
+---
+
+### 3. (Optional but recommended) Trim in pipeline
+
+```id="fix3"
+export ARM_CLIENT_SECRET=$(printf %s "$ARM_CLIENT_SECRET" | tr -d '\r\n')
+```
+
+---
+
+## Validation After Fix
+
+```id="val3"
+echo "$ARM_CLIENT_SECRET" | od -c
+```
+
+Expected:
+
+```id="val4"
+... Q   U
+```
+
+> No `\n` at end
+
+---
+
+## Final Summary
+
+* Secret value was correct
+* Secret contained hidden newline (`\n`)
+* Caused `AADSTS7000215` authentication failure
+* Fixed by trimming the secret before storing/using
+
+---
+
+## Key Lesson
+
+Always sanitize secrets:
+
+```id="lesson"
+trimspace() in Terraform  
+and  
+remove \r\n in pipelines
+```
+
+Even invisible characters can break authentication.
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------
 Verify GitHub Token from EC2/VM:

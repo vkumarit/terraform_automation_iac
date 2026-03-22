@@ -849,7 +849,7 @@ variable "enable_vm_health_check" {
 }
 
 # Creating VM by exporting variables ENVIRONMENT dev and SIZE_ALIAS small from pipeline yaml file.
-
+/*
 resource "azurerm_linux_virtual_machine" "linux_vm" {
   name                = "linux_vm_01"   
   # use no underscores, special characters, spaces /or use `computer_name`
@@ -932,6 +932,6 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     Name = "vm-linux"
   })
 }
-
+*/
 
 # Deployment of resources in different regions using loop
