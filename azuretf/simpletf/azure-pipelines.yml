@@ -68,34 +68,34 @@ stages:
     # -----------------------------
     # Azure CLI Login & agreement check (needed for orphan cleanup)
     # -----------------------------
-    - task: AzureCLI@2
-      displayName: "Azure CLI Login"
-      inputs:
-        azureSubscription: $(serviceConnection)
-        scriptType: bash
-        scriptLocation: inlineScript
-        inlineScript: |
-          echo "Logging into Azure..."
-          az account show
-          echo "Azure login successful."
+    #- task: AzureCLI@2
+    #  displayName: "Azure CLI Login"
+    #  inputs:
+    #    azureSubscription: $(serviceConnection)
+    #    scriptType: bash
+    #    scriptLocation: inlineScript
+    #    inlineScript: |
+    #      echo "Logging into Azure..."
+    #      az account show
+    #      echo "Azure login successful."
            
-          echo "Checking marketplace agreement..."
+    #      echo "Checking marketplace agreement..."
           
-          ACCEPTED=$(az vm image terms show \
-            --publisher cognosys \
-            --offer centos-8-3-free \
-            --plan centos-8-3-free \
-            --query accepted -o tsv)
+    #      ACCEPTED=$(az vm image terms show \
+    #        --publisher cognosys \
+    #        --offer centos-8-3-free \
+    #        --plan centos-8-3-free \
+    #        --query accepted -o tsv)
             
-          if [ "$ACCEPTED" != "true" ]; then
-            echo "Accepting marketplace terms..."
-            az vm image terms accept \
-              --publisher cognosys \
-              --offer centos-8-3-free \
-              --plan centos-8-3-free
-          else
-            echo "Marketplace agreement already accepted."
-          fi
+    #      if [ "$ACCEPTED" != "true" ]; then
+    #        echo "Accepting marketplace terms..."
+    #        az vm image terms accept \
+    #          --publisher cognosys \
+    #          --offer centos-8-3-free \
+    #          --plan centos-8-3-free
+    #      else
+    #        echo "Marketplace agreement already accepted."
+    #      fi
         # Remove the agreement code after run once per subscription, 
         # after Azure stores it permanently.
         # **This placeholder can be used to run other az cli commands also.**
