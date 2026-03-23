@@ -59,17 +59,6 @@ stages:
     #    RunAsPreJob: true
     
     # -----------------------------
-    # Comparing secrets
-    # -----------------------------
-    - script: |
-        echo "Comparing secrets..."
-
-        echo "$ARM_CLIENT_SECRET" | od -c
-      displayName: "Dump Secret Raw Bytes"
-      env:
-        ARM_CLIENT_SECRET: $(sp-client-secret)
-    
-    # -----------------------------
     # Install Terraform
     # -----------------------------
     - task: TerraformInstaller@0
@@ -168,6 +157,19 @@ stages:
         ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
         GITHUB_TOKEN: $(githubtoken)
     
+    # -----------------------------
+    # Test client secret
+    # -----------------------------
+    - bash: |
+        echo "## DEBUG PIPELINE SECRET ##"
+        echo "Length: ${#ARM_CLIENT_SECRET}"
+        echo "Preview: ${ARM_CLIENT_SECRET:0:20}"
+        echo -n "$ARM_CLIENT_SECRET" | od -c | head -n 3
+        echo -n "$ARM_CLIENT_SECRET" | xxd | head -n 1
+      displayName: 'Debug Pipeline Secret Bytes'
+      env:
+        ARM_CLIENT_SECRET: $(sp-client-secret)
+        
     # -----------------------------
     # Terraform Init
     # -----------------------------
