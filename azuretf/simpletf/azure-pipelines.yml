@@ -178,13 +178,14 @@ stages:
         #./runterraform.sh init
         terraform init
       #workingDirectory: azuretf/simpletf
-      displayName: "Terraform Init"
-      env:
-        ARM_CLIENT_ID: $(sp-client-id)
-        ARM_CLIENT_SECRET: $(sp-client-secret)
-        ARM_TENANT_ID: $(sp-tenant-id)
-        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-        GITHUB_TOKEN: $(githubtoken)
+      displayName: "Terraform Init - Service Connection Only"
+    #  displayName: "Terraform Init"
+    #  env:
+    #    ARM_CLIENT_ID: $(sp-client-id)
+    #    ARM_CLIENT_SECRET: $(sp-client-secret)
+    #    ARM_TENANT_ID: $(sp-tenant-id)
+    #    ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+    #    GITHUB_TOKEN: $(githubtoken)
 
     # -----------------------------
     # Terraform Plan
