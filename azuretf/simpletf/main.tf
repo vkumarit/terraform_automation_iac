@@ -79,7 +79,7 @@ provider "azurerm" {
   #use_cli = true
   
   ## B) Add key value as below required by version >= 4.1.0 for azure authentication.
-  subscription_id  = "2b2f02f7-dde2-47db-974c-47d2182721ae"
+  #subscription_id  = "2b2f02f7-dde2-47db-974c-47d2182721ae"
   /*  
   OR,
   ## Export subscription_id to env vars, it will be auto-read by terraform for authentication,
@@ -213,7 +213,7 @@ terraform {
     #key = "${var.environment}/terraform.tfstate"    
     #when keeping separate statefile for each environment
     
-    use_azuread_auth     = true                      # When want to use entra id for authentication
+    #use_azuread_auth     = true                      # When want to use entra id for authentication
     #use_cli              = true  
     # use_cli uses logged-in az cli context for authentication, comment out when switching to pipeline
   }
