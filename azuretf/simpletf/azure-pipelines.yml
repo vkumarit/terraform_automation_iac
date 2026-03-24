@@ -179,12 +179,12 @@ stages:
         terraform init
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
-    #  env:
-    #    ARM_CLIENT_ID: $(sp-client-id)
+      env:
+        ARM_CLIENT_ID: $(sp-client-id)
     #    ARM_CLIENT_SECRET: $(sp-client-secret)
-    #    ARM_TENANT_ID: $(sp-tenant-id)
-    #    ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-    #    GITHUB_TOKEN: $(githubtoken)
+        ARM_TENANT_ID: $(sp-tenant-id)
+        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+        GITHUB_TOKEN: $(githubtoken)
 
     # -----------------------------
     # Terraform Plan
@@ -197,7 +197,7 @@ stages:
       displayName: "Terraform Plan"
       env:
         ARM_CLIENT_ID: $(sp-client-id)
-        ARM_CLIENT_SECRET: $(sp-client-secret)
+    #    ARM_CLIENT_SECRET: $(sp-client-secret)
         ARM_TENANT_ID: $(sp-tenant-id)
         ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
         GITHUB_TOKEN: $(githubtoken)
@@ -217,7 +217,7 @@ stages:
       displayName: "Terraform Apply"
       env:
         ARM_CLIENT_ID: $(sp-client-id)
-        ARM_CLIENT_SECRET: $(sp-client-secret)
+    #    ARM_CLIENT_SECRET: $(sp-client-secret)
         ARM_TENANT_ID: $(sp-tenant-id)
         ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
         GITHUB_TOKEN: $(githubtoken)
