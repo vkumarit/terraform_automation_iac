@@ -175,13 +175,13 @@ stages:
     # -----------------------------
     - script: |
         cd azuretf/simpletf
-        #./runterraform.sh init
-        terraform init
+        ./runterraform.sh init
+        #terraform init
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
       env:
         ARM_CLIENT_ID: $(sp-client-id)
-    #    ARM_CLIENT_SECRET: $(sp-client-secret)
+        ARM_CLIENT_SECRET: $(sp-client-secret)
         ARM_TENANT_ID: $(sp-tenant-id)
         ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
         GITHUB_TOKEN: $(githubtoken)
@@ -191,13 +191,13 @@ stages:
     # -----------------------------
     - script: |
         cd azuretf/simpletf
-        #./runterraform.sh plan
-        terraform plan -out=tfplan
+        ./runterraform.sh plan
+        #terraform plan -out=tfplan
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
       env:
         ARM_CLIENT_ID: $(sp-client-id)
-    #    ARM_CLIENT_SECRET: $(sp-client-secret)
+        ARM_CLIENT_SECRET: $(sp-client-secret)
         ARM_TENANT_ID: $(sp-tenant-id)
         ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
         GITHUB_TOKEN: $(githubtoken)
@@ -211,13 +211,13 @@ stages:
     # -----------------------------
     - script: |
         cd azuretf/simpletf
-        #./runterraform.sh apply
-        terraform apply -auto-approve tfplan
+        ./runterraform.sh apply
+        #terraform apply -auto-approve tfplan
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
       env:
         ARM_CLIENT_ID: $(sp-client-id)
-    #    ARM_CLIENT_SECRET: $(sp-client-secret)
+        ARM_CLIENT_SECRET: $(sp-client-secret)
         ARM_TENANT_ID: $(sp-tenant-id)
         ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
         GITHUB_TOKEN: $(githubtoken)
