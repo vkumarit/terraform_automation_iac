@@ -1874,16 +1874,17 @@ azurerm_linux_virtual_machine
 
 Goal is to keep the same pipeline and infrastructure but allow Terraform to automatically deploy multiple VMs based on configuration.
 ---------------------------------------------------------------------------------------------------------------
-### Terraform Tagging Strategy – Final Implementation Notes
+### Terraform Tagging Strategy – Final Implementation Notes (Updated)
 
 #### 🎯 Objective
 
 Implement a consistent tagging strategy in Terraform to:
 
 * Track resources created per pipeline run
-* Detect and clean up orphaned resources
+* Detect and clean up partially created and orphaned resources
 * Standardize metadata across all Azure resources
 * Ensure safe recovery from failed Terraform executions
+* Prevent re-tagging of existing resources on every run
 
 ---
 
@@ -1894,9 +1895,8 @@ We introduced a centralized tagging mechanism using `locals`:
 ```hcl
 locals {
   common_tags = {
-    environment   = var.environment
-    terraform_run = var.run_id
-    managed_by    = "terraform"
+    environment = var.environment
+    managed_by  = "terraform"
   }
 }
 ```
@@ -1904,22 +1904,29 @@ locals {
 #### Purpose of each tag:
 
 * **environment** → identifies environment (dev/test/prod)
-* **terraform_run** → uniquely identifies pipeline run (used for orphan cleanup)
 * **managed_by** → ensures only Terraform-managed resources are targeted
+* **creation_run_id** → uniquely identifies the pipeline run that CREATED the resource
 
 ---
 
-### ⚠️ Correction Applied
+### ⚠️ Important Design Decision
 
-Removed invalid global block:
+`creation_run_id` is **NOT part of `common_tags` intentionally**
+
+It is applied per-resource like:
 
 ```hcl
 tags = merge(local.common_tags, {
-  Name = "resource-name"
+  Name            = "<resource-name>"
+  creation_run_id = var.run_id
 })
 ```
 
-(This is NOT valid at the root level in Terraform and must only be used inside resources.)
+Reason:
+
+* Allows lifecycle control per resource
+* Prevents unwanted updates across runs
+* Ensures immutability after creation
 
 ---
 
@@ -1932,7 +1939,8 @@ We use Terraform’s `merge()` function to combine:
 
 ```hcl
 tags = merge(local.common_tags, {
-  Name = "<resource-name>"
+  Name            = "<resource-name>"
+  creation_run_id = var.run_id
 })
 ```
 
@@ -1940,13 +1948,208 @@ tags = merge(local.common_tags, {
 
 * Prevents duplication
 * Allows per-resource customization
-* Ensures `terraform_run` is always present (critical for cleanup)
+* Keeps tagging consistent across all resources
+
+---
+
+### 🔒 Preventing Tag Updates (CRITICAL)
+
+To stop Terraform from updating tags every run:
+
+```hcl
+lifecycle {
+  ignore_changes = [
+    tags["creation_run_id"]
+  ]
+}
+```
+
+#### Behavior:
+
+* First run:
+
+  * Resource created
+  * `creation_run_id = RUN_ID_1`
+
+* Next run:
+
+  * `var.run_id = RUN_ID_2`
+  * Terraform ignores change
+
+✔ Tag remains unchanged
+✔ No unnecessary updates
+✔ Full idempotency maintained
+
+---
+
+### 🛠️ Extended Lifecycle Usage
+
+For resources with dynamic attributes:
+
+```hcl
+lifecycle {
+  ignore_changes = [
+    customer_managed_key,
+    tags["creation_run_id"]
+  ]
+}
+```
+
+✔ Valid syntax
+✔ Supports multiple ignored attributes
+
+---
+
+### ❌ Why `terraform_run` Was Removed
+
+Previous approach:
+
+```hcl
+terraform_run = var.run_id
+```
+
+#### Problem:
+
+* Changes every pipeline run
+* Forces Terraform to update ALL resources
+* Breaks idempotency
+* Causes unnecessary churn
+
+#### Fix:
+
+```hcl
+creation_run_id = var.run_id
+```
+
+* lifecycle ignore → freezes value after creation
+
+---
+
+### 🔄 Handling Existing Resources
+
+#### Case 1: Resource exists in Terraform state
+
+* Tags added once (in-place update)
+* No recreation
+* Future runs → no changes due to lifecycle
+
+#### Case 2: Resource exists but NOT in state (orphan)
+
+* Terraform cannot manage or tag it
+* Must be handled via:
+
+  * Cleanup script (preferred)
+  * Azure CLI
+  * Terraform import
+
+---
+
+### 🔗 Pipeline Integration
+
+Pipeline provides:
+
+```yaml
+TF_VAR_environment = prod
+TF_VAR_run_id      = $(Build.BuildId)
+RUN_ID             = $(Build.BuildId)
+```
+
+#### Usage:
+
+* `TF_VAR_run_id` → used in Terraform tagging
+* `RUN_ID` → used in cleanup script
+
+---
+
+### 🔥 Integration with Cleanup Logic (CRITICAL)
+
+Tagging directly powers orphan cleanup in `runterraform.sh`
+
+#### Step 1: Identify resources from failed run
+
+```bash
+Resources
+| where resourceGroup == 'myTFResourceGroup'
+| where tags.managed_by == 'terraform'
+| where tags.creation_run_id == RUN_ID
+| project id, type
+```
+
+✔ Finds only resources created in the FAILED run
+✔ Ignores older stable resources
+
+---
+
+### Step 2: Compare with Terraform State
+
+* Extract IDs from Terraform state
+* Compare with Azure resources
+
+#### Logic:
+
+* In Azure + NOT in state → ORPHAN
+* In Azure + in state → VALID
+
+---
+
+### Step 3: Safe Deletion
+
+Delete ONLY resources:
+
+* With `creation_run_id == CURRENT_RUN_ID`
+* AND NOT present in Terraform state
+
+✔ Prevents accidental deletion
+✔ Ensures safe cleanup
+
+---
+
+### Step 4: Dependency-Aware Deletion
+
+Order:
+
+* virtualMachines
+* networkInterfaces
+* disks
+* publicIPAddresses
+* networkSecurityGroups
+* virtualNetworks
+
+✔ Avoids dependency failures
+
+---
+
+### Step 5: Untagged Safety Net
+
+Scan entire resource group:
+
+If resource:
+
+* NOT in Terraform state
+* NOT already deleted
+
+→ Delete as orphan
+
+---
+
+### 🧠 Key Design Principle
+
+We are NOT tracking:
+
+* Who created the resource
+* When it was created
+* Why it was created
+
+We ONLY care about:
+
+* Was it created in THIS failed run?
+* Is it missing from Terraform state?
+
+If YES → DELETE IT
 
 ---
 
 ### ✅ Taggable Resources (Implemented)
-
-Tags were added to all Azure resources that support tagging:
 
 #### Core Infrastructure
 
@@ -1971,19 +2174,9 @@ Tags were added to all Azure resources that support tagging:
 
 * azurerm_linux_virtual_machine
 
-Each resource includes:
-
-```hcl
-tags = merge(local.common_tags, {
-  Name = "<logical-resource-name>"
-})
-```
-
 ---
 
 ### ❌ Non-Taggable Resources (Skipped)
-
-These resources do NOT support tags in Azure and were intentionally skipped:
 
 * azurerm_storage_container
 * azurerm_subnet
@@ -1996,83 +2189,9 @@ These resources do NOT support tags in Azure and were intentionally skipped:
 
 ---
 
-### 🔄 Handling Existing Resources
-
-* If a resource already exists **and is in Terraform state**:
-  → Tags are added via **in-place update (safe, no recreation)**
-
-* If a resource exists but is **NOT in state (orphaned)**:
-  → Terraform cannot tag it
-  → Must be handled via:
-
-  * Azure CLI tagging
-  * Manual cleanup
-  * Terraform import
-
----
-
-### ⚠️ Standardization Fix
-
-Replaced inconsistent tagging like:
-
-```hcl
-environment = "Production"
-```
-
-With:
-
-```hcl
-environment = var.environment
-```
-
-Pipeline sets:
-
-```yaml
-TF_VAR_environment = prod
-```
-
-✔ Ensures consistent values across all resources
-
----
-
-### 🔗 Pipeline Integration
-
-Tags are dynamically populated via pipeline variables:
-
-```yaml
-TF_VAR_environment = prod
-TF_VAR_run_id = $(Build.BuildId)
-```
-
-Ensures every run generates:
-
-```hcl
-terraform_run = <pipeline-run-id>
-```
-
----
-
-### 🔥 Integration with Cleanup Logic
-
-The tagging strategy directly supports orphan cleanup:
-
-```bash
-where tags.terraform_run == RUN_ID
-```
-
-This guarantees:
-
-* Only resources from the current failed run are targeted
-* No cross-run accidental deletions
-* Reliable identification of orphaned resources
-
----
-
 ### 🧩 Naming Convention
 
-Each resource includes a `Name` tag for readability and traceability:
-
-Examples:
+Each resource includes a `Name` tag:
 
 ```hcl
 Name = "vnet-prod"
@@ -2080,19 +2199,37 @@ Name = "vm-linux"
 Name = "kv-prodmyapp"
 ```
 
+✔ Improves readability
+✔ Helps in Azure portal debugging
+
 ---
 
 ### 🏁 Final Outcome
 
 ✔ Centralized tagging via `locals`
-✔ Consistent tagging across all supported resources
-✔ Zero duplication using `merge()`
-✔ Pipeline-driven dynamic tagging
-✔ Safe updates (no resource recreation)
-✔ Reliable orphan detection using `terraform_run`
-✔ Strong foundation for automated cleanup and recovery
+✔ Immutable `creation_run_id` per resource
+✔ No repeated tagging across runs
+✔ Full idempotency maintained
+✔ Reliable orphan detection using run ID
+✔ Safe cleanup using Azure Resource Graph
+✔ Dependency-aware deletion
+✔ Strong recovery mechanism after failures
 
 ---
+
+### 💡 Mental Model
+
+creation_run_id = “this resource belongs to run X”
+
+If run X fails:
+
+→ delete everything with that tag not in state
+
+Next run:
+
+→ clean slate
+→ fix code
+→ recreate correctly
 
 ---
 
@@ -2101,11 +2238,29 @@ Name = "kv-prodmyapp"
 Enhance cleanup script to:
 
 * handle non-taggable resources (like subnets, containers etc)
-* safely delete dependency chains
-* avoid accidental deletions
-* Show a module-based tagging pattern used in real production systems
+
 
 ---
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------
 how to centralize this lifecycle block using modules so you don’t repeat it across 20+ resources. 
@@ -2122,7 +2277,8 @@ Please provide a complete, end-to-end solution that includes:
 - Best practices for keeping the code DRY while still flexible
 - Any limitations of lifecycle blocks in modules and how to handle them
 
-I’m looking for a practical, production-ready pattern with examples.
+I’m looking for a practical, production-ready pattern with examples. 
+Show a module-based tagging pattern used in real production systems
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------
