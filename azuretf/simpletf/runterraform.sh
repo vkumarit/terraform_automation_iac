@@ -273,7 +273,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
     Resources
     | where resourceGroup == 'myTFResourceGroup'
     | where tags.managed_by == 'terraform'
-    | where tags.terraform_run == '$RUN_ID'
+    | where tags.creation_run_id == '$RUN_ID'
     | project id, type
     " --query "data" -o json 2>/dev/null || echo "[]")
     # " | where resourceGroup == 'myTFResourceGroup' " - scoped orphaned resources scan search to RG,

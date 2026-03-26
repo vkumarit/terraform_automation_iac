@@ -53,7 +53,7 @@ variable "run_id" {
 locals {
   common_tags = {
     environment   = var.environment
-    terraform_run = var.run_id
+    #terraform_run = var.run_id
     managed_by    = "terraform"
   }
 }
@@ -113,7 +113,12 @@ resource "azurerm_resource_group" "prodmyapp" {
   
   tags = merge(local.common_tags, {
     Name = "rg-prodmyapp"
+    creation_run_id = var.run_id
   })
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }  
 }
 
 ## Storage Account
@@ -129,7 +134,12 @@ resource "azurerm_storage_account" "prodmyapp" {
   
   tags = merge(local.common_tags, {
     Name = "st-tfstate"
+    creation_run_id = var.run_id
   })
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 /*
@@ -241,7 +251,12 @@ resource "azurerm_key_vault" "prodmyapp" {
   
   tags = merge(local.common_tags, {
     Name = "kv-prodmyapp"
+    creation_run_id = var.run_id
   })
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }
 
 }
 
@@ -405,7 +420,12 @@ resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   
   tags = merge(local.common_tags, {
     Name = "identity-storage"
+    creation_run_id = var.run_id
   })
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "azurerm_role_assignment" "storage_kv_crypto" {
@@ -439,15 +459,17 @@ resource "azurerm_storage_account" "prodmyapp_cmk" {
     identity_ids = [azurerm_user_assigned_identity.prodmyapp_sa_identity.id]
   }
   
-  lifecycle {
-    ignore_changes = [
-      customer_managed_key
-    ]
-  }
-  
   tags = merge(local.common_tags, {
     Name = "st-cmk"
+    creation_run_id = var.run_id
   })
+  
+  lifecycle {
+    ignore_changes = [
+      customer_managed_key,
+      tags
+    ]
+  }
 }
 
 # Create key with explicit rotation policy
@@ -481,7 +503,12 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
   
   tags = merge(local.common_tags, {
     Name = "kv-key-cmk"
+    creation_run_id = var.run_id
   })
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
@@ -550,7 +577,12 @@ resource "azurerm_network_security_group" "prodmyapp_sg" {
   
   tags = merge(local.common_tags, {
     Name = "nsg-open"
+    creation_run_id = var.run_id
   })
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 # VNET
@@ -572,7 +604,12 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
   
   tags = merge(local.common_tags, {
     Name = "vnet-prod"
+    creation_run_id = var.run_id
   })
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 # Subnets w/ Network Security Group
@@ -620,7 +657,12 @@ resource "azurerm_public_ip" "prodmyapp_pub_ips" {
 
   tags = merge(local.common_tags, {
     Name = "pip-prod"
+    creation_run_id = var.run_id
   })
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 ## Network Interface (NIC) (NSG & IP + VM)
@@ -651,7 +693,12 @@ resource "azurerm_network_interface" "prodmyapp_nic" {
   
   tags = merge(local.common_tags, {
     Name = "nic-prod"
+    creation_run_id = var.run_id
   })
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 # Network Interface & Security Group Association
@@ -810,7 +857,12 @@ resource "azurerm_disk_encryption_set" "prod_des" {
   
   tags = merge(local.common_tags, {
     Name = "des-prod"
+    creation_run_id = var.run_id
   })
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 # and,
@@ -875,8 +927,8 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   #enables login using ssh key but disables login with password using defined `admin_ssh_key` block.
 
   os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
+    caching                = "ReadWrite"
+    storage_account_type   = "Standard_LRS"
     disk_encryption_set_id = azurerm_disk_encryption_set.prod_des.id
   }
   # works for test/dev
@@ -908,11 +960,6 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   }
   # `plan{},` block is for third party images other than canonical and microsoft.
   
-  lifecycle {
-    create_before_destroy = true
-    prevent_destroy       = false  # `true` for prod, protection against `terraform destroy`
-  }
-  
   # Configure specific timeouts for the VM resource operations
   #timeouts {
     # Increase create timeout from default (often 30 mins) to 45 mins
@@ -928,8 +975,15 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   ]
   
   tags = merge(local.common_tags, {
-    Name = "vm-linux"
+    Name            = "vm-linux"
+    creation_run_id = var.run_id
   })
+  
+  lifecycle {
+    create_before_destroy = true
+    prevent_destroy       = false  # `true` for prod, protection against `terraform destroy`
+    ignore_changes        = [tags]
+  }
 }
 */
 

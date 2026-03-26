@@ -2103,6 +2103,7 @@ Enhance cleanup script to:
 * handle non-taggable resources (like subnets, containers etc)
 * safely delete dependency chains
 * avoid accidental deletions
+* Show a module-based tagging pattern used in real production systems
 
 ---
 
@@ -2112,10 +2113,10 @@ Enhance cleanup script to:
 
 ---------------------------------------------------------------------------------------------------------------
 
-----------------------------------------X
 For accepting the terms for subscription of third party OS not managed by Microsoft/Canonical
 We don't use resource block, as below 
 
+----
 resource "azurerm_marketplace_agreement" "centos" {
   publisher = "cognosys"
   offer     = "centos-8-3-free"
@@ -2131,14 +2132,54 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     time_sleep.wait_for_des_rbac
   ]
 }
+----
 
-and We use azure cli command and may run it via script from pipeline yaml, ex - centos 8.3 free
+Or, Add step to yaml pipeline and run it via script from pipeline yaml as below,
+
+----
+# -----------------------------
+# Azure CLI Login & agreement check (needed for orphan cleanup)
+# -----------------------------
+#- task: AzureCLI@2
+#  displayName: "Azure CLI Login"
+#  inputs:
+#    azureSubscription: $(serviceConnection)
+#    scriptType: bash
+#    scriptLocation: inlineScript
+#    inlineScript: |
+#      echo "Logging into Azure..."
+#      az account show
+#      echo "Azure login successful."
+           
+#      echo "Checking marketplace agreement..."
+          
+#      ACCEPTED=$(az vm image terms show \
+#        --publisher cognosy
+#        --offer centos-8-3-free \
+#        --plan centos-8-3-free \
+#        --query accepted -o tsv)
+            
+#      if [ "$ACCEPTED" != "true" ]; then
+#        echo "Accepting marketplace terms..."
+#        az vm image terms accept \
+#          --publisher cognosys \
+#          --offer centos-8-3-free \
+#          --plan centos-8-3-free
+#      else
+#        echo "Marketplace agreement already accepted."
+#      fi
+    # Remove the agreement code after run once per subscription, 
+    # after Azure stores it permanently.
+    # **This placeholder can be used to run other az cli commands also.**
+
+----
+
+Or, We use azure cli command, ex - centos 8.3 free
 
 az vm image terms accept \
   --publisher cognosys \
   --offer centos-8-3-free \
   --plan centos-8-3-free
-----------------------------------------X
 
 --------------------------------------------------------------------------------------------------------------
 Best practice, This is exactly how teams handle:
@@ -2150,7 +2191,7 @@ Best practice, This is exactly how teams handle:
 goes with GitHub tokens, API keys, DB passwords
 --------------------------------------------------------------------------------------------------------------
 
-============================================================
+=========================================
 TERRAFORM ENTERPRISE PIPELINE FIX SUMMARY
 =========================================
 
@@ -2618,7 +2659,9 @@ This is exactly how large enterprises run Terraform on self-hosted agents:
 xxxxxxxxxx 
 
 --------------------------------------------------------------------------------------------------------------
-# Terraform Pipeline Failure – Client Secret Error (Root Cause & Fix)
+*** SOLUTION PENDING ***
+
+# Terraform Pipeline Failure – Client Secret Error 
 
 ## Error Observed
 
@@ -2628,7 +2671,21 @@ During `terraform init` in Azure DevOps pipeline:
 AADSTS7000215: Invalid client secret provided.
 Ensure the secret being sent in the request is the client secret value, not the client secret ID
 ```
-
+Initializing the backend...
+╷
+│ Error: retrieving Storage Account (Subscription: "***"
+│ Resource Group Name: "myTFResourceGroup"
+│ Storage Account Name: "prodmyapptfstate01"): authorizing request: clientCredentialsToken: received HTTP
+  status 401 with response: {"error":"invalid_client","error_description":"AADSTS7000215: Invalid client secret 
+  provided. Ensure the secret being sent in the request is the client secret value, not the client secret ID,
+  for a secret added to app '***'. Trace ID: d4e6bc61-f505-4db2-a35d-d0ad31e58b00 
+  Correlation ID: f159c563-e045-4870-aff1-796fe6123a03 Timestamp: 2026-03-23 02:49:48Z","error_codes":[7000215],
+  "timestamp":"2026-03-23 02:49:48Z","trace_id":"d4e6bc61-f505-4db2-a35d-d0ad31e58b00",
+  "correlation_id":"f159c563-e045-4870-aff1-796fe6123a03",
+  "error_uri":"https://login.microsoftonline.com/error?code=7000215"}
+│ 
+│ 
+╵
 ---
 
 ## What We Checked
@@ -2894,7 +2951,8 @@ $ git switch <branch-name> Or,
 $ git checkout <branch-name>
 -----------------
 
-# ------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------
+# -----------------------------
 # Install jq - command-line JSON processor (required for GitHub Checks)
 # -----------------------------
 #- script: |
@@ -2918,14 +2976,7 @@ $ git checkout <branch-name>
       
 #** Use `sudo yum install -y jq` once on ec2/VM and comment above code or 
 # keep using above code to install jq (OPTIONAL)
-# ------------------------------------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------------------------------------
-# Clean logs
-# -----------------------------
-#- script: |
-#    rm -f azuretf/simpletf/*.log azuretf/simpletf/annotations.json
-#  displayName: "Clean previous logs"
-# -------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------
 PIPELINE CODE:
 #---
 
@@ -3124,7 +3175,7 @@ PIPELINE CODE:
 #              workingDirectory: 'azuretf/simpletf'   # since files in terraform_automation_IaC/azuretf/simpletf/
 #              environmentServiceNameAzureRM: '$(serviceConnection)'
 #              commandOptions: 'tfplan'
-# -------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------
 ??? TO DOs ???
 -How to estimate VM size mathematically
 -How to design for 10k+ concurrent users
