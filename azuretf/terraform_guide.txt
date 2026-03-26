@@ -2108,7 +2108,21 @@ Enhance cleanup script to:
 ---
 
 ---------------------------------------------------------------------------------------------------------------
+how to centralize this lifecycle block using modules so you don’t repeat it across 20+ resources. 
+For tagging new resources, avoid tagging old already tagged resources,
 
+I want to centralize the Terraform lifecycle block 
+(specifically `ignore_changes = [tags["creation_run_id"]]`) using modules 
+so I don’t have to repeat it across multiple resources.
+
+Please provide a complete, end-to-end solution that includes:
+- How to design a reusable module that applies this lifecycle rule
+- How to pass tags and other common configurations into the module
+- How to structure the module for different resource types (e.g., storage account, VM, etc.)
+- Best practices for keeping the code DRY while still flexible
+- Any limitations of lifecycle blocks in modules and how to handle them
+
+I’m looking for a practical, production-ready pattern with examples.
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------
@@ -3182,3 +3196,4 @@ PIPELINE CODE:
 -How to implement autoscaling in Terraform properly
 -How real enterprise teams do capacity planning
 -clean up your Key Vault secret pattern to make it fully enterprise-safe without leaking anything to state.
+-
