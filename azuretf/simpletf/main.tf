@@ -916,13 +916,13 @@ resource "time_sleep" "wait_for_des_rbac" {
 }
 
 # Dynamic precondition for VM Health check
-variable "enable_vm_health_check" {
-  type    = bool
-  default = false
-}
+#variable "enable_vm_health_check" {
+#  type    = bool
+#  default = false
+#}
 
 # Creating VM by exporting variables ENVIRONMENT dev and SIZE_ALIAS small from pipeline yaml file.
-/*
+
 resource "azurerm_linux_virtual_machine" "linux_vm" {
   name                = "linux_vm_01"   
   # use no underscores, special characters, spaces /or use `computer_name`
@@ -1010,6 +1010,6 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     ]
   }
 }
-*/
+
 
 # Deployment of resources in different regions using loop
