@@ -683,6 +683,11 @@ resource "azurerm_public_ip" "prodmyapp_pub_ips" {
   }
 }
 
+# Output the public IP for SSH login to VM it is atteched to.
+output "vm_public_ip" {
+  value = azurerm_public_ip.prodmyapp_pub_ips.ip_address
+}
+
 ## Network Interface (NIC) (NSG & IP + VM)
 resource "azurerm_network_interface" "prodmyapp_nic" {
   name                = "prodmyapp-nic1"
@@ -931,7 +936,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
   #size                = "Standard_DS1_v2"
-  size = local.selected_vm_size
+  size                = local.selected_vm_size
   admin_username      = "adminuser"
   
   admin_ssh_key {
