@@ -1,0 +1,14 @@
+Acquiring state lock. This may take a few moments...
+azurerm_linux_virtual_machine.linux_vm: Creating...
+azurerm_linux_virtual_machine.linux_vm: Still creating... [00m10s elapsed]
+azurerm_linux_virtual_machine.linux_vm: Still creating... [00m20s elapsed]
+azurerm_linux_virtual_machine.linux_vm: Still creating... [00m30s elapsed]
+azurerm_linux_virtual_machine.linux_vm: Still creating... [00m40s elapsed]
+azurerm_linux_virtual_machine.linux_vm: Still creating... [00m50s elapsed]
+azurerm_linux_virtual_machine.linux_vm: Still creating... [01m00s elapsed]
+azurerm_linux_virtual_machine.linux_vm: Still creating... [01m10s elapsed]
+azurerm_linux_virtual_machine.linux_vm: Still creating... [01m20s elapsed]
+azurerm_linux_virtual_machine.linux_vm: Creation complete after 1m27s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/linux_vm_01]
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
