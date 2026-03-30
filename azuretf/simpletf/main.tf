@@ -553,7 +553,7 @@ azurerm_network_interface_security_group_association: Links NSGs to network inte
 ## Virtual Network w/ cidr 10.0.0.0/16 and Subnets
 
 # Network Security Group (All allowed for testing)
-resource "azurerm_network_security_group" "prodmyapp_sg" {
+resource "azurerm_network_security_group" "prodmyapp_sg_linux" {
   name                = "open-security-group"
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
@@ -565,7 +565,7 @@ resource "azurerm_network_security_group" "prodmyapp_sg" {
     access                     = "Allow"
     protocol                   = "*"             # Tcp, Udp, Icmp, Esp, Ah
     source_port_range          = "*"             # ports ranges 0-65535, `*` equivalent to "0-65535"
-    destination_port_range     = "*"             # `22` for SSH (Only Inbound)
+    destination_port_range     = "22"             # `22` for SSH (Only Inbound)
     
     source_address_prefix      = "*"             
     # "AzureCloud" (Azure DevOps Microsoft-hosted agent) / "*" (`*` equivalent to  "0.0.0.0/0") 
@@ -652,12 +652,12 @@ resource "azurerm_subnet" "pvt_subnet" {
 
 resource "azurerm_subnet_network_security_group_association" "pub_subnet_nsg" {
   subnet_id                 = azurerm_subnet.pub_subnet.id
-  network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
+  network_security_group_id = azurerm_network_security_group.prodmyapp_sg_linux.id
 }
 
 resource "azurerm_subnet_network_security_group_association" "pvt_subnet_nsg" {
   subnet_id                 = azurerm_subnet.pvt_subnet.id
-  network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
+  network_security_group_id = azurerm_network_security_group.prodmyapp_sg_linux.id
 }
 
 # Public IP (used to expose VMs' to internet)
@@ -688,8 +688,10 @@ output "vm_public_ip" {
   value = azurerm_public_ip.prodmyapp_pub_ips.ip_address
 }
 
+# Output "vm_public_ip" - "20.5.121.162"
+
 ## Network Interface (NIC) (NSG & IP + VM)
-resource "azurerm_network_interface" "prodmyapp_nic" {
+resource "azurerm_network_interface" "prodmyapp_nic_linux" {
   name                = "prodmyapp-nic1"
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
@@ -727,10 +729,27 @@ resource "azurerm_network_interface" "prodmyapp_nic" {
 }
 
 # Network Interface & Security Group Association
-resource "azurerm_network_interface_security_group_association" "nic_nsg_assn" {
-  network_interface_id      = azurerm_network_interface.prodmyapp_nic.id
-  network_security_group_id = azurerm_network_security_group.prodmyapp_sg.id
+resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_linux" {
+  network_interface_id      = azurerm_network_interface.prodmyapp_nic_linux.id
+  network_security_group_id = azurerm_network_security_group.prodmyapp_sg_linux.id
 }
+
+## VM - linux (Small scale production-grade)
+
+/*
+--------------------------------------------
+SSH Key generartion, create `tls_private_key`.
+Writing private key to local file (.pem).
+Writing public key to local file (.pub).
+Create variables `environment` and `size_alias` for VM. 
+Define locals vm_sizes, locals vm_images based on dev, test, prod.
+Create `null_resource` to `validate_vm_size`.
+Create a Disk Encryption Set resource and link it to Key Vault CMK, then attach it to the VM OS disk 
+with key `disk_encryption_set_id` inside OS disk block in VM.
+Assign `Key Vault Crypto Service Encryption User` role to disk encryption set identity `principal_id`.
+Create linux VM resource using all above and other keys and values.
+--------------------------------------------
+*/
 
 ## SSH Key Generation (tls provider block required)
 
@@ -753,10 +772,7 @@ resource "local_file" "public_key_openssh" {
   filename        = pathexpand("~/.ssh/prodmyapp_vm1.pub")
   content         = tls_private_key.vm_ssh.public_key_openssh
   file_permission = "0644"           # Owner: read+write (6) Group: read only  (4) Others: read only (4)
-}
-
-
-## VMs - linux/windows each 
+} 
 
 # Define variable for VM selection
 # Scalable approach avoids repeating validation lists
@@ -840,36 +856,59 @@ resource "null_resource" "validate_vm_size" {
 locals {
   vm_images = {
     dev = {
-      publisher = "cognosys"
-      offer     = "centos-8-3-free"
-      sku       = "centos-8-3-free"
-      version   = "1.2019.0810"
+      linux = {
+        publisher = "cognosys"
+        offer     = "centos-8-3-free"
+        sku       = "centos-8-3-free"
+        version   = "latest"
+      }
+      windows = {
+        publisher = "MicrosoftWindowsServer"
+        offer     = "WindowsServer"
+        sku       = "2019-Datacenter"
+        version   = "latest"
+      }
     }
     # Dev > latest
     
     test = {
-      publisher = "Canonical"
-      offer     = "0001-com-ubuntu-server-focal"
-      sku       = "20_04-lts"
-      version   = "20.04.202401220"
+      linux = {
+        publisher = "Canonical"
+        offer     = "0001-com-ubuntu-server-focal"
+        sku       = "20_04-lts"
+        version   = "20.04.202401220"
+      }
+      windows = {
+        publisher = "MicrosoftWindowsServer"
+        offer     = "WindowsServer"
+        sku       = "2019-Datacenter"
+        version   = "17763.8511.260305"
+      }
     }
     # Test > pinned
     
     prod = {
-      publisher = "cognosys"
-      offer     = "centos-8-3-free"
-      sku       = "centos-8-3-free"
-      version   = "1.2019.0810"
+      linux = {
+        publisher = "cognosys"
+        offer     = "centos-8-3-free"
+        sku       = "centos-8-3-free"
+        version   = "1.2019.0810"
+      }
+      windows = {
+        publisher = "MicrosoftWindowsServer"
+        offer     = "WindowsServer"
+        sku       = "2019-Datacenter"
+        version   = "17763.8511.260305"
+      }
     }
     # Prod > pinned and controlled
   }
 }
 
-#Linux VM
-
 # Azure Disk Encryption (CMK-backed disks) (Prod VMs) 
 # (Optional to `encryption_at_host_enabled` at needs to be enabled at subscription level)
 # 1) Create a Disk Encryption Set and Link it to Key Vault CMK
+
 resource "azurerm_disk_encryption_set" "prod_des" {
   name                = "prod-des"
   resource_group_name = azurerm_resource_group.prodmyapp.name
@@ -920,12 +959,6 @@ resource "time_sleep" "wait_for_des_rbac" {
   ]
 }
 
-# Dynamic precondition for VM Health check
-#variable "enable_vm_health_check" {
-#  type    = bool
-#  default = false
-#}
-
 # Creating VM by exporting variables ENVIRONMENT dev and SIZE_ALIAS small from pipeline yaml file.
 
 resource "azurerm_linux_virtual_machine" "linux_vm" {
@@ -944,7 +977,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     public_key = tls_private_key.vm_ssh.public_key_openssh
   }
   
-  network_interface_ids = [azurerm_network_interface.prodmyapp_nic.id]
+  network_interface_ids = [azurerm_network_interface.prodmyapp_nic_linux.id]
   
   #encryption_at_host_enabled      = true
   #OS disk, Data disks, Temporary disk are encrypted at the physical host level before 
@@ -974,16 +1007,16 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   #StandardSSD_LRS > Balanced cost/performance
 
   source_image_reference {
-    publisher = local.vm_images[var.environment].publisher
-    offer     = local.vm_images[var.environment].offer
-    sku       = local.vm_images[var.environment].sku
-    version   = local.vm_images[var.environment].version
+    publisher = local.vm_images[var.environment].linux.publisher
+    offer     = local.vm_images[var.environment].linux.offer
+    sku       = local.vm_images[var.environment].linux.sku
+    version   = local.vm_images[var.environment].linux.version
   }
   
   plan {
-    name      = local.vm_images[var.environment].sku
-    product   = local.vm_images[var.environment].offer
-    publisher = local.vm_images[var.environment].publisher
+    name      = local.vm_images[var.environment].linux.sku
+    product   = local.vm_images[var.environment].linux.offer
+    publisher = local.vm_images[var.environment].linux.publisher
   }
   # `plan{},` block is for third party images other than canonical and microsoft.
   
@@ -1016,5 +1049,145 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   }
 }
 
+# to SSH login do - `ssh -i ~/.ssh/prodmyapp_vm1.pem adminuser@20.5.121.162`
+
+## Windows VM
+
+# Dedicated NSG for Windows
+resource "azurerm_network_security_group" "prodmyapp_nsg_windows" {
+  name                = "windows-secure-nsg"
+  location            = azurerm_resource_group.prodmyapp.location
+  resource_group_name = azurerm_resource_group.prodmyapp.name
+
+  # Allow RDP ONLY from your IP
+  security_rule {
+    name                       = "Allow-RDP-MyIP"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "3389"
+
+    source_address_prefix      = "*" # "<OUR_laptop_wifi_PUBLIC_IP>/32"
+    destination_address_prefix = "*"
+  }
+
+  # Deny everything else inbound
+  security_rule {
+    name                       = "Deny-All-Inbound"
+    priority                   = 200
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+#Separate Public IP
+resource "azurerm_public_ip" "prodmyapp_pub_ip_windows" {
+  name                = "win-public-ip"
+  location            = azurerm_resource_group.prodmyapp.location
+  resource_group_name = azurerm_resource_group.prodmyapp.name
+  allocation_method   = "Static"
+}
+
+# separate NIC for Windows VM
+resource "azurerm_network_interface" "prodmyapp_nic_windows" {
+  name                = "prodmyapp-win-nic"
+  location            = azurerm_resource_group.prodmyapp.location
+  resource_group_name = azurerm_resource_group.prodmyapp.name
+
+  ip_configuration {
+    name                          = "ip_config_windows"
+    subnet_id                     = azurerm_subnet.pub_subnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.prodmyapp_pub_ip_windows.id
+  }
+}
+
+# NSG Association for Windows NIC
+resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_windows" {
+  network_interface_id      = azurerm_network_interface.prodmyapp_nic_windows.id
+  network_security_group_id = azurerm_network_security_group.prodmyapp_nsg_windows.id
+}
+
+# Pull admin password from key vault
+data "azurerm_key_vault_secret" "win_password" {
+  name         = "windowsvmpassword01"
+  key_vault_id = azurerm_key_vault.prodmyapp.id
+  
+  depends_on = [
+    azurerm_role_assignment.tf_kv_admin,
+    time_sleep.wait_for_kv_rbac
+  ]
+  # Terraform reads secret during plan phase, so requires `depends_on`
+}
+
+resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
+  name                = "windows_vm_01"
+  computer_name       = "windowsvmdev01"
+  
+  resource_group_name = azurerm_resource_group.prodmyapp.name
+  location            = azurerm_resource_group.prodmyapp.location
+  size                = local.selected_vm_size
+  admin_username      = "adminuser"
+  #admin_password      = "Adminuser@1234!"
+  admin_password = data.azurerm_key_vault_secret.win_password.value
+  
+  network_interface_ids = [
+    azurerm_network_interface.prodmyapp_nic_windows.id,
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+    disk_encryption_set_id = azurerm_disk_encryption_set.prod_des.id
+  }
+  
+  /*
+  # for production 
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
+    disk_size_gb         = 128
+    disk_encryption_set_id = azurerm_disk_encryption_set.prod_des.id
+  }
+  */
+
+  source_image_reference {
+    publisher = local.vm_images[var.environment].windows.publisher
+    offer     = local.vm_images[var.environment].windows.offer
+    sku       = local.vm_images[var.environment].windows.sku
+    version   = local.vm_images[var.environment].windows.version
+  }
+  
+  # Enable Boot Diagnostics
+  boot_diagnostics {
+    storage_account_uri = azurerm_storage_account.prodmyapp.primary_blob_endpoint
+  }
+  
+  depends_on = [
+    azurerm_role_assignment.des_kv_crypto,
+    time_sleep.wait_for_des_rbac
+  ]
+  
+  tags = merge(local.common_tags, {
+    Name            = "vm-windows"
+    creation_run_id = var.run_id
+  })
+  
+  lifecycle {
+    create_before_destroy = true
+    prevent_destroy       = false  # `true` for prod, protection against `terraform destroy`
+    
+    ignore_changes        = [
+      tags["creation_run_id"]
+    ]
+  }
+}
 
 # Deployment of resources in different regions using loop

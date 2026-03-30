@@ -30,6 +30,12 @@ az keyvault secret set \
   --name sp-client-secret \
   --value "<YOUR_SP_SECRET>"
 
+Create/push windows password to key vault - prodmyappkv
+az keyvault secret set \
+  --vault-name prodmyappkv \
+  --name windows-password \
+  --value "YourStrongPassword!"
+
 List resources under a resource group in tabled format
 $ az resource list --resource-group myTFResourceGroup -o table
 
@@ -103,6 +109,43 @@ Architecture    Offer            Publisher    Sku              Urn              
 --------------  ---------------  -----------  ---------------  ----------------------------------------------------  -----------
 x64             centos-8-3-free  cognosys     centos-8-3-free  cognosys:centos-8-3-free:centos-8-3-free:1.2019.0810  1.2019.0810
 
+## List windows OS
+az vm image list \
+  --location "australiaeast" \
+  --publisher MicrosoftWindowsServer \
+  --offer WindowsServer \
+  --sku 2019-Datacenter \
+  --all -o table
+
+# last entry is latest to get latest version from output for production
+az vm image list \
+  --location "australiaeast" \
+  --publisher MicrosoftWindowsServer \
+  --offer WindowsServer \
+  --sku 2019-Datacenter \
+  --all \
+  --query "[-1].version" \
+  -o tsv
+  
+# URN output
+MicrosoftWindowsServer:WindowsServer:2019-Datacenter:17763.8511.260305
+used as 
+source_image_reference {
+  publisher = "MicrosoftWindowsServer"
+  offer     = "WindowsServer"
+  sku       = "2019-Datacenter"
+  version   = "17763.8511.260305"
+}
+
+#WindowsServer
+| SKU                    | Meaning                   |
+| ---------------------- | ------------------------- |
+| `2019-Datacenter`      | Full GUI (RDP friendly)   |
+| `2019-Datacenter-Core` | No GUI (CLI only)         |
+| `*-g2`                 | Gen2 VM (modern hardware) |
+| `*-smalldisk`          | Smaller OS disk           |
+
+  
 -----------------------------------------------------------------------------------------------------------------
 # Enable `encryption_at_host_enabled` at subscription level when using it in VM creation,
 
