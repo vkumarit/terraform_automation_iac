@@ -263,7 +263,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
     # OPTION 1: Azure CLI resource listing
     # --------------------------------------------------
     #ORPHAN_IDS=$(az resource list \
-    #  --tag terraform_run="$RUN_ID" \
+    #  --tag creation_run_id="$RUN_ID" \
     #  --query "[].id" -o tsv 2>/dev/null || true)
 
     # --------------------------------------------------
@@ -273,7 +273,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
     Resources
     | where resourceGroup == 'myTFResourceGroup'
     | where tags.managed_by == 'terraform'
-    | where tags.terraform_run == '$RUN_ID'
+    | where tags.creation_run_id == '$RUN_ID'
     | project id, type
     " --query "data" -o json 2>/dev/null || echo "[]")
     # " | where resourceGroup == 'myTFResourceGroup' " - scoped orphaned resources scan search to RG,

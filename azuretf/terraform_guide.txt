@@ -3352,4 +3352,11 @@ PIPELINE CODE:
 -How to implement autoscaling in Terraform properly
 -How real enterprise teams do capacity planning
 -clean up your Key Vault secret pattern to make it fully enterprise-safe without leaking anything to state.
--
+-Enterprise-grade reusable modules
+-Multi-region deployment (you hinted at it)
+-Zero-downtime blue/green infra
+-Policy as Code (OPA / Sentinel)
+-Multi-region deployment using loops (you hinted at it)
+-Environment isolation (dev/test/prod with separate states)
+-Zero-downtime infra updates
+-Terraform module architecture (real enterprise structure)
