@@ -119,7 +119,7 @@ elif [[ "$COMMAND" == "plan" ]]; then
   else
     echo "Backend reachable. Running terraform plan..."
   
-    terraform plan -input=false -parallelism=2 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
+    terraform plan -input=false -parallelism=5 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
     # -parallelism=5 (only with plan & apply) > reduce memory usage 
     # -detailed-exitcode:
     #   0 > no changes
@@ -189,7 +189,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
   # ------------------------------------------
   # Run terraform apply 
   # ------------------------------------------
-  terraform apply -input=false -parallelism=2 -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
+  terraform apply -input=false -parallelism=5 -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
   # -input=false 
   # -parallelism=5 (only with plan & apply) > reduce memory usage
   # -auto-approve skips manual confirmation
@@ -226,7 +226,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
     echo "Detecting partially created/broken resources..."
     
     PLAN_OUT="tfplan.recovery"
-    terraform plan -input=false -parallelism=2 -lock-timeout=10m -no-color -out="$PLAN_OUT" -detailed-exitcode || true
+    terraform plan -input=false -parallelism=5 -lock-timeout=10m -no-color -out="$PLAN_OUT" -detailed-exitcode || true
     terraform show -json "$PLAN_OUT" > tfplan.recovery.json
 
     BROKEN_RESOURCES=$(jq -r '
