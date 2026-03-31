@@ -1,19 +1,244 @@
 Acquiring state lock. This may take a few moments...
+tls_private_key.vm_ssh: Refreshing state... [id=3f41b7f5f82dbadce6d1f0563e9a676fd390031f]
+data.azuread_service_principal.prodmyapp: Reading...
+data.azuread_service_principal.prodmyapp: Read complete after 4s [id=3a64aed9-8685-4f60-bad4-c7a0b3e0e4d2]
+local_file.public_key_openssh: Refreshing state... [id=ef769e7d437e35cfc54efad2fab95746b91649a5]
+null_resource.validate_vm_size: Refreshing state... [id=3688996702491092770]
+local_sensitive_file.private_key_pem: Refreshing state... [id=a70b04f6f86174d4edb4e9279305475fed74d30b]
+azurerm_network_interface.prodmyapp_nic: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-nic1]
+azurerm_network_security_group.prodmyapp_sg: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group]
+data.azurerm_client_config.current: Reading...
+azurerm_resource_group.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup]
+data.azurerm_client_config.current: Read complete after 3s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9M2E2NGFlZDktODY4NS00ZjYwLWJhZDQtYzdhMGIzZTBlNGQyO3N1YnNjcmlwdGlvbklkPTJiMmYwMmY3LWRkZTItNDdkYi05NzRjLTQ3ZDIxODI3MjFhZTt0ZW5hbnRJZD1mMTc1YzU2ZC00MDEzLTQyZmEtYTBlOC00MTAzZDIyNzZhMGQ=]
+azurerm_public_ip.prodmyapp_pub_ip_windows: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/publicIPAddresses/win-public-ip]
+azurerm_virtual_network.prodmyapp_vnet: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network]
+azurerm_public_ip.prodmyapp_pub_ips: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/publicIPAddresses/prodmyapp_public_ip1]
+azurerm_storage_account.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyapptfstate01]
+azurerm_network_security_group.prodmyapp_sg_linux: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group]
+azurerm_user_assigned_identity.prodmyapp_sa_identity: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/my-storage-identity]
+azurerm_key_vault.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv]
+azurerm_network_security_group.prodmyapp_nsg_windows: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/windows-secure-nsg]
+azurerm_subnet.pub_subnet: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pub_subnet1]
+azurerm_subnet.pvt_subnet: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pvt_subnet2]
+azurerm_storage_container.prodmyapp: Refreshing state... [id=https://prodmyapptfstate01.blob.core.windows.net/mytfstate]
+azurerm_storage_account.prodmyapp_cmk: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01]
+azurerm_role_assignment.storage_kv_crypto: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/aefe9ba4-338e-8c0c-9a57-5f61505a2dea]
+azurerm_key_vault_secret.sp_client_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-client-id/cb55e61ab48340c2abb4e63b1ad22e5c]
+azurerm_key_vault_secret.sp_tenant_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-tenant-id/c0d2c9eb5cf64d6ba457cb78d38171ab]
+azurerm_key_vault_secret.sp_client_secret: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-client-secret/7b0caf3e60b444fdb993437f4b0b8923]
+azurerm_key_vault_secret.sp_subscription_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-subscription-id/392c3168be9140f1ab860a75e569112b]
+azurerm_key_vault_secret.github_token: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/githubtoken/0f593de8fa8144e4854db02f5f525489]
+azurerm_role_assignment.tf_kv_admin: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/e1017293-79a4-7204-8a24-8ba2b4f2457e]
+azurerm_network_interface.prodmyapp_nic_windows: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-win-nic]
+azurerm_role_assignment.terraform_backend_storage_access: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyapptfstate01/blobServices/default/containers/mytfstate/providers/Microsoft.Authorization/roleAssignments/cacfe159-e1ec-59c3-855e-bc022194d3ce]
+time_sleep.wait_for_kv_rbac: Refreshing state... [id=2026-01-24T15:17:41Z]
+azurerm_key_vault_key.prodmyapp_key: Refreshing state... [id=https://prodmyappkv.vault.azure.net/keys/my-storage-cmk/51e0da2d9d5a4b53bfedce7faa0471cc]
+data.azurerm_key_vault_secret.win_password: Reading...
+azurerm_storage_account_customer_managed_key.prodmyapp_sa_cmk: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01]
+data.azurerm_key_vault_secret.win_password: Read complete after 1s [id=https://prodmyappkv.vault.azure.net/secrets/windowsvmpassword01/37ef0fd5b8ed466da73c4e658bbba2bf]
+azurerm_disk_encryption_set.prod_des: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/diskEncryptionSets/prod-des]
+azurerm_role_assignment.des_kv_crypto: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/4f38d83b-6110-8bb5-19dd-7f72f076d8de]
+time_sleep.wait_for_des_rbac: Refreshing state... [id=2026-03-03T15:27:03Z]
+azurerm_linux_virtual_machine.linux_vm: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/linux_vm_01]
+azurerm_windows_virtual_machine.prodmyapp_windows_vm: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/windows_vm_01]
 
-Error: Error acquiring the state lock
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+  ~ update in-place
+  - destroy
 
-Error message: state blob is already locked
-Lock Info:
-  ID:        2c8cf872-2f19-bbb6-d9bf-6d5c611d0c83
-  Path:      mytfstate/terraform.tfstate
-  Operation: OperationTypeApply
-  Who:       cloud-user@terraform-server
-  Version:   1.14.6
-  Created:   2026-03-30 19:50:00.30309327 +0000 UTC
-  Info:      
+Terraform will perform the following actions:
 
+  # azurerm_linux_virtual_machine.linux_vm will be updated in-place
+  ~ resource "azurerm_linux_virtual_machine" "linux_vm" {
+        id                                                     = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/linux_vm_01"
+        name                                                   = "linux_vm_01"
+      ~ network_interface_ids                                  = [
+          - "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-nic1",
+        ] -> (known after apply)
+        tags                                                   = {
+            "Name"            = "vm-linux"
+            "creation_run_id" = "290"
+            "environment"     = "prod"
+            "managed_by"      = "terraform"
+        }
+        # (38 unchanged attributes hidden)
 
-Terraform acquires a state lock to protect the state from being written
-by multiple users at the same time. Please resolve the issue above and try
-again. For most commands, you can disable locking with the "-lock=false"
-flag, but this is not recommended.
+        # (4 unchanged blocks hidden)
+    }
+
+  # azurerm_network_interface.prodmyapp_nic will be destroyed
+  # (because azurerm_network_interface.prodmyapp_nic is not in configuration)
+  - resource "azurerm_network_interface" "prodmyapp_nic" {
+      - accelerated_networking_enabled = false -> null
+      - applied_dns_servers            = [] -> null
+      - dns_servers                    = [] -> null
+      - id                             = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-nic1" -> null
+      - internal_domain_name_suffix    = "jtbcw0u4zznu5ntvch3o2rp4ra.px.internal.cloudapp.net" -> null
+      - ip_forwarding_enabled          = false -> null
+      - location                       = "australiaeast" -> null
+      - mac_address                    = "70-A8-A5-55-71-3A" -> null
+      - name                           = "prodmyapp-nic1" -> null
+      - private_ip_address             = "10.0.1.4" -> null
+      - private_ip_addresses           = [
+          - "10.0.1.4",
+        ] -> null
+      - resource_group_name            = "myTFResourceGroup" -> null
+      - tags                           = {
+          - "Name"        = "nic-prod"
+          - "environment" = "prod"
+          - "managed_by"  = "terraform"
+        } -> null
+      - virtual_machine_id             = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/linux_vm_01" -> null
+        # (4 unchanged attributes hidden)
+
+      - ip_configuration {
+          - name                                               = "ip_config_1" -> null
+          - primary                                            = true -> null
+          - private_ip_address                                 = "10.0.1.4" -> null
+          - private_ip_address_allocation                      = "Dynamic" -> null
+          - private_ip_address_version                         = "IPv4" -> null
+          - public_ip_address_id                               = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/publicIPAddresses/prodmyapp_public_ip1" -> null
+          - subnet_id                                          = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pub_subnet1" -> null
+            # (1 unchanged attribute hidden)
+        }
+    }
+
+  # azurerm_network_interface.prodmyapp_nic_linux will be created
+  + resource "azurerm_network_interface" "prodmyapp_nic_linux" {
+      + applied_dns_servers         = (known after apply)
+      + id                          = (known after apply)
+      + internal_domain_name_suffix = (known after apply)
+      + location                    = "australiaeast"
+      + mac_address                 = (known after apply)
+      + name                        = "prodmyapp-nic1"
+      + private_ip_address          = (known after apply)
+      + private_ip_addresses        = (known after apply)
+      + resource_group_name         = "myTFResourceGroup"
+      + tags                        = {
+          + "Name"            = "nic-prod"
+          + "creation_run_id" = "293"
+          + "environment"     = "prod"
+          + "managed_by"      = "terraform"
+        }
+      + virtual_machine_id          = (known after apply)
+
+      + ip_configuration {
+          + gateway_load_balancer_frontend_ip_configuration_id = (known after apply)
+          + name                                               = "ip_config_1"
+          + primary                                            = (known after apply)
+          + private_ip_address                                 = (known after apply)
+          + private_ip_address_allocation                      = "Dynamic"
+          + private_ip_address_version                         = "IPv4"
+          + public_ip_address_id                               = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/publicIPAddresses/prodmyapp_public_ip1"
+          + subnet_id                                          = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pub_subnet1"
+        }
+    }
+
+  # azurerm_network_interface_security_group_association.nic_nsg_assn_linux will be created
+  + resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_linux" {
+      + id                        = (known after apply)
+      + network_interface_id      = (known after apply)
+      + network_security_group_id = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group"
+    }
+
+  # azurerm_network_interface_security_group_association.nic_nsg_assn_windows will be created
+  + resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_windows" {
+      + id                        = (known after apply)
+      + network_interface_id      = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-win-nic"
+      + network_security_group_id = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/windows-secure-nsg"
+    }
+
+  # azurerm_network_security_group.prodmyapp_sg will be destroyed
+  # (because azurerm_network_security_group.prodmyapp_sg is not in configuration)
+  - resource "azurerm_network_security_group" "prodmyapp_sg" {
+      - id                  = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group" -> null
+      - location            = "australiaeast" -> null
+      - name                = "open-security-group" -> null
+      - resource_group_name = "myTFResourceGroup" -> null
+      - security_rule       = [
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "*"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "*"
+              - destination_port_ranges                    = []
+              - direction                                  = "Outbound"
+              - name                                       = "AllowAllOutbound"
+              - priority                                   = 101
+              - protocol                                   = "*"
+              - source_address_prefix                      = "*"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "*"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "22"
+              - destination_port_ranges                    = []
+              - direction                                  = "Inbound"
+              - name                                       = "AllowAllInbound"
+              - priority                                   = 100
+              - protocol                                   = "*"
+              - source_address_prefix                      = "*"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+        ] -> null
+      - tags                = {
+          - "Name"            = "nsg-open"
+          - "creation_run_id" = "293"
+          - "environment"     = "prod"
+          - "managed_by"      = "terraform"
+        } -> null
+    }
+
+  # azurerm_subnet_network_security_group_association.pub_subnet_nsg will be created
+  + resource "azurerm_subnet_network_security_group_association" "pub_subnet_nsg" {
+      + id                        = (known after apply)
+      + network_security_group_id = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group"
+      + subnet_id                 = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pub_subnet1"
+    }
+
+  # azurerm_subnet_network_security_group_association.pvt_subnet_nsg will be created
+  + resource "azurerm_subnet_network_security_group_association" "pvt_subnet_nsg" {
+      + id                        = (known after apply)
+      + network_security_group_id = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group"
+      + subnet_id                 = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pvt_subnet2"
+    }
+
+  # azurerm_windows_virtual_machine.prodmyapp_windows_vm will be updated in-place
+  ~ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
+        id                                                     = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/windows_vm_01"
+        name                                                   = "windows_vm_01"
+        tags                                                   = {
+            "Name"            = "vm-windows"
+            "creation_run_id" = "293"
+            "environment"     = "prod"
+            "managed_by"      = "terraform"
+        }
+      ~ vm_agent_platform_updates_enabled                      = true -> false
+        # (41 unchanged attributes hidden)
+
+        # (3 unchanged blocks hidden)
+    }
+
+Plan: 5 to add, 2 to change, 2 to destroy.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: tfplan.binary
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "tfplan.binary"
+Releasing state lock. This may take a few moments...
