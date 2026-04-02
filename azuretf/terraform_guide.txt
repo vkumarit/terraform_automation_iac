@@ -2725,7 +2725,7 @@ sudo crontab -e
 Add:
 0 3 * * * systemctl restart azure-pipelines-agent
 
-STORAGE SOLUTIONS:
+STORAGE Related SOLUTIONS:
 ------------------
 6) EC2/VM Disk Occupied by,
 - Agent work folders - `/opt/agent/_work/` - old pipeline runs not deleted automatically.
@@ -2826,7 +2826,19 @@ This is exactly how large enterprises run Terraform on self-hosted agents:
 - Plugin cache enabled
 - Minimal artifacts
 #
-xxxxxxxxxx 
+xxxxxxxxxx xxxxxxxxxxxxxxxxxxxxxx xxxxxxxxxxxxxxx xxxxxxxxxxxxxxxxxx xxxxxxxxxxxxxxxxx xxxxxxxxxxxx
+Second Face-2-Face with OOM
+Problem - It’s parallelism + provider memory + Azure API load overwhelming the agent.
+
+Step-by-step fix (works on t3.micro):
+
+1. Limit parallelism (MOST IMPORTANT) - "-parallelism=1" for plan and apply. 
+This alone can reduce memory by 50–70%. Slower apply But stable.
+
+2. Disable unnecessary refresh during apply - "-refresh=false"
+Refresh = reads entire infra → high memory So, we already run plan before apply anyway.
+
+
 
 --------------------------------------------------------------------------------------------------------------
 *** SOLUTION PENDING ***

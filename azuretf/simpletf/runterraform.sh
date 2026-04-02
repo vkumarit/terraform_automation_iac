@@ -119,7 +119,7 @@ elif [[ "$COMMAND" == "plan" ]]; then
   else
     echo "Backend reachable. Running terraform plan..."
   
-    terraform plan -input=false -parallelism=5 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
+    terraform plan -input=false -parallelism=1 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
     # -parallelism=5 (only with plan & apply) > reduce memory usage 
     # -detailed-exitcode:
     #   0 > no changes
@@ -169,14 +169,15 @@ elif [[ "$COMMAND" == "apply" ]]; then
   fi
 
   # -----------------------------
-  # Block bulk destroy operations
+  # Block bulk destroy operations &
+  # prevent pipeline crash from parsing issues.
   # -----------------------------
-  DESTROY_COUNT=$(terraform show -json tfplan.binary | jq '
+  DESTROY_COUNT=$(terraform show -json tfplan.binary 2>/dev/null | jq '
   [
     .resource_changes[]
     | select(.change.actions | index("delete"))
   ] | length
-  ')
+  ' || echo 0)
 
   # Limit delete/replace 
   MAX_DESTROY=5
@@ -189,7 +190,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
   # ------------------------------------------
   # Run terraform apply 
   # ------------------------------------------
-  terraform apply -input=false -parallelism=5 -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
+  terraform apply -input=false -parallelism=1 -refresh=false -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
   # -input=false 
   # -parallelism=5 (only with plan & apply) > reduce memory usage
   # -auto-approve skips manual confirmation
@@ -212,190 +213,209 @@ elif [[ "$COMMAND" == "apply" ]]; then
     #terraform destroy -parallelism=5 -auto-approve -no-color 2>&1 | tee -a "$LOG_FILE"
 
     echo "Terraform apply failed." | tee -a "$LOG_FILE"
-    echo "===== Terraform Recovery Phase =====" | tee -a "$LOG_FILE"
+    echo "===== Terraform Recovery Phase (Step 1: State Sync) =====" | tee -a "$LOG_FILE"
 
     echo "Synchronizing Terraform state with Azure..."
     
     # Only read the real infrastructure and update the state file with -refresh-only.
     # Do NOT create, modify, or destroy infrastructure.
     terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color 2>&1 | tee -a "$LOG_FILE" || true
-
-    # ------------------------------------------
-    # Auto-detect and clean partially created resources
-    # ------------------------------------------
-    echo "Detecting partially created/broken resources..."
     
-    PLAN_OUT="tfplan.recovery"
-    terraform plan -input=false -parallelism=5 -lock-timeout=10m -no-color -out="$PLAN_OUT" -detailed-exitcode || true
-    terraform show -json "$PLAN_OUT" > tfplan.recovery.json
+    echo "Recovery Step 1 complete. Starting Step 2 in fresh process..."
 
-    BROKEN_RESOURCES=$(jq -r '
-      .resource_changes[]
-      | select(.change.actions == ["create"])
-      | select(
-          (.change.after.provisioning_state? != "Succeeded")
-          or (.change.after? == null)
-        )
-      | .address
-    ' tfplan.recovery.json)
-
-    if [[ -n "$BROKEN_RESOURCES" ]]; then
-        COUNT=$(printf '%s\n' "$BROKEN_RESOURCES" | sed '/^$/d' | wc -l)
-        echo "Broken resources detected: $COUNT"
-        
-        echo "Detected partially created/broken resources:"
-        printf '%s\n' "$BROKEN_RESOURCES"
-
-        for res in $BROKEN_RESOURCES; do
-            echo "Destroying $res in Azure..."
-            terraform destroy -target="$res" -auto-approve -parallelism=2 -lock-timeout=10m -no-color || true
-
-            echo "Removing $res from Terraform state..."
-            terraform state rm "$res" || true
-        done
-    else
-        echo "No broken resources detected. Recovery complete."
-    fi
-
-    echo "Scanning Azure for orphan resources created during this pipeline run..."
-
-    # --------------------------------------------------
-    # OPTION 1: Azure CLI resource listing
-    # --------------------------------------------------
-    #ORPHAN_IDS=$(az resource list \
-    #  --tag creation_run_id="$RUN_ID" \
-    #  --query "[].id" -o tsv 2>/dev/null || true)
-
-    # --------------------------------------------------
-    # OPTION 2: Azure Resource Graph (faster for large environments)
-    # --------------------------------------------------
-    ORPHAN_IDS=$(az graph query -q "
-    Resources
-    | where resourceGroup == 'myTFResourceGroup'
-    | where tags.managed_by == 'terraform'
-    | where tags.creation_run_id == '$RUN_ID'
-    | project id, type
-    " --query "data" -o json 2>/dev/null || echo "[]")
-    # " | where resourceGroup == 'myTFResourceGroup' " - scoped orphaned resources scan search to RG,
-    # ``` "data[].id" -o tsv ``` - outputs only IDs as text.
-    # ``` "data" -o json ``` - outputs ID + TYPE as json.
-    # ``` echo "[]" ``` - if query fails, prevents script crash and gives valid json
-    # instead of entire subscription.
-
-    if [[ -n "$ORPHAN_IDS" && "$ORPHAN_IDS" != "[]" ]]; then
-        ORPHAN_ID_LIST=$(echo "$ORPHAN_IDS" | jq -r '.[].id')
-    else
-        ORPHAN_ID_LIST=""
-    fi
-    
-    echo "Building Terraform state resource ID list..."
-
-    STATE_IDS=$(terraform state list | while read r; do
-      terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty'
-    done)
-    
-    STATE_IDS_SET=$(echo "$STATE_IDS" | sort -u)
-    
-    if [[ -n "$ORPHAN_IDS" && "$ORPHAN_IDS" != "[]" ]]; then
-        echo "Orphan Azure resources detected:"
-        echo "$ORPHAN_IDS" | jq .
-
-        # ------------------------------------------
-        # Function: delete safely by type
-        # ------------------------------------------
-        delete_by_type() {
-            TYPE_FILTER=$1
-            echo "$ORPHAN_IDS" | jq -c ".[] | select(.type | test(\"$TYPE_FILTER\"))" | while read res; do
-
-                ID=$(echo "$res" | jq -r '.id')
-
-                if printf '%s\n' "$STATE_IDS_SET" | grep -Fxq "$ID"; then
-                    # grep -Fxq "$ID" - avoids partial matches, accidental deletes
-                    echo "Skipping managed resource: $ID"
-                    continue
-                fi
-                
-                echo "Deleting [$TYPE_FILTER]: $ID"
-                az resource delete --ids "$ID" || true
-            done
-        }
-
-        # ------------------------------------------
-        # Dependency-aware deletion
-        # ------------------------------------------
-
-        delete_by_type "virtualMachines"
-        delete_by_type "networkInterfaces"
-        delete_by_type "disks"
-        delete_by_type "publicIPAddresses"
-        delete_by_type "networkSecurityGroups"
-        delete_by_type "virtualNetworks"
-
-        # ------------------------------------------
-        # Fallback: delete remaining
-        # ------------------------------------------
-        echo "$ORPHAN_IDS" | jq -c '.[]' | while read res; do
-
-            ID=$(echo "$res" | jq -r '.id')
-
-            if printf '%s\n' "$STATE_IDS_SET" | grep -Fxq "$ID"; then
-                echo "Skipping managed resource: $ID"
-                continue
-            fi
-
-            echo "Deleting remaining resource: $ID"
-            az resource delete --ids "$ID" || true
-
-        done
-
-    else
-        echo "No tagged orphan Azure resources found."
-    fi
-    
-    # ------------------------------------------
-    # Untagged: orphaned resources cleanup (safety net)
-    # ------------------------------------------
-    echo "Scanning for UNTAGGED orphan resources (safety net)..."
-
-    ALL_RESOURCES=$(az resource list \
-      --resource-group myTFResourceGroup \
-      --query "[].id" -o tsv 2>/dev/null || true)
-
-    echo "$ALL_RESOURCES" | grep -v '^$' | while read -r ID; do
-
-        # Skip if managed in Terraform state
-        if printf '%s\n' "$STATE_IDS_SET" | grep -Fxq "$ID"; then
-            echo "Skipping managed resource: $ID"
-            continue
-        fi
-
-        # Skip if already handled as tagged orphan
-        if [[ -n "$ORPHAN_ID_LIST" ]] && printf '%s\n' "$ORPHAN_ID_LIST" | grep -Fxq "$ID"; then
-            echo "Skipping already processed tagged orphan: $ID"
-            continue
-        fi
-
-        # Delete remaining untagged orphan
-        echo "Deleting UNTAGGED orphan: $ID"
-        az resource delete --ids "$ID" || true
-
-    done
-    
-    echo "Recovery finished. Pipeline ready for next run after code/config fix."
-    
-    set -e
-
+    # Re-exec script (clean process), frees memory, avoids Terraform/JQ leaks
+    RUN_ID="$RUN_ID" exec "$0" recovery
   else
     echo "SUCCEEDED" > "${LOG_ROOT}/apply.status"
-  fi 
-
-  # ------------------------------------------
-  # Export outputs 
-  # ------------------------------------------
-  if [[ "$TF_EXIT" -eq 0 ]]; then
+    
     terraform output -json > "${LOG_ROOT}/outputs.json" 2>/dev/null || true
+    # If apply succeeded, export outputs to JSON file
   fi
-  # If apply succeeded, export outputs to JSON file
+
+elif [[ "$COMMAND" == "recovery" ]]; then
+  
+  set +e      
+  # allows recovery steps to continue even if something fails
+  
+  TF_EXIT=1    
+  # ensures final pipeline status = FAILED no matter what
+  
+  # ------------------------------------------
+  # Auto-detect and clean partially created resources
+  # ------------------------------------------
+  echo "Detecting partially created/broken resources..."
+    
+  PLAN_OUT="tfplan.recovery"
+  terraform plan -input=false -parallelism=1 -lock-timeout=10m -no-color -out="$PLAN_OUT" -detailed-exitcode || true
+  #terraform show -json "$PLAN_OUT" > tfplan.recovery.json
+
+  #BROKEN_RESOURCES=$(jq -r '
+  #  .resource_changes[]
+  #  | select(.change.actions == ["create"])
+  #  | select(
+  #      (.change.after.provisioning_state? != "Succeeded")
+  #      or (.change.after? == null)
+  #    )
+  #  | .address
+  #' tfplan.recovery.json)
+  
+  BROKEN_RESOURCES=$(terraform show -json "$PLAN_OUT" 2>/dev/null | jq -r '
+    .resource_changes[]
+    | select(.change.actions == ["create"])
+    | select(
+        (.change.after.provisioning_state? != "Succeeded")
+        or (.change.after? == null)
+      )
+    | .address
+  ')
+
+  if [[ -n "$BROKEN_RESOURCES" ]]; then
+      COUNT=$(printf '%s\n' "$BROKEN_RESOURCES" | sed '/^$/d' | wc -l)
+      echo "Broken resources detected: $COUNT"
+        
+      echo "Detected partially created/broken resources:"
+      printf '%s\n' "$BROKEN_RESOURCES"
+
+      for res in $BROKEN_RESOURCES; do
+          echo "Destroying $res in Azure..."
+          terraform destroy -target="$res" -auto-approve -parallelism=1 -lock-timeout=10m -no-color || true
+
+          echo "Removing $res from Terraform state..."
+          terraform state rm "$res" || true
+          
+          echo "Wait..."
+          sleep 0.2
+      done
+  else
+      echo "No broken resources detected. Recovery complete."
+  fi
+
+  echo "Scanning Azure for orphan resources created during this pipeline run..."
+
+  # --------------------------------------------------
+  # OPTION 1: Azure CLI resource listing
+  # --------------------------------------------------
+  #ORPHAN_IDS=$(az resource list \
+  #  --tag creation_run_id="$RUN_ID" \
+  #  --query "[].id" -o tsv 2>/dev/null || true)
+
+  # --------------------------------------------------
+  # OPTION 2: Azure Resource Graph (faster for large environments)
+  # --------------------------------------------------
+  ORPHAN_IDS=$(az graph query -q "
+  Resources
+  | where resourceGroup == 'myTFResourceGroup'
+  | where tags.managed_by == 'terraform'
+  | where tags.creation_run_id == '$RUN_ID'
+  | project id, type
+  " --query "data" -o json 2>/dev/null || echo "[]")
+  # " | where resourceGroup == 'myTFResourceGroup' " - scoped orphaned resources scan search to RG,
+  # ``` "data[].id" -o tsv ``` - outputs only IDs as text.
+  # ``` "data" -o json ``` - outputs ID + TYPE as json.
+  # ``` echo "[]" ``` - if query fails, prevents script crash and gives valid json
+  # instead of entire subscription.
+
+  if [[ -n "$ORPHAN_IDS" && "$ORPHAN_IDS" != "[]" ]]; then
+      ORPHAN_ID_LIST=$(echo "$ORPHAN_IDS" | jq -r '.[].id')
+  else
+      ORPHAN_ID_LIST=""
+  fi
+    
+  echo "Building Terraform state resource ID list..."
+
+  STATE_IDS=$(terraform state list | while read r; do
+    terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty'
+  done)
+    
+  STATE_IDS_SET=$(echo "$STATE_IDS" | sort -u)
+    
+  if [[ -n "$ORPHAN_IDS" && "$ORPHAN_IDS" != "[]" ]]; then
+      echo "Orphan Azure resources detected:"
+      echo "$ORPHAN_IDS" | jq .
+
+      # ------------------------------------------
+      # Function: delete safely by type
+      # ------------------------------------------
+      delete_by_type() {
+          TYPE_FILTER=$1
+          echo "$ORPHAN_IDS" | jq -c ".[] | select(.type | test(\"$TYPE_FILTER\"))" | while read res; do
+
+              ID=$(echo "$res" | jq -r '.id')
+
+              if printf '%s\n' "$STATE_IDS_SET" | grep -Fxq "$ID"; then
+                  # grep -Fxq "$ID" - avoids partial matches, accidental deletes
+                  echo "Skipping managed resource: $ID"
+                  continue
+              fi
+                
+              echo "Deleting [$TYPE_FILTER]: $ID"
+              az resource delete --ids "$ID" || true
+          done
+      }
+
+      # ------------------------------------------
+      # Dependency-aware deletion
+      # ------------------------------------------
+
+      delete_by_type "virtualMachines"
+      delete_by_type "networkInterfaces"
+      delete_by_type "disks"
+      delete_by_type "publicIPAddresses"
+      delete_by_type "networkSecurityGroups"
+      delete_by_type "virtualNetworks"
+
+      # ------------------------------------------
+      # Fallback: delete remaining
+      # ------------------------------------------
+      echo "$ORPHAN_IDS" | jq -c '.[]' | while read res; do
+
+          ID=$(echo "$res" | jq -r '.id')
+
+          if printf '%s\n' "$STATE_IDS_SET" | grep -Fxq "$ID"; then
+              echo "Skipping managed resource: $ID"
+              continue
+          fi
+
+          echo "Deleting remaining resource: $ID"
+          az resource delete --ids "$ID" || true
+
+      done
+
+  else
+      echo "No tagged orphan Azure resources found."
+  fi
+    
+  # ------------------------------------------
+  # Untagged: orphaned resources cleanup (safety net)
+  # ------------------------------------------
+  echo "Scanning for UNTAGGED orphan resources (safety net)..."
+
+  ALL_RESOURCES=$(az resource list \
+    --resource-group myTFResourceGroup \
+    --query "[].id" -o tsv 2>/dev/null || true)
+
+  echo "$ALL_RESOURCES" | grep -v '^$' | while read -r ID; do
+
+      # Skip if managed in Terraform state
+      if printf '%s\n' "$STATE_IDS_SET" | grep -Fxq "$ID"; then
+          echo "Skipping managed resource: $ID"
+          continue
+      fi
+
+      # Skip if already handled as tagged orphan
+      if [[ -n "$ORPHAN_ID_LIST" ]] && printf '%s\n' "$ORPHAN_ID_LIST" | grep -Fxq "$ID"; then
+          echo "Skipping already processed tagged orphan: $ID"
+          continue
+      fi
+
+      # Delete remaining untagged orphan
+      echo "Deleting UNTAGGED orphan: $ID"
+      az resource delete --ids "$ID" || true
+
+  done
+    
+  echo "Recovery finished. Pipeline ready for next run after code/config fix."
+
 fi
 
 # ------------------------------------------
