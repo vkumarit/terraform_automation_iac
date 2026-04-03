@@ -68,16 +68,16 @@ stages:
     # -----------------------------
     # Azure CLI Login & agreement check (needed for orphan cleanup)
     # -----------------------------
-    - task: AzureCLI@2
-      displayName: "Azure CLI Login"
-      inputs:
-        azureSubscription: $(serviceConnection)
-        scriptType: bash
-        scriptLocation: inlineScript
-        inlineScript: |
-          echo "Logging into Azure..."
-          az account show
-          echo "Azure login successful."
+    #- task: AzureCLI@2
+    #  displayName: "Azure CLI Login"
+    #  inputs:
+    #    azureSubscription: $(serviceConnection)
+    #    scriptType: bash
+    #    scriptLocation: inlineScript
+    #    inlineScript: |
+    #      echo "Logging into Azure..."
+    #      az account show
+    #      echo "Azure login successful."
            
     #      echo "Checking marketplace agreement..."
           
