@@ -1,0 +1,40 @@
+
+Error: Reference to undeclared resource
+
+  on main.tf line 469, in resource "azurerm_storage_account" "prodmyapp_cmk":
+ 469:     identity_ids = [azurerm_user_assigned_identity.prodmyapp_sa_identity.id]
+
+A managed resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity"
+has not been declared in the root module.
+
+Error: Reference to undeclared resource
+
+  on main.tf line 489, in resource "azurerm_key_vault_key" "prodmyapp_key":
+ 489:   key_vault_id = azurerm_key_vault.prodmyapp.id
+
+A managed resource "azurerm_key_vault" "prodmyapp" has not been declared in
+the root module.
+
+Error: Reference to undeclared resource
+
+  on main.tf line 510, in resource "azurerm_key_vault_key" "prodmyapp_key":
+ 510:     azurerm_key_vault.prodmyapp,
+
+A managed resource "azurerm_key_vault" "prodmyapp" has not been declared in
+the root module.
+
+Error: Reference to undeclared resource
+
+  on main.tf line 1121, in data "azurerm_key_vault_secret" "win_password":
+1121:   key_vault_id = azurerm_key_vault.prodmyapp.id
+
+A managed resource "azurerm_key_vault" "prodmyapp" has not been declared in
+the root module.
+
+Error: Reference to undeclared resource
+
+  on main.tf line 1124, in data "azurerm_key_vault_secret" "win_password":
+1124:     azurerm_role_assignment.tf_kv_admin,
+
+A managed resource "azurerm_role_assignment" "tf_kv_admin" has not been
+declared in the root module.
