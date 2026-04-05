@@ -443,7 +443,7 @@ resource "azurerm_key_vault_secret" "sp_subscription_id" {
   depends_on   = [azurerm_key_vault.prodmyapp]
 }
 
-/*
+
 # Store current Client Secret 
 variable "arm_client_secret" {
   type      = string
@@ -528,7 +528,7 @@ resource "azurerm_key_vault_secret" "github_token" {
   
   depends_on   = [azurerm_key_vault.prodmyapp]
 }
-*/
+
 
 
 /*
