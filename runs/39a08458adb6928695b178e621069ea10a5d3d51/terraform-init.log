@@ -1,0 +1,19 @@
+Initializing the backend...
+
+Successfully configured the backend "azurerm"! Terraform will automatically
+use this backend unless the backend configuration changes.
+
+Error: Terraform encountered problems during initialisation, including problems
+with the configuration, described below.
+
+The Terraform configuration must be valid before initialization so that
+Terraform can determine which modules and providers need to be installed.
+
+
+Error: Duplicate variable declaration
+
+  on main.tf line 778:
+ 778: variable "environment" {
+
+A variable named "environment" was already declared at main.tf:52,1-23.
+Variable names must be unique within a module.
