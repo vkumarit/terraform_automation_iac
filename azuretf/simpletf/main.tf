@@ -258,7 +258,7 @@ resource "azurerm_role_assignment" "terraform_backend_storage_access" {
 terraform {
   backend "azurerm" {
     resource_group_name  = "myTFResourceGroup"
-    storage_account_name = "prodmyapptfstate01"
+    storage_account_name = "prodmyappsacmk01"
     container_name       = "mytfstate"
     
     key                  = "/prod/terraform.tfstate"       # folder/file name/directory inside container
