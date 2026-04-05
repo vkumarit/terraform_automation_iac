@@ -315,7 +315,7 @@ resource "azurerm_key_vault" "prodmyapp" {
 
 # Get current authenticated principal details automatically from 
 # data "azurerm_client_config" "current" {} , mentioned above in code
-/*
+
 # Store current SP Client ID (if using SP login) or app ID
 resource "azurerm_key_vault_secret" "sp_client_id" {
   name         = "sp-client-id"
@@ -326,7 +326,7 @@ resource "azurerm_key_vault_secret" "sp_client_id" {
   key_vault_id = azurerm_key_vault.prodmyapp.id
   depends_on   = [azurerm_key_vault.prodmyapp]
 }
-
+/*
 # Store current Client Secret 
 variable "arm_client_secret" {
   type      = string
@@ -438,7 +438,7 @@ resource "azurerm_key_vault_secret" "github_token" {
 ## User Enable encyption to storage account
 
 # After setting-up pipeline,
-# Create key, Storage Account, user_assigned_identity, role assignment, link them together and after
+# Create key, role assignment, link them together and after
 # Grant storage the access to Key Vault using User-Assigned Identity and role definition,
 # Link storage account with Link the identity and key 
 # (Creating new storage account resource block to avoid confusion between phases and changes in phases)
