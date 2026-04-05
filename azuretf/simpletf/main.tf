@@ -49,11 +49,11 @@ variable "run_id" {
   # Prevents error - `The argument "run_id" is required but no definition was found.`
 }
 
-variable "environment" {
-  description = "Environment for pipeline"
-  type        = string
+#variable "environment" {
+#  description = "Environment for pipeline"
+#  type        = string
   
-} 
+#} 
 
 # Tagging Resources
 locals {
