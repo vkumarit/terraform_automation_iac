@@ -130,7 +130,7 @@ resource "azurerm_resource_group" "prodmyapp" {
 }
 
 ## Storage Account
-
+/*
 # Can manually check available name using az cli, then enter here.
 resource "azurerm_storage_account" "prodmyapp" {
   name                = "prodmyapptfstate01"
@@ -182,7 +182,7 @@ resource "azurerm_storage_account" "mytfstate" {
 */
 
 ## Storage Container
-
+/*
 resource "azurerm_storage_container" "prodmyapp" {
   name                  = "mytfstate"
   storage_account_name = azurerm_storage_account.prodmyapp.name
@@ -220,7 +220,7 @@ resource "azurerm_role_assignment" "terraform_backend_storage_access" {
 
 # After core resource creation configure backened.tf file. Move terraform statefile to Storage Container. 
 # Perform init -upgrade after configuring.
-
+/*
 # backened.tf 
 terraform {
   backend "azurerm" {
@@ -244,7 +244,7 @@ terraform {
 data "azurerm_client_config" "current" {}        
 
 ## Key Vault
-/*
+
 resource "azurerm_key_vault" "prodmyapp" {
   name                        = "prodmyappkv"
   location                    = azurerm_resource_group.prodmyapp.location
@@ -282,7 +282,7 @@ resource "azurerm_key_vault" "prodmyapp" {
 
 # Get current authenticated principal details automatically from 
 # data "azurerm_client_config" "current" {} , mentioned above in code
-
+/*
 # Store current SP Client ID (if using SP login) or app ID
 resource "azurerm_key_vault_secret" "sp_client_id" {
   name         = "sp-client-id"
