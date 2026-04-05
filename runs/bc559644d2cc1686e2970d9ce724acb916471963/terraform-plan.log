@@ -1,0 +1,214 @@
+Acquiring state lock. This may take a few moments...
+data.azurerm_client_config.current: Reading...
+data.azurerm_client_config.current: Read complete after 1s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9M2E2NGFlZDktODY4NS00ZjYwLWJhZDQtYzdhMGIzZTBlNGQyO3N1YnNjcmlwdGlvbklkPTJiMmYwMmY3LWRkZTItNDdkYi05NzRjLTQ3ZDIxODI3MjFhZTt0ZW5hbnRJZD1mMTc1YzU2ZC00MDEzLTQyZmEtYTBlOC00MTAzZDIyNzZhMGQ=]
+data.azuread_service_principal.prodmyapp: Reading...
+data.azuread_service_principal.prodmyapp: Read complete after 2s [id=3a64aed9-8685-4f60-bad4-c7a0b3e0e4d2]
+azurerm_resource_group.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup]
+azurerm_user_assigned_identity.prodmyapp_sa_identity: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/my-storage-identity]
+azurerm_key_vault.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv]
+azurerm_storage_account.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01]
+azurerm_key_vault_secret.sp_subscription_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-subscription-id/d9e52566c444468698fa5c757e275208]
+azurerm_key_vault_secret.github_token: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/githubtoken/6b33cfc91d77467b8134008c15dad9cb]
+azurerm_key_vault_secret.sp_client_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-client-id/daaa277f158a4b06b6c207ebd9a3c0b2]
+azurerm_key_vault_secret.sp_tenant_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-tenant-id/c52cf03f5d964a01a83c7cde84453970]
+azurerm_key_vault_secret.sp_client_secret: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-client-secret/7e3a47b7daec4a31b71aaac49de0b833]
+azurerm_role_assignment.tf_kv_admin: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/fa73cc1a-d1c6-615a-cd09-95639937701e]
+azurerm_role_assignment.storage_kv_crypto: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/44c60368-9614-ac32-9a5a-de742061b842]
+azurerm_storage_container.prodmyapp: Refreshing state... [id=https://prodmyappsacmk01.blob.core.windows.net/mytfstate]
+time_sleep.wait_for_kv_rbac: Refreshing state... [id=2026-04-05T10:36:38Z]
+azurerm_role_assignment.terraform_backend_storage_access: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01/blobServices/default/containers/mytfstate/providers/Microsoft.Authorization/roleAssignments/3cf4d54b-f2b6-9ea0-338e-7bcf0db31234]
+azurerm_key_vault_key.prodmyapp_key: Refreshing state... [id=https://prodmyappkv.vault.azure.net/keys/my-storage-cmk/51e0da2d9d5a4b53bfedce7faa0471cc]
+azurerm_storage_account_customer_managed_key.prodmyapp_sa_cmk: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # azurerm_network_interface.prodmyapp_nic_linux will be created
+  + resource "azurerm_network_interface" "prodmyapp_nic_linux" {
+      + applied_dns_servers         = (known after apply)
+      + id                          = (known after apply)
+      + internal_domain_name_suffix = (known after apply)
+      + location                    = "australiaeast"
+      + mac_address                 = (known after apply)
+      + name                        = "prodmyapp-nic1"
+      + private_ip_address          = (known after apply)
+      + private_ip_addresses        = (known after apply)
+      + resource_group_name         = "myTFResourceGroup"
+      + tags                        = {
+          + "Name"            = "nic-prod"
+          + "creation_run_id" = "330"
+          + "environment"     = "prod"
+          + "managed_by"      = "terraform"
+        }
+      + virtual_machine_id          = (known after apply)
+
+      + ip_configuration {
+          + gateway_load_balancer_frontend_ip_configuration_id = (known after apply)
+          + name                                               = "ip_config_1"
+          + primary                                            = (known after apply)
+          + private_ip_address                                 = (known after apply)
+          + private_ip_address_allocation                      = "Dynamic"
+          + private_ip_address_version                         = "IPv4"
+          + public_ip_address_id                               = (known after apply)
+          + subnet_id                                          = (known after apply)
+        }
+    }
+
+  # azurerm_network_interface_security_group_association.nic_nsg_assn_linux will be created
+  + resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_linux" {
+      + id                        = (known after apply)
+      + network_interface_id      = (known after apply)
+      + network_security_group_id = (known after apply)
+    }
+
+  # azurerm_network_security_group.prodmyapp_sg_linux will be created
+  + resource "azurerm_network_security_group" "prodmyapp_sg_linux" {
+      + id                  = (known after apply)
+      + location            = "australiaeast"
+      + name                = "open-security-group"
+      + resource_group_name = "myTFResourceGroup"
+      + security_rule       = [
+          + {
+              + access                                     = "Allow"
+              + destination_address_prefix                 = "*"
+              + destination_address_prefixes               = []
+              + destination_application_security_group_ids = []
+              + destination_port_range                     = "*"
+              + destination_port_ranges                    = []
+              + direction                                  = "Outbound"
+              + name                                       = "AllowAllOutbound"
+              + priority                                   = 101
+              + protocol                                   = "*"
+              + source_address_prefix                      = "*"
+              + source_address_prefixes                    = []
+              + source_application_security_group_ids      = []
+              + source_port_range                          = "*"
+              + source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          + {
+              + access                                     = "Allow"
+              + destination_address_prefix                 = "*"
+              + destination_address_prefixes               = []
+              + destination_application_security_group_ids = []
+              + destination_port_range                     = "22"
+              + destination_port_ranges                    = []
+              + direction                                  = "Inbound"
+              + name                                       = "AllowAllInbound"
+              + priority                                   = 100
+              + protocol                                   = "*"
+              + source_address_prefix                      = "*"
+              + source_address_prefixes                    = []
+              + source_application_security_group_ids      = []
+              + source_port_range                          = "*"
+              + source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+        ]
+      + tags                = {
+          + "Name"            = "nsg-open"
+          + "creation_run_id" = "330"
+          + "environment"     = "prod"
+          + "managed_by"      = "terraform"
+        }
+    }
+
+  # azurerm_public_ip.prodmyapp_pub_ips will be created
+  + resource "azurerm_public_ip" "prodmyapp_pub_ips" {
+      + allocation_method       = "Static"
+      + ddos_protection_mode    = "VirtualNetworkInherited"
+      + fqdn                    = (known after apply)
+      + id                      = (known after apply)
+      + idle_timeout_in_minutes = 4
+      + ip_address              = (known after apply)
+      + ip_version              = "IPv4"
+      + location                = "australiaeast"
+      + name                    = "prodmyapp_public_ip1"
+      + resource_group_name     = "myTFResourceGroup"
+      + sku                     = "Standard"
+      + sku_tier                = "Regional"
+      + tags                    = {
+          + "Name"            = "pip-prod"
+          + "creation_run_id" = "330"
+          + "environment"     = "prod"
+          + "managed_by"      = "terraform"
+        }
+    }
+
+  # azurerm_subnet.pub_subnet will be created
+  + resource "azurerm_subnet" "pub_subnet" {
+      + address_prefixes                              = [
+          + "10.0.1.0/28",
+        ]
+      + default_outbound_access_enabled               = true
+      + id                                            = (known after apply)
+      + name                                          = "prodmyapp_pub_subnet1"
+      + private_endpoint_network_policies             = "Disabled"
+      + private_link_service_network_policies_enabled = true
+      + resource_group_name                           = "myTFResourceGroup"
+      + virtual_network_name                          = "prodmyapp_virtual-network"
+    }
+
+  # azurerm_subnet.pvt_subnet will be created
+  + resource "azurerm_subnet" "pvt_subnet" {
+      + address_prefixes                              = [
+          + "10.0.2.0/24",
+        ]
+      + default_outbound_access_enabled               = true
+      + id                                            = (known after apply)
+      + name                                          = "prodmyapp_pvt_subnet2"
+      + private_endpoint_network_policies             = "Disabled"
+      + private_link_service_network_policies_enabled = true
+      + resource_group_name                           = "myTFResourceGroup"
+      + virtual_network_name                          = "prodmyapp_virtual-network"
+    }
+
+  # azurerm_subnet_network_security_group_association.pub_subnet_nsg will be created
+  + resource "azurerm_subnet_network_security_group_association" "pub_subnet_nsg" {
+      + id                        = (known after apply)
+      + network_security_group_id = (known after apply)
+      + subnet_id                 = (known after apply)
+    }
+
+  # azurerm_subnet_network_security_group_association.pvt_subnet_nsg will be created
+  + resource "azurerm_subnet_network_security_group_association" "pvt_subnet_nsg" {
+      + id                        = (known after apply)
+      + network_security_group_id = (known after apply)
+      + subnet_id                 = (known after apply)
+    }
+
+  # azurerm_virtual_network.prodmyapp_vnet will be created
+  + resource "azurerm_virtual_network" "prodmyapp_vnet" {
+      + address_space       = [
+          + "10.0.0.0/16",
+        ]
+      + dns_servers         = (known after apply)
+      + guid                = (known after apply)
+      + id                  = (known after apply)
+      + location            = "australiaeast"
+      + name                = "prodmyapp_virtual-network"
+      + resource_group_name = "myTFResourceGroup"
+      + subnet              = (known after apply)
+      + tags                = {
+          + "Name"            = "vnet-prod"
+          + "creation_run_id" = "330"
+          + "environment"     = "prod"
+          + "managed_by"      = "terraform"
+        }
+    }
+
+Plan: 9 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + vm_public_ip = (known after apply)
+
+─────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: tfplan.binary
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "tfplan.binary"
+Releasing state lock. This may take a few moments...
