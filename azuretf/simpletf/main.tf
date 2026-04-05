@@ -180,7 +180,7 @@ resource "azurerm_storage_account" "prodmyapp" {
 
 # every team member has to add this and after renaming it can be removed
 #moved {
-#  from = azurerm_storage_account.prodmyapp_cmk
+#  from = azurerm_storage_account.prodmyapp
 #  to   = azurerm_storage_account.prodmyapp
 #}
  
@@ -515,7 +515,7 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
 }
 
 resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
-  storage_account_id = azurerm_storage_account.prodmyapp_cmk.id
+  storage_account_id = azurerm_storage_account.prodmyapp.id
   key_vault_id       = azurerm_key_vault.prodmyapp.id
   key_name          = azurerm_key_vault_key.prodmyapp_key.name
   key_version       = azurerm_key_vault_key.prodmyapp_key.version
@@ -525,7 +525,7 @@ resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
   depends_on = [
     azurerm_role_assignment.storage_kv_crypto,
     azurerm_key_vault_key.prodmyapp_key,
-    azurerm_storage_account.prodmyapp_cmk
+    azurerm_storage_account.prodmyapp
   ]
 }
 
