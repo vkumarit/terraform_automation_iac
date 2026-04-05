@@ -422,8 +422,28 @@ resource "azurerm_key_vault_secret" "sp_client_id" {
   depends_on   = [azurerm_key_vault.prodmyapp]
 }
 
+# Store Tenant ID (auto-detected)
+resource "azurerm_key_vault_secret" "sp_tenant_id" {
+  name         = "sp-tenant-id"
+  value        = data.azurerm_client_config.current.tenant_id
+  #value        = var.arm_tenant_id             # When exported ARM_TENANT_ID to env vars
+  key_vault_id = azurerm_key_vault.prodmyapp.id
+  depends_on   = [azurerm_key_vault.prodmyapp]
+}
 
-/*
+# Store Subscription ID (auto-detected)  
+resource "azurerm_key_vault_secret" "sp_subscription_id" {
+  name         = "sp-subscription-id"
+  value        = data.azurerm_client_config.current.subscription_id 
+  
+  #value        = var.arm_subscription_id       
+  #When exported ARM_SUBSCRIPTION_ID to env vars both ways - data and var can be used
+  
+  key_vault_id = azurerm_key_vault.prodmyapp.id
+  depends_on   = [azurerm_key_vault.prodmyapp]
+}
+
+
 # Store current Client Secret 
 variable "arm_client_secret" {
   type      = string
@@ -451,9 +471,9 @@ resource "azurerm_key_vault_secret" "sp_client_secret" {
   key_vault_id = azurerm_key_vault.prodmyapp.id
   
   lifecycle {
-#    ignore_changes = [] # Allow rotation, available value will be taken
+    ignore_changes = [] # Allow rotation, available value will be taken
 
-    ignore_changes = [value]  
+#    ignore_changes = [value]  
      #Never update the secret after first creation, freeze secret forever
      #Used when not managing secret rotation using terraform, az cli used for secret rotation
 
@@ -464,30 +484,7 @@ resource "azurerm_key_vault_secret" "sp_client_secret" {
   
   depends_on   = [azurerm_key_vault.prodmyapp]
 }
-*/
 
-
-# Store Tenant ID (auto-detected)
-resource "azurerm_key_vault_secret" "sp_tenant_id" {
-  name         = "sp-tenant-id"
-  value        = data.azurerm_client_config.current.tenant_id
-  #value        = var.arm_tenant_id             # When exported ARM_TENANT_ID to env vars
-  key_vault_id = azurerm_key_vault.prodmyapp.id
-  depends_on   = [azurerm_key_vault.prodmyapp]
-}
-
-# Store Subscription ID (auto-detected)  
-resource "azurerm_key_vault_secret" "sp_subscription_id" {
-  name         = "sp-subscription-id"
-  value        = data.azurerm_client_config.current.subscription_id 
-  
-  #value        = var.arm_subscription_id       
-  #When exported ARM_SUBSCRIPTION_ID to env vars both ways - data and var can be used
-  
-  key_vault_id = azurerm_key_vault.prodmyapp.id
-  depends_on   = [azurerm_key_vault.prodmyapp]
-}
-/*
 # Store GitHub Token 
 variable "github_token" {
   type      = string
@@ -510,17 +507,17 @@ variable "github_token" {
 
 resource "azurerm_key_vault_secret" "github_token" {
   name         = "githubtoken"
-  #value        = var.github_token         # var when exported TF_VAR_github_token to EC2/VM env vars
+  value        = var.github_token         # var when exported TF_VAR_github_token to EC2/VM env vars
   
-  value        = "placeholder"             
+  #value        = "placeholder"             
   #Used when not managing secret rotation using terraform, az cli used for secret rotation
   
   key_vault_id = azurerm_key_vault.prodmyapp.id
   
   lifecycle {
-#    ignore_changes = [] # Allow rotation, available value will be taken
+    ignore_changes = [] # Allow rotation, available value will be taken
 
-    ignore_changes = [value]  
+#    ignore_changes = [value]  
      #Never update the secret after first creation, freeze secret forever
      #Used when not managing secret rotation using terraform, az cli used for secret rotation
 
@@ -531,7 +528,7 @@ resource "azurerm_key_vault_secret" "github_token" {
   
   depends_on   = [azurerm_key_vault.prodmyapp]
 }
-*/
+
 
 
 /*
