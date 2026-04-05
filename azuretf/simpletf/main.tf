@@ -76,7 +76,7 @@ provider "azurerm" {
   
   ## A) use this when local/bootstrap, logged in to azure using cli as an User, to authenticate to azure.
   # Not required under automation/SP/pipeline condition.
-  #use_cli = true
+  use_cli = true
   
   ## B) Add key value as below required by version >= 4.1.0 for azure authentication.
   subscription_id  = "2b2f02f7-dde2-47db-974c-47d2182721ae"
@@ -91,7 +91,7 @@ provider "azurerm" {
 }
 
 ## Resource Group
-
+/*
 resource "azurerm_resource_group" "prodmyapp" {
   name     = "myTFResourceGroup"
   location = "Australia East"
@@ -228,7 +228,7 @@ terraform {
     #when keeping separate statefile for each environment
     
     #use_azuread_auth     = true                      # When want to use entra id for authentication
-    #use_cli              = true  
+    use_cli              = true  
     # use_cli uses logged-in az cli context for authentication, comment out when switching to pipeline
   }
 }

@@ -11,14 +11,14 @@ trigger:
       - terraform-logs
 
 variables:
-- group: az-classic-kv-var
+#- group: az-classic-kv-var
 - name: serviceConnection
   value: 'az-classic-conn'
-- name: ENVIRONMENT
-  value: prod
+#- name: ENVIRONMENT
+#  value: prod
   #value: $(Build.SourceBranchName) #for environment-specific (dev/prod/test/staging) pipeline runs
-- name: SIZE_ALIAS
-  value: small
+#- name: SIZE_ALIAS
+#  value: small
 
 
 pool:
@@ -141,34 +141,34 @@ stages:
     # -----------------------------
     # Debug Secret Injection
     # -----------------------------
-    - script: |
-        echo "DEBUG: ARM_CLIENT_ID length: ${#ARM_CLIENT_ID}"
-        echo "DEBUG: ARM_CLIENT_SECRET length: ${#ARM_CLIENT_SECRET}; first 5 chars: ${ARM_CLIENT_SECRET:0:5}"
-        echo "DEBUG: ARM_TENANT_ID present: ${ARM_TENANT_ID:+yes}"
-        echo "DEBUG: ARM_SUBSCRIPTION_ID present: ${ARM_SUBSCRIPTION_ID:+yes}"
-        echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
-        terraform version
-      workingDirectory: azuretf/simpletf
-      displayName: "Debug Terraform Environment variables"
-      env:
-        ARM_CLIENT_ID: $(sp-client-id)
-        ARM_CLIENT_SECRET: $(sp-client-secret)
-        ARM_TENANT_ID: $(sp-tenant-id)
-        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-        GITHUB_TOKEN: $(githubtoken)
+    #- script: |
+    #    echo "DEBUG: ARM_CLIENT_ID length: ${#ARM_CLIENT_ID}"
+    #    echo "DEBUG: ARM_CLIENT_SECRET length: ${#ARM_CLIENT_SECRET}; first 5 chars: ${ARM_CLIENT_SECRET:0:5}"
+    #    echo "DEBUG: ARM_TENANT_ID present: ${ARM_TENANT_ID:+yes}"
+    #    echo "DEBUG: ARM_SUBSCRIPTION_ID present: ${ARM_SUBSCRIPTION_ID:+yes}"
+    #    echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
+    #    terraform version
+    #  workingDirectory: azuretf/simpletf
+    #  displayName: "Debug Terraform Environment variables"
+    #  env:
+    #    ARM_CLIENT_ID: $(sp-client-id)
+    #    ARM_CLIENT_SECRET: $(sp-client-secret)
+    #    ARM_TENANT_ID: $(sp-tenant-id)
+    #    ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+    #    GITHUB_TOKEN: $(githubtoken)
     
     # -----------------------------
     # Test client secret
     # -----------------------------
-    - bash: |
-        echo "## DEBUG PIPELINE SECRET ##"
-        echo "Length: ${#ARM_CLIENT_SECRET}"
-        echo "Preview: ${ARM_CLIENT_SECRET:0:20}"
-        echo -n "$ARM_CLIENT_SECRET" | od -c | head -n 3
-        echo -n "$ARM_CLIENT_SECRET" | xxd | head -n 1
-      displayName: 'Debug Pipeline Secret Bytes'
-      env:
-        ARM_CLIENT_SECRET: $(sp-client-secret)
+    ##- bash: |
+    ##    echo "## DEBUG PIPELINE SECRET ##"
+    ##    echo "Length: ${#ARM_CLIENT_SECRET}"
+    ##    echo "Preview: ${ARM_CLIENT_SECRET:0:20}"
+    ##    echo -n "$ARM_CLIENT_SECRET" | od -c | head -n 3
+    ##    echo -n "$ARM_CLIENT_SECRET" | xxd | head -n 1
+    ##  displayName: 'Debug Pipeline Secret Bytes'
+    ##  env:
+    ##    ARM_CLIENT_SECRET: $(sp-client-secret)
         
     # -----------------------------
     # Terraform Init
@@ -179,12 +179,12 @@ stages:
         #terraform init -reconfigure -upgrade
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
-      env:
-        ARM_CLIENT_ID: $(sp-client-id)
-        ARM_CLIENT_SECRET: $(sp-client-secret)
-        ARM_TENANT_ID: $(sp-tenant-id)
-        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-        GITHUB_TOKEN: $(githubtoken)
+    #  env:
+    #    ARM_CLIENT_ID: $(sp-client-id)
+    #    ARM_CLIENT_SECRET: $(sp-client-secret)
+    #    ARM_TENANT_ID: $(sp-tenant-id)
+    #    ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+    #    GITHUB_TOKEN: $(githubtoken)
 
     # -----------------------------
     # Terraform Plan
@@ -196,11 +196,11 @@ stages:
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
       env:
-        ARM_CLIENT_ID: $(sp-client-id)
-        ARM_CLIENT_SECRET: $(sp-client-secret)
-        ARM_TENANT_ID: $(sp-tenant-id)
-        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-        GITHUB_TOKEN: $(githubtoken)
+    #    ARM_CLIENT_ID: $(sp-client-id)
+    #    ARM_CLIENT_SECRET: $(sp-client-secret)
+    #    ARM_TENANT_ID: $(sp-tenant-id)
+    #    ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+    #    GITHUB_TOKEN: $(githubtoken)
         TF_VAR_environment: $(ENVIRONMENT)
         TF_VAR_size_alias: $(SIZE_ALIAS)
         TF_VAR_run_id: $(Build.BuildId)
@@ -216,11 +216,11 @@ stages:
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
       env:
-        ARM_CLIENT_ID: $(sp-client-id)
-        ARM_CLIENT_SECRET: $(sp-client-secret)
-        ARM_TENANT_ID: $(sp-tenant-id)
-        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-        GITHUB_TOKEN: $(githubtoken)
+    #    ARM_CLIENT_ID: $(sp-client-id)
+    #    ARM_CLIENT_SECRET: $(sp-client-secret)
+    #    ARM_TENANT_ID: $(sp-tenant-id)
+    #    ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+    #    GITHUB_TOKEN: $(githubtoken)
         TF_VAR_environment: $(ENVIRONMENT)
         TF_VAR_size_alias: $(SIZE_ALIAS)
         TF_VAR_run_id: $(Build.BuildId)              #for terraform env
