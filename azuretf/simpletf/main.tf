@@ -220,7 +220,7 @@ resource "azurerm_role_assignment" "terraform_backend_storage_access" {
 
 # After core resource creation configure backened.tf file. Move terraform statefile to Storage Container. 
 # Perform init -upgrade after configuring.
-/*
+
 # backened.tf 
 terraform {
   backend "azurerm" {
@@ -228,7 +228,7 @@ terraform {
     storage_account_name = "prodmyapptfstate01"
     container_name       = "mytfstate"
     
-    key                  = "terraform.tfstate"       # folder/file name/directory inside container
+    key                  = "/prod/terraform.tfstate"       # folder/file name/directory inside container
     
     #key = "${var.environment}/terraform.tfstate"    
     #when keeping separate statefile for each environment
@@ -244,7 +244,7 @@ terraform {
 data "azurerm_client_config" "current" {}        
 
 ## Key Vault
-
+/*
 resource "azurerm_key_vault" "prodmyapp" {
   name                        = "prodmyappkv"
   location                    = azurerm_resource_group.prodmyapp.location
