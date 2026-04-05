@@ -544,7 +544,7 @@ azurerm_network_interface_security_group_association: Links NSGs to network inte
 */
 
 ## Virtual Network w/ cidr 10.0.0.0/16 and Subnets
-/*
+
 # Network Security Group (All allowed for testing)
 resource "azurerm_network_security_group" "prodmyapp_sg_linux" {
   name                = "open-security-group"
