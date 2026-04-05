@@ -1,0 +1,7 @@
+{
+  "vm_public_ip": {
+    "sensitive": false,
+    "type": "string",
+    "value": "20.5.75.14"
+  }
+}
