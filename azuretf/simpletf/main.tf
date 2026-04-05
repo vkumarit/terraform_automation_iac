@@ -34,7 +34,7 @@ terraform {
 
 
 ###               PHASE-I               ###
-# Create Core Resources - Resource Group, Storage Account, Storage Container.
+# Create Core Resources - Resource Group, User-Assigned Identity, Storage Account (CMK), Storage Container.
 # using azcli and/or env vars for SP terraform azure authentication on ec2.
 # Perform init plan apply.
 
@@ -130,23 +130,49 @@ resource "azurerm_resource_group" "prodmyapp" {
 }
 
 ## Storage Account
-/*
-# Can manually check available name using az cli, then enter here.
-resource "azurerm_storage_account" "prodmyapp" {
-  name                = "prodmyapptfstate01"
-  resource_group_name = azurerm_resource_group.prodmyapp.name
+
+# Create User-Assigned Identity: Grant access to Key Vault.
+resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
+  name                = "my-storage-identity"
   location            = azurerm_resource_group.prodmyapp.location
-  account_tier        = "Standard"
-  account_replication_type = "LRS"
-  allow_nested_items_to_be_public = false
+  resource_group_name = azurerm_resource_group.prodmyapp.name
   
   tags = merge(local.common_tags, {
-    Name = "st-tfstate"
+    Name = "identity-storage"
     creation_run_id = var.run_id
   })
   
   lifecycle {
     ignore_changes = [
+      tags["creation_run_id"]
+    ]
+  }
+  # Add lifecycle block from the beginning, 
+  # when creating a new resource.
+}
+
+# Can manually check available name using az cli, then enter here.
+# Create Storage Account (CMK): Set backened then Link the identity and key later.
+resource "azurerm_storage_account" "prodmyapp_cmk" {
+  name                     = "prodmyappsacmk01"
+  location                 = azurerm_resource_group.prodmyapp.location
+  resource_group_name      = azurerm_resource_group.prodmyapp.name
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.prodmyapp_sa_identity.id]
+  }
+  
+  tags = merge(local.common_tags, {
+    Name = "st-tfstate-cmk"
+    creation_run_id = var.run_id
+  })
+  
+  lifecycle {
+    ignore_changes = [
+      customer_managed_key,
       tags["creation_run_id"]
     ]
   }
@@ -424,26 +450,6 @@ resource "time_sleep" "wait_for_kv_rbac" {
   depends_on      = [azurerm_role_assignment.tf_kv_admin]
 }
 
-# Create User-Assigned Identity: Grant access to Key Vault.
-resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
-  name                = "my-storage-identity"
-  location            = azurerm_resource_group.prodmyapp.location
-  resource_group_name = azurerm_resource_group.prodmyapp.name
-  
-  tags = merge(local.common_tags, {
-    Name = "identity-storage"
-    creation_run_id = var.run_id
-  })
-  
-  lifecycle {
-    ignore_changes = [
-      tags["creation_run_id"]
-    ]
-  }
-  # Add lifecycle block from the beginning, 
-  # when creating a new resource.
-}
-
 resource "azurerm_role_assignment" "storage_kv_crypto" {
   scope                = azurerm_key_vault.prodmyapp.id
   role_definition_name = "Key Vault Crypto Service Encryption User"
@@ -462,31 +468,6 @@ resource "azurerm_role_assignment" "human_kv_crypto_officer" {
 */
 
 /*
-#Create Storage Account (CMK): Link the identity and key.
-resource "azurerm_storage_account" "prodmyapp_cmk" {
-  name                     = "prodmyappsacmk01"
-  location                 = azurerm_resource_group.prodmyapp.location
-  resource_group_name      = azurerm_resource_group.prodmyapp.name
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-
-  identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.prodmyapp_sa_identity.id]
-  }
-  
-  tags = merge(local.common_tags, {
-    Name = "st-cmk"
-    creation_run_id = var.run_id
-  })
-  
-  lifecycle {
-    ignore_changes = [
-      customer_managed_key,
-      tags["creation_run_id"]
-    ]
-  }
-}
 
 # Create key with explicit rotation policy
 
