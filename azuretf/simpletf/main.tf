@@ -277,7 +277,7 @@ terraform {
 data "azurerm_client_config" "current" {}        
 
 ## Key Vault
-
+/*
 resource "azurerm_key_vault" "prodmyapp" {
   name                        = "prodmyappkv"
   location                    = azurerm_resource_group.prodmyapp.location
@@ -315,7 +315,7 @@ resource "azurerm_key_vault" "prodmyapp" {
 
 # Get current authenticated principal details automatically from 
 # data "azurerm_client_config" "current" {} , mentioned above in code
-
+/*
 # Store current SP Client ID (if using SP login) or app ID
 resource "azurerm_key_vault_secret" "sp_client_id" {
   name         = "sp-client-id"
@@ -442,7 +442,7 @@ resource "azurerm_key_vault_secret" "github_token" {
 # Grant storage the access to Key Vault using User-Assigned Identity and role definition,
 # Link storage account with Link the identity and key 
 # (Creating new storage account resource block to avoid confusion between phases and changes in phases)
-
+/*
 #RBAC for Terraform key vault created 'prodmyappkv'
 resource "azurerm_role_assignment" "tf_kv_admin" {
   scope                = azurerm_key_vault.prodmyapp.id
@@ -473,10 +473,8 @@ resource "azurerm_role_assignment" "human_kv_crypto_officer" {
 }
 */
 
-/*
-
 # Create key with explicit rotation policy
-
+/*
 resource "azurerm_key_vault_key" "prodmyapp_key" {
   name         = "my-storage-cmk"
   key_vault_id = azurerm_key_vault.prodmyapp.id
