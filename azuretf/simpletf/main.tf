@@ -153,7 +153,7 @@ resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
 
 # Can manually check available name using az cli, then enter here.
 # Create Storage Account (CMK): Set backened then Link the identity and key later.
-resource "azurerm_storage_account" "prodmyapp_cmk" {
+resource "azurerm_storage_account" "prodmyapp" {
   name                     = "prodmyappsacmk01"
   location                 = azurerm_resource_group.prodmyapp.location
   resource_group_name      = azurerm_resource_group.prodmyapp.name
@@ -177,6 +177,13 @@ resource "azurerm_storage_account" "prodmyapp_cmk" {
     ]
   }
 }
+
+# every team member has to add this and after renaming it can be removed
+moved {
+  from = azurerm_storage_account.prodmyapp_cmk
+  to   = azurerm_storage_account.prodmyapp
+}
+ 
 
 /*
 # How to solve the problem of storage account name already taken?
@@ -208,7 +215,7 @@ resource "azurerm_storage_account" "mytfstate" {
 */
 
 ## Storage Container
-/*
+
 resource "azurerm_storage_container" "prodmyapp" {
   name                  = "mytfstate"
   storage_account_name = azurerm_storage_account.prodmyapp.name
