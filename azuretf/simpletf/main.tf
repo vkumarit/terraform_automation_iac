@@ -179,10 +179,10 @@ resource "azurerm_storage_account" "prodmyapp" {
 }
 
 # every team member has to add this and after renaming it can be removed
-#moved {
-#  from = azurerm_storage_account.prodmyapp_cmk
-#  to   = azurerm_storage_account.prodmyapp
-#}
+moved {
+  from = azurerm_storage_account.prodmyapp_cmk
+  to   = azurerm_storage_account.prodmyapp
+}
  
 
 /*
