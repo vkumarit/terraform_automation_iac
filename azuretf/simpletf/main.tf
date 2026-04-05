@@ -179,10 +179,10 @@ resource "azurerm_storage_account" "prodmyapp" {
 }
 
 # every team member has to add this and after renaming it can be removed
-moved {
-  from = azurerm_storage_account.prodmyapp_cmk
-  to   = azurerm_storage_account.prodmyapp
-}
+#moved {
+#  from = azurerm_storage_account.prodmyapp_cmk
+#  to   = azurerm_storage_account.prodmyapp
+#}
  
 
 /*
@@ -315,15 +315,14 @@ resource "azurerm_key_vault" "prodmyapp" {
 
 # Get current authenticated principal details automatically from 
 # data "azurerm_client_config" "current" {} , mentioned above in code
-/*
+
 # Store current SP Client ID (if using SP login) or app ID
 resource "azurerm_key_vault_secret" "sp_client_id" {
   name         = "sp-client-id"
   value        = data.azurerm_client_config.current.client_id
   
   #value        = var.arm_client_id             # when exported ARM_CLIENT_ID to env vars
-  #value        = data.azurerm_client_config.current.client_id != null ? data.azurerm_client_config.current.client_id : "04b07795-8ddb-461a-bbee-02f9e1bf7b46"  # fallback
-  
+    
   key_vault_id = azurerm_key_vault.prodmyapp.id
   depends_on   = [azurerm_key_vault.prodmyapp]
 }
