@@ -530,6 +530,7 @@ resource "azurerm_key_vault_secret" "github_token" {
 }
 
 
+###               PHASE-IV               ###
 
 /*
 -----------------
@@ -727,6 +728,10 @@ resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_li
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg_linux.id
 }
 
+
+###               PHASE-V               ###
+
+
 ## VM - linux (Small scale production-grade)
 
 /*
@@ -745,7 +750,7 @@ Create linux VM resource using all above and other keys and values.
 */
 
 ## SSH Key Generation (tls provider block required)
-/*
+
 # Creating Key
 resource "tls_private_key" "vm_ssh" {
   algorithm = "RSA"
@@ -1119,7 +1124,7 @@ data "azurerm_key_vault_secret" "win_password" {
   ]
   # Terraform reads secret during plan phase, so requires `depends_on`
 }
-
+/*
 resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
   name                = "windows_vm_01"
   computer_name       = "windowsvmdev01"
