@@ -63,7 +63,7 @@ stages:
     # -----------------------------
     - task: TerraformInstaller@0
       inputs:
-        terraformVersion: '1.14.6' #  for prod and 'latest' for dev/test/staging
+        terraformVersion: '1.14.8' #  for prod and 'latest' for dev/test/staging
 
     # -----------------------------
     # Azure CLI Login & agreement check (needed for orphan cleanup)
