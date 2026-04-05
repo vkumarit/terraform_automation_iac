@@ -1189,5 +1189,5 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
     ]
   }
 }
-
+*/
 # Deployment of resources in different regions using loop
