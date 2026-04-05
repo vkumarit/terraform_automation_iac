@@ -201,10 +201,10 @@ stages:
        ARM_TENANT_ID: $(sp-tenant-id)
        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
        GITHUB_TOKEN: $(githubtoken)
-        TF_VAR_environment: $(ENVIRONMENT)
-        TF_VAR_size_alias: $(SIZE_ALIAS)
-        TF_VAR_run_id: $(Build.BuildId)
-        RUN_ID: $(Build.BuildId)
+       TF_VAR_environment: $(ENVIRONMENT)
+       TF_VAR_size_alias: $(SIZE_ALIAS)
+       TF_VAR_run_id: $(Build.BuildId)
+       RUN_ID: $(Build.BuildId)
 
     # -----------------------------
     # Terraform Apply
