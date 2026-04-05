@@ -455,7 +455,7 @@ resource "azurerm_role_assignment" "human_kv_crypto_officer" {
 }
 */
 
-
+/*
 #Create Storage Account (CMK): Link the identity and key.
 resource "azurerm_storage_account" "prodmyapp_cmk" {
   name                     = "prodmyappsacmk01"
@@ -551,7 +551,7 @@ azurerm_network_interface_security_group_association: Links NSGs to network inte
 */
 
 ## Virtual Network w/ cidr 10.0.0.0/16 and Subnets
-
+/*
 # Network Security Group (All allowed for testing)
 resource "azurerm_network_security_group" "prodmyapp_sg_linux" {
   name                = "open-security-group"
@@ -752,7 +752,7 @@ Create linux VM resource using all above and other keys and values.
 */
 
 ## SSH Key Generation (tls provider block required)
-
+/*
 # Creating Key
 resource "tls_private_key" "vm_ssh" {
   algorithm = "RSA"
@@ -1157,7 +1157,7 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
     disk_encryption_set_id = azurerm_disk_encryption_set.prod_des.id
   }
   */
-
+/*
   source_image_reference {
     publisher = local.vm_images[var.environment].windows.publisher
     offer     = local.vm_images[var.environment].windows.offer
