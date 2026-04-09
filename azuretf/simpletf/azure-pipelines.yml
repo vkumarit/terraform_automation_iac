@@ -141,21 +141,21 @@ stages:
     # -----------------------------
     # Debug Secret Injection
     # -----------------------------
-    - script: |
-        echo "DEBUG: ARM_CLIENT_ID length: ${#ARM_CLIENT_ID}"
-        echo "DEBUG: ARM_CLIENT_SECRET length: ${#ARM_CLIENT_SECRET}; first 5 chars: ${ARM_CLIENT_SECRET:0:5}"
-        echo "DEBUG: ARM_TENANT_ID present: ${ARM_TENANT_ID:+yes}"
-        echo "DEBUG: ARM_SUBSCRIPTION_ID present: ${ARM_SUBSCRIPTION_ID:+yes}"
-        echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
-        terraform version
-      workingDirectory: azuretf/simpletf
-      displayName: "Debug Terraform Environment variables"
-      env:
-        ARM_CLIENT_ID: $(sp-client-id)
-        ARM_CLIENT_SECRET: $(sp-client-secret)
-        ARM_TENANT_ID: $(sp-tenant-id)
-        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-        GITHUB_TOKEN: $(githubtoken)
+    #- script: |
+    #    echo "DEBUG: ARM_CLIENT_ID length: ${#ARM_CLIENT_ID}"
+    #    echo "DEBUG: ARM_CLIENT_SECRET length: ${#ARM_CLIENT_SECRET}; first 5 chars: ${ARM_CLIENT_SECRET:0:5}"
+    #    echo "DEBUG: ARM_TENANT_ID present: ${ARM_TENANT_ID:+yes}"
+    #    echo "DEBUG: ARM_SUBSCRIPTION_ID present: ${ARM_SUBSCRIPTION_ID:+yes}"
+    #    echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
+    #    terraform version
+    #  workingDirectory: azuretf/simpletf
+    #  displayName: "Debug Terraform Environment variables"
+    #  env:
+    #    ARM_CLIENT_ID: $(sp-client-id)
+    #    ARM_CLIENT_SECRET: $(sp-client-secret)
+    #    ARM_TENANT_ID: $(sp-tenant-id)
+    #    ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+    #    GITHUB_TOKEN: $(githubtoken)
     
     # -----------------------------
     # Test client secret
@@ -187,56 +187,56 @@ stages:
     # -----------------------------
     - script: |
         cd azuretf/simpletf
-        ./runterraform.sh init
-        #terraform init -reconfigure -upgrade
+        #./runterraform.sh init
+        terraform init -upgrade
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
-      env:
-        ARM_CLIENT_ID: $(sp-client-id)
-        ARM_CLIENT_SECRET: $(sp-client-secret)
-        ARM_TENANT_ID: $(sp-tenant-id)
-        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-        GITHUB_TOKEN: $(githubtoken)
+    #  env:
+    #    ARM_CLIENT_ID: $(sp-client-id)
+    #    ARM_CLIENT_SECRET: $(sp-client-secret)
+    #    ARM_TENANT_ID: $(sp-tenant-id)
+    #    ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+    #    GITHUB_TOKEN: $(githubtoken)
 
     # -----------------------------
     # Terraform Plan
     # -----------------------------
     - script: |
         cd azuretf/simpletf
-        ./runterraform.sh plan
-        #terraform plan -out=tfplan
+        #./runterraform.sh plan
+        terraform plan -out=tfplan
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
-      env:
-       ARM_CLIENT_ID: $(sp-client-id)
-       ARM_CLIENT_SECRET: $(sp-client-secret)
-       ARM_TENANT_ID: $(sp-tenant-id)
-       ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-       GITHUB_TOKEN: $(githubtoken)
-       TF_VAR_environment: $(ENVIRONMENT)
-       TF_VAR_size_alias: $(SIZE_ALIAS)
-       TF_VAR_run_id: $(Build.BuildId)
-       RUN_ID: $(Build.BuildId)
+    #  env:
+    #   ARM_CLIENT_ID: $(sp-client-id)
+    #   ARM_CLIENT_SECRET: $(sp-client-secret)
+    #   ARM_TENANT_ID: $(sp-tenant-id)
+    #   ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+    #   GITHUB_TOKEN: $(githubtoken)
+    #   TF_VAR_environment: $(ENVIRONMENT)
+    #   TF_VAR_size_alias: $(SIZE_ALIAS)
+    #   TF_VAR_run_id: $(Build.BuildId)
+    #   RUN_ID: $(Build.BuildId)
 
     # -----------------------------
     # Terraform Apply
     # -----------------------------
     - script: |
         cd azuretf/simpletf
-        ./runterraform.sh apply
-        #terraform apply -auto-approve tfplan
+        #./runterraform.sh apply
+        terraform apply -auto-approve tfplan
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
-      env:
-        ARM_CLIENT_ID: $(sp-client-id)
-        ARM_CLIENT_SECRET: $(sp-client-secret)
-        ARM_TENANT_ID: $(sp-tenant-id)
-        ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-        GITHUB_TOKEN: $(githubtoken)
-        TF_VAR_environment: $(ENVIRONMENT)
-        TF_VAR_size_alias: $(SIZE_ALIAS)
-        TF_VAR_run_id: $(Build.BuildId)              #for terraform env
-        RUN_ID: $(Build.BuildId)                     #for .sh
+    #  env:
+    #    ARM_CLIENT_ID: $(sp-client-id)
+    #    ARM_CLIENT_SECRET: $(sp-client-secret)
+    #    ARM_TENANT_ID: $(sp-tenant-id)
+    #    ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
+    #    GITHUB_TOKEN: $(githubtoken)
+    #    TF_VAR_environment: $(ENVIRONMENT)
+    #    TF_VAR_size_alias: $(SIZE_ALIAS)
+    #    TF_VAR_run_id: $(Build.BuildId)              #for terraform env
+    #    RUN_ID: $(Build.BuildId)                     #for .sh
         
     # -----------------------------
     # Clean Terraform junk after every run
