@@ -4061,6 +4061,22 @@ az keyvault secret show --vault-name prodmyappkv --name sp-client-secret --query
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------
+Re-Instate the pipeline:
+
+update main.tf by commenting everything except resource group block to start, then commit and push
+go to backened and do git pull to terraform directory then do,
+$ rm -rf .terraform .terraform.lock.hcl
+
+because backened config changes for state
+$ terraform init -upgrade
+
+continue with plan
+$ terraform plan -out=tfplan 
+$ terraform apply tfplan
+
+afterwards uncomment code and apply phase wise 
+
+and export secrets to env and update to key vault
 
 ---------------------------------------------------------------------------------------------------------------
 Verify GitHub Token from EC2/VM:

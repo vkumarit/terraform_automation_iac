@@ -61,10 +61,10 @@ variable "deployment_id" {
   default = "prodmyapp"
 }
 
-#variable "environment" {
-#  description = "Environment for pipeline"
-#  type        = string
-#} 
+variable "environment" {
+  description = "Environment for pipeline"
+  type        = string
+} 
 
 # Tagging Resources
 #locals {
