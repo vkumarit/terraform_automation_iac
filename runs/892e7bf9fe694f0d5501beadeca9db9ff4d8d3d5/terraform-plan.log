@@ -1,0 +1,8 @@
+
+Error: Reference to undeclared input variable
+
+  on main.tf line 88, in locals:
+  88:     environment     = var.environment
+
+An input variable with the name "environment" has not been declared. This
+variable can be declared with a variable "environment" {} block.

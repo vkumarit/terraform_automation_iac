@@ -4,6 +4,6 @@ Terraform Run Summary
 Commit : 892e7bf9fe694f0d5501beadeca9db9ff4d8d3d5
 
 INIT  : SUCCEEDED
-PLAN  : PLAN SKIPPED
+PLAN  : FAILED
 APPLY : APPLY SKIPPED
 =========================================
