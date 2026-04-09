@@ -159,7 +159,7 @@ resource "azurerm_resource_group" "prodmyapp" {
 }
 
 ## Storage Account
-
+/*
 # Create User-Assigned Identity: Grant access to Key Vault.
 resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   name                = "my-storage-identity"
@@ -242,7 +242,7 @@ resource "azurerm_storage_account" "mytfstate" {
 */
 
 ## Storage Container
-
+/*
 resource "azurerm_storage_container" "prodmyapp" {
   name                  = "mytfstate"
   storage_account_name  = azurerm_storage_account.prodmyapp.name
@@ -371,7 +371,7 @@ resource "azurerm_role_assignment" "human_kv_crypto_officer" {
 */
 
 # Create key with explicit rotation policy
-
+/*
 resource "azurerm_key_vault_key" "prodmyapp_key" {
   name         = "my-storage-cmk"
   key_vault_id = azurerm_key_vault.prodmyapp.id
@@ -570,7 +570,7 @@ azurerm_network_interface_security_group_association: Links NSGs to network inte
 */
 
 ## Virtual Network w/ cidr 10.0.0.0/16 and Subnets
-
+/*
 # Network Security Group (All allowed for testing)
 resource "azurerm_network_security_group" "prodmyapp_sg_linux" {
   name                = "open-security-group"
@@ -771,7 +771,7 @@ Create linux VM resource using all above and other keys and values.
 */
 
 ## SSH Key Generation (tls provider block required)
-
+/*
 # Creating Key
 resource "tls_private_key" "vm_ssh" {
   algorithm = "RSA"
@@ -1144,7 +1144,7 @@ data "azurerm_key_vault_secret" "win_password" {
   ]
   # Terraform reads secret during plan phase, so requires `depends_on`
 }
-/*
+
 resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
   name                = "windows_vm_01"
   computer_name       = "windowsvmdev01"
@@ -1206,5 +1206,5 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
     ]
   }
 }
-*/
+
 # Deployment of resources in different regions using loop
