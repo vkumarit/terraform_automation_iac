@@ -240,17 +240,6 @@ resource "azurerm_storage_container" "prodmyapp" {
   storage_account_name  = azurerm_storage_account.prodmyapp.name
   container_access_type = "private"
   depends_on            = [azurerm_storage_account.prodmyapp] # ensures storage account creates first
-  
-  tags = merge(local.common_tags, {
-    Name = "st-tfstate-cmk"
-  })
-
-  lifecycle {
-    ignore_changes = [
-      customer_managed_key,
-      tags["creation_run_id"]
-    ]
-  }
 }
 /*
 ## Backend Access Role
