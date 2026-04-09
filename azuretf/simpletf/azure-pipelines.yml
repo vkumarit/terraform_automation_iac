@@ -11,7 +11,7 @@ trigger:
       - terraform-logs
 
 variables:
-- group: az-classic-kv-var
+#- group: az-classic-kv-var
 - name: serviceConnection
   value: 'az-classic-conn'
 - name: ENVIRONMENT
