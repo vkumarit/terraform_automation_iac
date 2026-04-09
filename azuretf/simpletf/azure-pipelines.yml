@@ -160,16 +160,28 @@ stages:
     # -----------------------------
     # Test client secret
     # -----------------------------
-    - bash: |
-        echo "## DEBUG PIPELINE SECRET ##"
-        echo "Length: ${#ARM_CLIENT_SECRET}"
-        echo "Preview: ${ARM_CLIENT_SECRET:0:20}"
-        echo -n "$ARM_CLIENT_SECRET" | od -c | head -n 3
-        echo -n "$ARM_CLIENT_SECRET" | xxd | head -n 1
-      displayName: 'Debug Pipeline Secret Bytes'
-      env:
-        ARM_CLIENT_SECRET: $(sp-client-secret)
+    #- bash: |
+    #    echo "## DEBUG PIPELINE SECRET ##"
+    #    echo "Length: ${#ARM_CLIENT_SECRET}"
+    #    echo "Preview: ${ARM_CLIENT_SECRET:0:20}"
+    #    echo -n "$ARM_CLIENT_SECRET" | od -c | head -n 3
+    #    echo -n "$ARM_CLIENT_SECRET" | xxd | head -n 1
+    #  displayName: 'Debug Pipeline Secret Bytes'
+    #  env:
+    #    ARM_CLIENT_SECRET: $(sp-client-secret)
         
+    # -----------------------------
+    # Terraform Validate/Lint
+    # -----------------------------
+    - script: terraform fmt -check -recursive
+      displayName: "Terraform Format Check"
+
+    - script: terraform init -backend=false -no-color
+      displayName: "Terraform Init (Validation Only)"
+
+    - script: terraform validate -no-color
+      displayName: "Terraform Validate"    
+    
     # -----------------------------
     # Terraform Init
     # -----------------------------

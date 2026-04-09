@@ -49,10 +49,11 @@ variable "run_id" {
   # helps when someone runs Terraform locally. 
   # Prevents error - `The argument "run_id" is required but no definition was found.`
   
-  validation {
-    condition     = length(local.effective_run_id) > 0
-    error_message = "run_id must be provided in pipeline."
-  }
+#  validation {
+#    condition     = length(local.effective_run_id) > 0
+#    error_message = "run_id must be provided in pipeline."
+#  }
+
 }
 
 variable "deployment_id" {
