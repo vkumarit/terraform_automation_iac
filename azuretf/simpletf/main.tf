@@ -67,14 +67,6 @@ variable "environment" {
 } 
 
 # Tagging Resources
-#locals {
-#  common_tags = {
-#    environment   = var.environment
-#    #terraform_run = local.effective_run_id
-#    managed_by    = "terraform"
-#  }
-#}
-
 locals {
   effective_run_id = (
     var.run_id != "" ?
@@ -127,7 +119,7 @@ provider "azurerm" {
 }
 
 ## Resource Group
-
+/*
 resource "azurerm_resource_group" "prodmyapp" {
   name     = "myTFResourceGroup"
   location = "Australia East"
@@ -146,7 +138,7 @@ resource "azurerm_resource_group" "prodmyapp" {
   #  update = "30m"  # Override the default update timeout
   #  delete = "45m"  # Override the default delete timeout (useful if the RG contains many resources)
   #}
-
+/*
   tags = merge(local.common_tags, {
     Name = "rg-prodmyapp"
   })
@@ -157,7 +149,7 @@ resource "azurerm_resource_group" "prodmyapp" {
     ]
   }
 }
-
+*/
 ## Storage Account
 /*
 # Create User-Assigned Identity: Grant access to Key Vault.
