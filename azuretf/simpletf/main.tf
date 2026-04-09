@@ -296,7 +296,7 @@ terraform {
 data "azurerm_client_config" "current" {}
 
 ## Key Vault
-/*
+
 resource "azurerm_key_vault" "prodmyapp" {
   name                        = "prodmyappkv"
   location                    = azurerm_resource_group.prodmyapp.location
