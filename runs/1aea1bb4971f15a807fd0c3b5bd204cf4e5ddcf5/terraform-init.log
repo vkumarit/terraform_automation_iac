@@ -1,0 +1,19 @@
+Initializing the backend...
+
+Successfully configured the backend "azurerm"! Terraform will automatically
+use this backend unless the backend configuration changes.
+
+Error: Terraform encountered problems during initialisation, including problems
+with the configuration, described below.
+
+The Terraform configuration must be valid before initialization so that
+Terraform can determine which modules and providers need to be installed.
+
+
+Error: Invalid variable validation condition
+
+  on main.tf line 53, in variable "run_id":
+  53:     condition     = length(local.effective_run_id) > 0
+
+The condition for variable "run_id" must refer to var.run_id in order to test
+incoming values.
