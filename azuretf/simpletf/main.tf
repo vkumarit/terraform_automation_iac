@@ -119,7 +119,7 @@ provider "azurerm" {
 }
 
 ## Resource Group
-/*
+
 resource "azurerm_resource_group" "prodmyapp" {
   name     = "myTFResourceGroup"
   location = "Australia East"
@@ -138,7 +138,7 @@ resource "azurerm_resource_group" "prodmyapp" {
   #  update = "30m"  # Override the default update timeout
   #  delete = "45m"  # Override the default delete timeout (useful if the RG contains many resources)
   #}
-/*
+
   tags = merge(local.common_tags, {
     Name = "rg-prodmyapp"
   })
@@ -149,9 +149,9 @@ resource "azurerm_resource_group" "prodmyapp" {
     ]
   }
 }
-*/
+
 ## Storage Account
-/*
+
 # Create User-Assigned Identity: Grant access to Key Vault.
 resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   name                = "my-storage-identity"
@@ -234,12 +234,23 @@ resource "azurerm_storage_account" "mytfstate" {
 */
 
 ## Storage Container
-/*
+
 resource "azurerm_storage_container" "prodmyapp" {
   name                  = "mytfstate"
   storage_account_name  = azurerm_storage_account.prodmyapp.name
   container_access_type = "private"
   depends_on            = [azurerm_storage_account.prodmyapp] # ensures storage account creates first
+  
+  tags = merge(local.common_tags, {
+    Name = "st-tfstate-cmk"
+  })
+
+  lifecycle {
+    ignore_changes = [
+      customer_managed_key,
+      tags["creation_run_id"]
+    ]
+  }
 }
 
 ## Backend Access Role
@@ -392,7 +403,7 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
   ]
 
   tags = merge(local.common_tags, {
-    Name = "kv-key-cmk"
+    Name = "kv-key-cmk_prodmyapp"
   })
 
   lifecycle {
@@ -599,7 +610,7 @@ resource "azurerm_network_security_group" "prodmyapp_sg_linux" {
   }
 
   tags = merge(local.common_tags, {
-    Name = "nsg-open"
+    Name = "nsg-open_prodmyapp"
   })
 
   lifecycle {
@@ -627,7 +638,7 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
   #subnet = []
 
   tags = merge(local.common_tags, {
-    Name = "vnet-prod"
+    Name = "vnet-prodmyapp"
   })
 
   lifecycle {
@@ -645,6 +656,16 @@ resource "azurerm_subnet" "pub_subnet" {
   resource_group_name  = azurerm_resource_group.prodmyapp.name
   virtual_network_name = azurerm_virtual_network.prodmyapp_vnet.name
   address_prefixes     = ["10.0.1.0/28"]
+  
+  tags = merge(local.common_tags, {
+    Name = "pub_subnet_prodmyapp"
+  })
+
+  lifecycle {
+    ignore_changes = [
+      tags["creation_run_id"]
+    ]
+  }
 }
 
 # private subnet (10.0.2.0/24) 
@@ -653,6 +674,16 @@ resource "azurerm_subnet" "pvt_subnet" {
   resource_group_name  = azurerm_resource_group.prodmyapp.name
   virtual_network_name = azurerm_virtual_network.prodmyapp_vnet.name
   address_prefixes     = ["10.0.2.0/24"]
+  
+  tags = merge(local.common_tags, {
+    Name = "pvt_subnet_prodmyapp"
+  })
+
+  lifecycle {
+    ignore_changes = [
+      tags["creation_run_id"]
+    ]
+  }
 }
 
 # Separate Subnet NSG associations 
@@ -681,7 +712,7 @@ resource "azurerm_public_ip" "prodmyapp_pub_ips" {
   # Can use data block `azurerm_public_ip` to obtain IP Address also.
 
   tags = merge(local.common_tags, {
-    Name = "pip-prod"
+    Name = "pip-prodmyapp"
   })
 
   lifecycle {
@@ -725,7 +756,7 @@ resource "azurerm_network_interface" "prodmyapp_nic_linux" {
   ]
 
   tags = merge(local.common_tags, {
-    Name = "nic-prod"
+    Name = "nic-prodmyapp"
   })
 
   lifecycle {
@@ -932,7 +963,7 @@ resource "azurerm_disk_encryption_set" "prod_des" {
   }
 
   tags = merge(local.common_tags, {
-    Name = "des-prod"
+    Name = "des-prodmyapp"
   })
 
   lifecycle {
@@ -1062,7 +1093,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
 # to SSH login do - `ssh -i ~/.ssh/prodmyapp_vm1.pem adminuser@20.5.121.162`
 
 ## Windows VM
-
+/*
 # Dedicated NSG for Windows
 resource "azurerm_network_security_group" "prodmyapp_nsg_windows" {
   name                = "windows-secure-nsg"
@@ -1095,6 +1126,16 @@ resource "azurerm_network_security_group" "prodmyapp_nsg_windows" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+  
+  tags = merge(local.common_tags, {
+    Name = "nsg-windows_prodmyapp"
+  })
+
+  lifecycle {
+    ignore_changes = [
+      tags["creation_run_id"]
+    ]
+  }
 }
 
 #Separate Public IP
@@ -1103,6 +1144,16 @@ resource "azurerm_public_ip" "prodmyapp_pub_ip_windows" {
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
   allocation_method   = "Static"
+  
+  tags = merge(local.common_tags, {
+    Name = "pub-ip-win_prodmyapp"
+  })
+
+  lifecycle {
+    ignore_changes = [
+      tags["creation_run_id"]
+    ]
+  }
 }
 
 # separate NIC for Windows VM
@@ -1116,6 +1167,16 @@ resource "azurerm_network_interface" "prodmyapp_nic_windows" {
     subnet_id                     = azurerm_subnet.pub_subnet.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.prodmyapp_pub_ip_windows.id
+  }
+  
+  tags = merge(local.common_tags, {
+    Name = "nic-windows_prodmyapp"
+  })
+
+  lifecycle {
+    ignore_changes = [
+      tags["creation_run_id"]
+    ]
   }
 }
 
