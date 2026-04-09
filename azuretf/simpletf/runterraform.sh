@@ -7,9 +7,6 @@ set -euo pipefail
 # -o pipefail → If any command in a pipeline fails, the whole pipeline fails
 # This makes the script strict and production-safe
 
-REPO="vkumarit/terraform_automation_iac"
-# GitHub repository where logs will be pushed
-
 COMMAND="${1:-}"
 # First argument passed to script (init|plan|apply)
 # ${1:-} means: use $1, or empty if not provided
@@ -25,28 +22,27 @@ if [[ -z "$COMMAND" ]]; then
 fi
 # Ensures script is always called with an argument
 
+
 COMMIT_SHA="$(git rev-parse HEAD)"
 # Gets current commit hash of checked-out repo
 
-ROOT_DIR="$(git rev-parse --show-toplevel)"
-# Gets absolute path of repository root directory
 
 CURRENT_BRANCH="$(git branch --show-current || true)"
 # Gets current branch name
 # || true prevents failure if in detached HEAD state
+
+
+# Add clean-up mode
+CLEANUP_MODE="${CLEANUP_MODE:-safe}"
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+# Gets absolute path of repository root directory
 
 LOG_ROOT="${ROOT_DIR}/.terraform-run-logs/${COMMIT_SHA}"
 mkdir -p "$LOG_ROOT"
 LOG_FILE="${LOG_ROOT}/terraform-${COMMAND}.log"
 # Log file name per command
 # Example: terraform-init.log
-
-# Add clean-up mode
-CLEANUP_MODE="${CLEANUP_MODE:-safe}"
-
-# Tag filters (must match Terraform exactly)
-TAG_MANAGED_BY="${TAG_MANAGED_BY:-terraform}"
-TAG_DEPLOYMENT_ID="${TAG_DEPLOYMENT_ID:-prodmyapp}"
 
 # ------------------------------------------
 # RUN_ID handling (single source of truth)
@@ -64,11 +60,20 @@ fi
 # Export for Terraform
 export TF_VAR_run_id="$RUN_ID"
 
-WORK_DIR="$(pwd)"
-# Capture original working directory.
+RESOURCE_CACHE_FILE="${RESOURCE_CACHE_FILE:-/tmp/resource_cache.json}"
+
+REPO="vkumarit/terraform_automation_iac"
+# GitHub repository where logs will be pushed
+
+# Tag filters (must match Terraform exactly)
+TAG_MANAGED_BY="${TAG_MANAGED_BY:-terraform}"
+TAG_DEPLOYMENT_ID="${TAG_DEPLOYMENT_ID:-prodmyapp}"
+
 TF_EXIT=0
 # Variable to store Terraform exit code
 
+WORK_DIR="$(pwd)"
+# Capture original working directory.
 
 #=========================================
 # Cleanup function
@@ -201,6 +206,17 @@ if [[ "$COMMAND" == "init" ]]; then
 elif [[ "$COMMAND" == "plan" ]]; then
 
   set +e
+  
+  echo "===== PRE-CLEAN PHASE ====="
+  
+  echo "Refreshing Terraform state..."
+  if ! terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color \
+    2>&1 | tee -a "$LOG_FILE"; then
+
+    echo "WARNING: refresh-only failed, proceeding with cleanup cautiously"
+  fi
+  
+  CLEANUP_MODE=safe cleanup_orphans
 
   echo "Pre-check: verifying backend state access..."
   terraform state pull > /dev/null 2>&1
@@ -238,17 +254,6 @@ elif [[ "$COMMAND" == "plan" ]]; then
 elif [[ "$COMMAND" == "apply" ]]; then
 
   set +e
-  
-  echo "===== PRE-CLEAN PHASE ====="
-  
-  echo "Refreshing Terraform state..."
-  if ! terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color \
-    2>&1 | tee -a "$LOG_FILE"; then
-
-    echo "WARNING: refresh-only failed, proceeding with cleanup cautiously"
-  fi
-  
-  CLEANUP_MODE=safe cleanup_orphans
 
   # ------------------------------------------
   # Ensure plan status before apply
