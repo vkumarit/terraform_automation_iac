@@ -119,7 +119,7 @@ provider "azurerm" {
 }
 
 ## Resource Group
-
+/*
 resource "azurerm_resource_group" "prodmyapp" {
   name     = "myTFResourceGroup"
   location = "Australia East"
@@ -138,7 +138,7 @@ resource "azurerm_resource_group" "prodmyapp" {
   #  update = "30m"  # Override the default update timeout
   #  delete = "45m"  # Override the default delete timeout (useful if the RG contains many resources)
   #}
-
+/*
   tags = merge(local.common_tags, {
     Name = "rg-prodmyapp"
   })
@@ -234,7 +234,7 @@ resource "azurerm_storage_account" "mytfstate" {
 */
 
 ## Storage Container
-
+/*
 resource "azurerm_storage_container" "prodmyapp" {
   name                  = "mytfstate"
   storage_account_name  = azurerm_storage_account.prodmyapp.name
