@@ -42,26 +42,55 @@ terraform {
 variable "run_id" {
   description = "Pipeline run identifier"
   type        = string
+  default     = ""
   
-  default     = "manual" 
+  #default     = "manual" 
   # a fallback value for local runs when variable from CLI, environment variable, or tfvars isn't recieved,
   # helps when someone runs Terraform locally. 
   # Prevents error - `The argument "run_id" is required but no definition was found.`
+  
+  validation {
+    condition     = length(local.effective_run_id) > 0
+    error_message = "run_id must be provided in pipeline."
+  }
+}
+
+variable "deployment_id" {
+  type    = string
+  default = "prodmyapp"
 }
 
 #variable "environment" {
 #  description = "Environment for pipeline"
 #  type        = string
-  
 #} 
 
 # Tagging Resources
+#locals {
+#  common_tags = {
+#    environment   = var.environment
+#    #terraform_run = local.effective_run_id
+#    managed_by    = "terraform"
+#  }
+#}
+
 locals {
+  effective_run_id = (
+    var.run_id != "" ?
+    var.run_id :
+    "local-${timestamp()}-${terraform.workspace}"
+  )
+
   common_tags = {
-    environment   = var.environment
-    #terraform_run = var.run_id
-    managed_by    = "terraform"
+    managed_by      = "terraform"
+    deployment_id   = var.deployment_id
+    environment     = var.environment
+    creation_run_id = local.effective_run_id
   }
+}
+
+output "debug_tags" {
+  value = local.common_tags
 }
 
 ## Configure the Microsoft Azure Provider
@@ -82,7 +111,7 @@ provider "azurerm" {
   
   ## A) use this when local/bootstrap, logged in to azure using cli as an User, to authenticate to azure.
   # Not required under automation/SP/pipeline condition.
-  use_cli = true
+  #use_cli = true
   
   ## B) Add key value as below required by version >= 4.1.0 for azure authentication.
   subscription_id  = "2b2f02f7-dde2-47db-974c-47d2182721ae"
@@ -119,7 +148,6 @@ resource "azurerm_resource_group" "prodmyapp" {
 
   tags = merge(local.common_tags, {
     Name = "rg-prodmyapp"
-    creation_run_id = var.run_id
   })
   
   lifecycle {
@@ -139,7 +167,6 @@ resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   
   tags = merge(local.common_tags, {
     Name = "identity-storage"
-    creation_run_id = var.run_id
   })
   
   lifecycle {
@@ -167,7 +194,6 @@ resource "azurerm_storage_account" "prodmyapp" {
   
   tags = merge(local.common_tags, {
     Name = "st-tfstate-cmk"
-    creation_run_id = var.run_id
   })
   
   lifecycle {
@@ -294,7 +320,6 @@ resource "azurerm_key_vault" "prodmyapp" {
   
   tags = merge(local.common_tags, {
     Name = "kv-prodmyapp"
-    creation_run_id = var.run_id
   })
   
   lifecycle {
@@ -375,7 +400,6 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
   
   tags = merge(local.common_tags, {
     Name = "kv-key-cmk"
-    creation_run_id = var.run_id
   })
   
   lifecycle {
@@ -583,7 +607,6 @@ resource "azurerm_network_security_group" "prodmyapp_sg_linux" {
   
   tags = merge(local.common_tags, {
     Name = "nsg-open"
-    creation_run_id = var.run_id
   })
   
   lifecycle {
@@ -612,7 +635,6 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
   
   tags = merge(local.common_tags, {
     Name = "vnet-prod"
-    creation_run_id = var.run_id
   })
   
   lifecycle {
@@ -667,7 +689,6 @@ resource "azurerm_public_ip" "prodmyapp_pub_ips" {
 
   tags = merge(local.common_tags, {
     Name = "pip-prod"
-    creation_run_id = var.run_id
   })
   
   lifecycle {
@@ -712,7 +733,6 @@ resource "azurerm_network_interface" "prodmyapp_nic_linux" {
   
   tags = merge(local.common_tags, {
     Name = "nic-prod"
-    creation_run_id = var.run_id
   })
   
   lifecycle {
@@ -760,9 +780,10 @@ resource "tls_private_key" "vm_ssh" {
 # Writing for SSH purpose
 #> Write the private key to a local file with secure permissions
 resource "local_sensitive_file" "private_key_pem" {
-  filename        = pathexpand("~/.ssh/prodmyapp_vm1.pem")
-  content         = tls_private_key.vm_ssh.private_key_pem
-  file_permission = "0400"           # Owner: read only (4) Group: no access  (0) Others: no access (0)
+  filename             = pathexpand("~/.ssh/prodmyapp_vm1.pem")
+  content              = tls_private_key.vm_ssh.private_key_pem
+  file_permission      = "0400"           # Owner: read only (4) Group: no access  (0) Others: no access (0)
+  directory_permission = "0700"
 }
 
 #> Write the public key to a local file (standard permissions)
@@ -919,7 +940,6 @@ resource "azurerm_disk_encryption_set" "prod_des" {
   
   tags = merge(local.common_tags, {
     Name = "des-prod"
-    creation_run_id = var.run_id
   })
   
   lifecycle {
@@ -1034,7 +1054,6 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   
   tags = merge(local.common_tags, {
     Name            = "vm-linux"
-    creation_run_id = var.run_id
   })
   
   lifecycle {
@@ -1175,7 +1194,6 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
   
   tags = merge(local.common_tags, {
     Name            = "vm-windows"
-    creation_run_id = var.run_id
   })
   
   lifecycle {

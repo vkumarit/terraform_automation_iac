@@ -41,72 +41,122 @@ LOG_FILE="${LOG_ROOT}/terraform-${COMMAND}.log"
 # Log file name per command
 # Example: terraform-init.log
 
-# Use pipeline run ID to delete orphaned resources,
-# if terraform crashed after creating resources but not recorded by state before crash.
+# Add clean-up mode
+CLEANUP_MODE="${CLEANUP_MODE:-safe}"
+
+# Tag filters (must match Terraform exactly)
+TAG_MANAGED_BY="${TAG_MANAGED_BY:-terraform}"
+TAG_DEPLOYMENT_ID="${TAG_DEPLOYMENT_ID:-prodmyapp}"
+
+# ------------------------------------------
+# RUN_ID handling (single source of truth)
+# ------------------------------------------
+
 RUN_ID="${RUN_ID:-}"
-# Verify 
-if [[ "$COMMAND" != "init" && -z "$RUN_ID" ]]; then
-  echo "ERROR: RUN_ID environment variable not set (required for plan/apply)"
-  exit 1
+
+if [[ -z "$RUN_ID" ]]; then
+  RUN_ID="local-$(date +%s)"
+  echo "Using fallback RUN_ID=$RUN_ID"
+else
+  echo "Using pipeline RUN_ID=$RUN_ID"
 fi
+
+# Export for Terraform
+export TF_VAR_run_id="$RUN_ID"
 
 WORK_DIR="$(pwd)"
 # Capture original working directory.
 TF_EXIT=0
 # Variable to store Terraform exit code
 
-# ------------------------------------------
-# Function: delete safely by type
-# ------------------------------------------
-delete_by_type() {
-    TYPE_FILTER=$1
-    MODE=$2
 
-    if [[ "$MODE" == "tagged" ]]; then
+#=========================================
+# Cleanup function
+#=========================================
 
-        echo "$ORPHAN_IDS" | jq -c ".[] | select(.type | test(\"$TYPE_FILTER\"))" | while read res; do
-            ID=$(echo "$res" | jq -r '.id')
+cleanup_orphans() {
+  echo "========================================="
+  echo "Running STATE vs AZURE cleanup"
+  echo "========================================="
 
-            if printf '%s\n' "$STATE_IDS_SET" | grep -Fxq "$ID"; then
-                echo "Skipping managed resource: $ID"
-                continue
-            fi
+  echo "Cleanup mode: $CLEANUP_MODE"
 
-            echo "Deleting [TAGGED:$TYPE_FILTER]: $ID"
-          az resource delete --ids "$ID" || true
-        done
+  echo "Fetching Azure resources (mode: $CLEANUP_MODE)..."
 
-    elif [[ "$MODE" == "untagged" ]]; then
-
-        if [[ ! -s "$RESOURCE_CACHE_FILE" ]]; then
-            echo "WARNING: Resource cache file is empty. Skipping untagged cleanup."
-            return
-        fi
-
-        while IFS= read -r res; do
-        # runs the loop in a subshell
-
-            read -r ID TYPE < <(jq -r '[.id, .type] | @tsv' <<< "$res")
-            # reduces jq calls by 50%
-
-            if [[ "$TYPE" == *"/$TYPE_FILTER" ]]; then
-
-                if printf '%s\n' "$STATE_IDS_SET" | grep -Fxq "$ID"; then
-                    echo "Skipping managed resource: $ID"
-                    continue
-                fi
-
-                if [[ -n "$ORPHAN_ID_LIST" ]] && printf '%s\n' "$ORPHAN_ID_LIST" | grep -Fxq "$ID"; then
-                    echo "Skipping already processed tagged orphan: $ID"
-                    continue
-                fi
-
-                echo "Deleting [UNTAGGED:$TYPE_FILTER]: $ID"
-                az resource delete --ids "$ID" || true
-            fi
-
-        done < <(jq -c '.[]' "$RESOURCE_CACHE_FILE" 2>/dev/null)    
+  if [[ "$CLEANUP_MODE" == "safe" ]]; then
+    
+    # RUN_ID CHECK
+    if [[ -z "$RUN_ID" ]]; then
+      echo "ERROR: RUN_ID missing → refusing cleanup"
+      exit 1
     fi
+    
+    echo "SMART cleanup (run-aware)"
+    
+    echo "Filtering by tags:"
+    echo "  managed_by=$TAG_MANAGED_BY"
+    echo "  deployment_id=$TAG_DEPLOYMENT_ID"
+
+    az resource list \
+      --resource-group myTFResourceGroup \
+      --query "[?tags.managed_by=='$TAG_MANAGED_BY' && tags.deployment_id=='$TAG_DEPLOYMENT_ID'].{id:id, run:tags.creation_run_id}" \
+      -o json > /tmp/az_resources.json
+
+    #--------------------------------
+    # Extract only old-run resources
+    #--------------------------------
+    
+    CURRENT_RUN="$RUN_ID"
+
+    jq -r --arg RUN "$CURRENT_RUN" '
+      .[]
+      | select(.run != $RUN)
+      | .id
+    ' /tmp/az_resources.json > /tmp/az_ids.txt
+    
+  else
+    echo "WARNING: Running AGGRESSIVE cleanup (no tag filter)"
+
+    az resource list \
+      --resource-group myTFResourceGroup \
+      --query "[].id" -o tsv > /tmp/az_ids.txt
+  fi
+  
+  echo "Azure resource count: $(wc -l < /tmp/az_ids.txt)"
+  cat /tmp/az_ids.txt
+  
+  echo "Building Terraform state ID list..."
+
+  terraform state list | while read r; do
+    terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty'
+  done | sort -u > /tmp/tf_ids.txt
+  
+  echo "TF resource count: $(wc -l < /tmp/tf_ids.txt)"
+  cat /tmp/tf_ids.txt
+  
+  echo "Finding orphan resources..."
+
+  grep -Fxv -f /tmp/tf_ids.txt /tmp/az_ids.txt > /tmp/orphan_ids.txt || true
+
+  if [[ ! -s /tmp/orphan_ids.txt ]]; then
+    echo "No orphan resources found."
+    return
+  fi
+
+  echo "Orphan resources detected: $(wc -l < /tmp/orphan_ids.txt)"
+  cat /tmp/orphan_ids.txt
+
+  echo "Deleting orphan resources..."
+
+  for i in {1..3}; do
+    while read -r id; do
+      echo "Deleting: $id"
+      az resource delete --ids "$id" || true
+    done < /tmp/orphan_ids.txt
+    sleep 2
+  done
+
+  echo "Cleanup complete."
 }
 
 echo "========================================="
@@ -119,17 +169,6 @@ echo "========================================="
 # ==========================================
 # RUN TERRAFORM
 # ==========================================
-
-#xxx
-#echo "DEBUG: ARM_CLIENT_SECRET length: ${#ARM_CLIENT_SECRET}"
-#az login --service-principal \
-#   --username "$ARM_CLIENT_ID" \
-#   --password "$ARM_CLIENT_SECRET" \
-#   --tenant "$ARM_TENANT_ID" --output none && echo "SP login OK"
-#xxx
-
-#cd azuretf/simpletf - remove if pipeline working good
-# Move into Terraform working directory
 
 if [[ "$COMMAND" == "init" ]]; then
 
@@ -199,6 +238,17 @@ elif [[ "$COMMAND" == "plan" ]]; then
 elif [[ "$COMMAND" == "apply" ]]; then
 
   set +e
+  
+  echo "===== PRE-CLEAN PHASE ====="
+  
+  echo "Refreshing Terraform state..."
+  if ! terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color \
+    2>&1 | tee -a "$LOG_FILE"; then
+
+    echo "WARNING: refresh-only failed, proceeding with cleanup cautiously"
+  fi
+  
+  CLEANUP_MODE=safe cleanup_orphans
 
   # ------------------------------------------
   # Ensure plan status before apply
@@ -297,212 +347,21 @@ elif [[ "$COMMAND" == "recovery" ]]; then
   # ------------------------------------------
   # Auto-detect and clean partially created resources
   # ------------------------------------------
-  echo "Detecting partially created/broken resources..."
-    
-  PLAN_OUT="tfplan.recovery"
-  terraform plan -input=false -parallelism=1 -lock-timeout=10m -no-color -out="$PLAN_OUT" -detailed-exitcode || true
-  #terraform show -json "$PLAN_OUT" > tfplan.recovery.json
+
+  echo "===== POST-FAIL CLEANUP ====="
+
+  echo "Post-fail: state has been refreshed from Azure"
+  echo "Now enforcing: AZURE == TERRAFORM STATE"
+
+  echo "Collecting and comparing resources..."
   
-  BROKEN_RESOURCES=$(terraform show -json "$PLAN_OUT" 2>/dev/null | jq -r '
-    .resource_changes[]
-    | select(.change.actions | index("create"))
-    | select(.change.after != null)
-    | .address
-  ')
+  CLEANUP_MODE=aggressive cleanup_orphans
 
-  if [[ -n "$BROKEN_RESOURCES" ]]; then
-      COUNT=$(printf '%s\n' "$BROKEN_RESOURCES" | sed '/^$/d' | wc -l)
-      echo "Broken resources detected: $COUNT"
-        
-      echo "Detected partially created/broken resources:"
-      printf '%s\n' "$BROKEN_RESOURCES"
+  echo "Post-fail cleanup completed"
+  echo "All resources not present in Terraform state have been removed"
 
-      for res in $BROKEN_RESOURCES; do
+  echo "Recovery finished. Pipeline ready for next run after fix."
 
-        echo "-----------------------------------------"
-        echo "Processing resource: $res"
-
-        # ------------------------------------------
-        # Get Azure Resource ID from plan
-        # ------------------------------------------
-        RESOURCE_ID=$(terraform show -json "$PLAN_OUT" 2>/dev/null | jq -r "
-          .resource_changes[]
-          | select(.address == \"$res\")
-          | .change.after.id // empty
-        ")
-
-        if [[ -z "$RESOURCE_ID" || "$RESOURCE_ID" == "null" ]]; then
-            echo "Skipping (no ID found in plan): $res"
-            continue
-        fi
-
-        echo "Resolved Azure ID: $RESOURCE_ID"
-
-        # ------------------------------------------
-        # Check if resource exists in Azure
-        # ------------------------------------------
-        if az resource show --ids "$RESOURCE_ID" >/dev/null 2>&1; then
-            EXISTS_IN_AZURE=true
-            echo "✔ Exists in Azure"
-        else
-            EXISTS_IN_AZURE=false
-            echo "✘ Does NOT exist in Azure"
-        fi
-
-        # ------------------------------------------
-        # Check if resource exists in Terraform state
-        # ------------------------------------------
-        if terraform state list | grep -q "^$res$"; then
-            EXISTS_IN_STATE=true
-            echo "✔ Exists in Terraform state"
-        else
-            EXISTS_IN_STATE=false
-            echo "✘ NOT in Terraform state"
-        fi
-
-        # ------------------------------------------
-        # Decision Logic (CORE FIX)
-        # ------------------------------------------
-
-        if [[ "$EXISTS_IN_AZURE" == true ]]; then
-
-            if terraform state list | grep -q "^$res$"; then
-                echo "Destroying via Terraform: $res"
-                terraform destroy -target="$res" -auto-approve -parallelism=1 -no-color || true
-            else
-                echo "Deleting via Azure CLI: $RESOURCE_ID"
-                az resource delete --ids "$RESOURCE_ID" || true
-            fi
-
-        else
-            echo "Skipping (resource not found in Azure): $res"
-        fi
-
-        # ------------------------------------------
-        # SAFE state cleanup (FIX 3)
-        # ------------------------------------------
-        if terraform state list | grep -q "^$res$"; then
-            echo "Removing $res from Terraform state..."
-            terraform state rm "$res" || true
-        else
-            echo "Skipping state rm (not in state): $res"
-        fi
-        
-        echo "Wait..."
-        sleep 0.2
-
-      done
-  else
-      echo "No broken resources detected. Recovery complete."
-  fi
-
-  echo "Scanning Azure for orphan resources created during this pipeline run..."
-
-  # --------------------------------------------------
-  # OPTION 1: Azure CLI resource listing
-  # --------------------------------------------------
-  #ORPHAN_IDS=$(az resource list \
-  #  --tag creation_run_id="$RUN_ID" \
-  #  --query "[].id" -o tsv 2>/dev/null || true)
-
-  # --------------------------------------------------
-  # OPTION 2: Azure Resource Graph (faster for large environments)
-  # --------------------------------------------------
-  ORPHAN_IDS=$(az graph query -q "
-  Resources
-  | where resourceGroup == 'myTFResourceGroup'
-  | where tags.managed_by == 'terraform'
-  | where tags.creation_run_id == '$RUN_ID'
-  | project id, type
-  " --query "data" -o json 2>/dev/null || echo "[]")
-  # " | where resourceGroup == 'myTFResourceGroup' " - scoped orphaned resources scan search to RG,
-  # ``` "data[].id" -o tsv ``` - outputs only IDs as text.
-  # ``` "data" -o json ``` - outputs ID + TYPE as json.
-  # ``` echo "[]" ``` - if query fails, prevents script crash and gives valid json
-  # instead of entire subscription.
-
-  if [[ -n "$ORPHAN_IDS" && "$ORPHAN_IDS" != "[]" ]]; then
-      ORPHAN_ID_LIST=$(echo "$ORPHAN_IDS" | jq -r '.[].id')
-  else
-      ORPHAN_ID_LIST=""
-  fi
-    
-  echo "Building Terraform state resource ID list..."
-
-  STATE_IDS=$(terraform state list | while read r; do
-    terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty'
-  done)
-    
-  STATE_IDS_SET=$(echo "$STATE_IDS" | sort -u)
-  
-  echo "Caching Azure resources to disk..."
-
-  RESOURCE_CACHE_FILE="/tmp/az_resources_${RUN_ID}.json"
-
-  
-  # Partial/corrupt cache prevention
-  TMP_CACHE="${RESOURCE_CACHE_FILE}.tmp"
-
-  if az resource list \
-    --resource-group myTFResourceGroup \
-    --query "[].{id:id,type:type}" \
-    -o json > "$TMP_CACHE" 2>/dev/null; then
-      mv "$TMP_CACHE" "$RESOURCE_CACHE_FILE"
-  else
-      echo "[]" > "$RESOURCE_CACHE_FILE"
-  fi
-  
-    
-  if [[ -n "$ORPHAN_IDS" && "$ORPHAN_IDS" != "[]" ]]; then
-      echo "Orphan Azure resources detected:"
-      echo "$ORPHAN_IDS" | jq .
-
-      # ------------------------------------------
-      # Dependency-aware deletion
-      # ------------------------------------------
-
-      delete_by_type "virtualMachines" "tagged"
-      delete_by_type "networkInterfaces" "tagged"
-      delete_by_type "publicIPAddresses" "tagged"
-      delete_by_type "disks" "tagged"
-      delete_by_type "networkSecurityGroups" "tagged"
-      delete_by_type "virtualNetworks" "tagged"
-
-      # ------------------------------------------
-      # Fallback: delete remaining
-      # ------------------------------------------
-      echo "$ORPHAN_IDS" | jq -c '.[]' | while read res; do
-
-          ID=$(echo "$res" | jq -r '.id')
-
-          if printf '%s\n' "$STATE_IDS_SET" | grep -Fxq "$ID"; then
-              echo "Skipping managed resource: $ID"
-              continue
-          fi
-
-          echo "Deleting remaining resource: $ID"
-          az resource delete --ids "$ID" || true
-
-      done
-
-  else
-      echo "No tagged orphan Azure resources found."
-  fi
-    
-  # ------------------------------------------
-  # Untagged: orphaned resources cleanup (safety net)
-  # ------------------------------------------
-  echo "Scanning for UNTAGGED orphan resources (safety net)..."
-
-  delete_by_type "virtualMachines" "untagged"
-  delete_by_type "networkInterfaces" "untagged"
-  delete_by_type "publicIPAddresses" "untagged"
-  delete_by_type "disks" "untagged"
-  delete_by_type "networkSecurityGroups" "untagged"
-  delete_by_type "virtualNetworks" "untagged"
-    
-  echo "Recovery finished. Pipeline ready for next run after code/config fix."
-  
   rm -f "$RESOURCE_CACHE_FILE"
 
 fi
