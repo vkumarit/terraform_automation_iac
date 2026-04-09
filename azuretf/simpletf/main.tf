@@ -252,7 +252,7 @@ resource "azurerm_storage_container" "prodmyapp" {
     ]
   }
 }
-
+/*
 ## Backend Access Role
 data "azuread_service_principal" "prodmyapp" {
   display_name = "az-classic-app"
