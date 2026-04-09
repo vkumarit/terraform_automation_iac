@@ -241,7 +241,7 @@ resource "azurerm_storage_container" "prodmyapp" {
   container_access_type = "private"
   depends_on            = [azurerm_storage_account.prodmyapp] # ensures storage account creates first
 }
-/*
+
 ## Backend Access Role
 data "azuread_service_principal" "prodmyapp" {
   display_name = "az-classic-app"
@@ -272,7 +272,7 @@ resource "azurerm_role_assignment" "terraform_backend_storage_access" {
 
 # After core resource creation configure backened.tf file. Move terraform statefile to Storage Container. 
 # Perform init -upgrade after configuring.
-
+/*
 # backened.tf 
 terraform {
   backend "azurerm" {
