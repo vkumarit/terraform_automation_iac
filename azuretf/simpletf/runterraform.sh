@@ -181,12 +181,14 @@ if [[ "$COMMAND" == "init" ]]; then
   # Temporarily disable exit-on-error
   # So we can capture terraform exit code manually
 
-  terraform init -upgrade -reconfigure -no-color -lock-timeout=5m 2>&1 | tee "$LOG_FILE"
+  #terraform init -upgrade -reconfigure -no-color -lock-timeout=5m 2>&1 | tee "$LOG_FILE"
+  terraform init -upgrade -reconfigure -input=false -no-color -lock-timeout=5m -migrate-state 2>&1 | tee "$LOG_FILE"
   # Run terraform init
   # -upgrade Terraform ignores cached versions, re-evaluates provider constraints and 
   # -upgrade forces Terraform to download azurerm v4.1.0. (fresh) 
   # -no-color removes ANSI colors
   # -lock-timeout waits up to 5 minutes for backend lock
+  # -migrate-state will move the statefile to configured backend, once migrated no issues
   # 2>&1 sends stderr to stdout
   # tee writes output to file AND prints to console
 
