@@ -142,21 +142,21 @@ stages:
     # -----------------------------
     # Debug Secret Injection
     # -----------------------------
-    - script: |
+    #- script: |
     #    echo "DEBUG: ARM_CLIENT_ID length: ${#ARM_CLIENT_ID}"
     #    echo "DEBUG: ARM_CLIENT_SECRET length: ${#ARM_CLIENT_SECRET}; first 5 chars: ${ARM_CLIENT_SECRET:0:5}"
     #    echo "DEBUG: ARM_TENANT_ID present: ${ARM_TENANT_ID:+yes}"
     #    echo "DEBUG: ARM_SUBSCRIPTION_ID present: ${ARM_SUBSCRIPTION_ID:+yes}"
-        echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
-        terraform version
+    #    echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
+    #    terraform version
     #  workingDirectory: azuretf/simpletf
-      displayName: "Debug Terraform Environment variables"
-      env:
+    #  displayName: "Debug Terraform Environment variables"
+    #  env:
     #    ARM_CLIENT_ID: $(sp-client-id)
     #    ARM_CLIENT_SECRET: $(sp-client-secret)
     #    ARM_TENANT_ID: $(sp-tenant-id)
     #    ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
-        GITHUB_TOKEN: $(githubtoken)
+    #    GITHUB_TOKEN: $(githubtoken)
     
     # -----------------------------
     # Test client secret
