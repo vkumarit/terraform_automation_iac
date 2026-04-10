@@ -187,6 +187,7 @@ if [[ "$COMMAND" == "init" ]]; then
   terraform init -upgrade -input=false -no-color -lock-timeout=5m -migrate-state 2>&1 | tee "$LOG_FILE"
 
   TF_EXIT=${PIPESTATUS[0]}
+  # Capture actual terraform exit code (not tee exit code)
 
   if [[ "$TF_EXIT" -ne 0 ]]; then
     echo "Terraform init with migrate-state failed, retrying with reconfigure..." | tee -a "$LOG_FILE"
@@ -204,9 +205,6 @@ if [[ "$COMMAND" == "init" ]]; then
   # -migrate-state will move the statefile to configured backend, once migrated no issues
   # 2>&1 sends stderr to stdout
   # tee writes output to file AND prints to console
-
-  TF_EXIT=${PIPESTATUS[0]}
-  # Capture actual terraform exit code (not tee exit code)
 
   if [[ "$TF_EXIT" -ne 0 ]]; then
     echo "FAILED" > "${LOG_ROOT}/init.status"
