@@ -182,7 +182,20 @@ if [[ "$COMMAND" == "init" ]]; then
   # So we can capture terraform exit code manually
 
   #terraform init -upgrade -reconfigure -no-color -lock-timeout=5m 2>&1 | tee "$LOG_FILE"
-  terraform init -upgrade -reconfigure -input=false -no-color -lock-timeout=5m -migrate-state 2>&1 | tee "$LOG_FILE"
+  
+  # First try migration
+  terraform init -upgrade -input=false -no-color -lock-timeout=5m -migrate-state 2>&1 | tee "$LOG_FILE"
+
+  TF_EXIT=${PIPESTATUS[0]}
+
+  if [[ "$TF_EXIT" -ne 0 ]]; then
+    echo "Terraform init with migrate-state failed, retrying with reconfigure..." | tee -a "$LOG_FILE"
+
+    terraform init -upgrade -reconfigure -input=false -no-color -lock-timeout=5m 2>&1 | tee -a "$LOG_FILE"
+
+    TF_EXIT=${PIPESTATUS[0]}
+  fi
+  
   # Run terraform init
   # -upgrade Terraform ignores cached versions, re-evaluates provider constraints and 
   # -upgrade forces Terraform to download azurerm v4.1.0. (fresh) 
