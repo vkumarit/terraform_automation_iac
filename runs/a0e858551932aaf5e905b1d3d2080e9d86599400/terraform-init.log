@@ -1,0 +1,13 @@
+Initializing the backend...
+
+Error: retrieving Storage Account (Subscription: "2b2f02f7-dde2-47db-974c-47d2182721ae"
+Resource Group Name: "myTFResourceGroup"
+Storage Account Name: "prodmyappsacmk01"): unexpected status 404 (404 Not Found) with error: ResourceNotFound: The Resource 'Microsoft.Storage/storageAccounts/prodmyappsacmk01' under resource group 'myTFResourceGroup' was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+
+Terraform init with migrate-state failed, retrying with reconfigure...
+Initializing the backend...
+
+Error: retrieving Storage Account (Subscription: "2b2f02f7-dde2-47db-974c-47d2182721ae"
+Resource Group Name: "myTFResourceGroup"
+Storage Account Name: "prodmyappsacmk01"): unexpected status 404 (404 Not Found) with error: ResourceNotFound: The Resource 'Microsoft.Storage/storageAccounts/prodmyappsacmk01' under resource group 'myTFResourceGroup' was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+
