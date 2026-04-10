@@ -122,10 +122,10 @@ stages:
     # -----------------------------
     # Make runterraform.sh executable
     # -----------------------------
-    - script: |
-        chmod +x runterraform.sh
-      workingDirectory: azuretf/simpletf
-      displayName: "Make runterraform.sh executable"
+    #- script: |
+    #    chmod +x runterraform.sh
+    #  workingDirectory: azuretf/simpletf
+    #  displayName: "Make runterraform.sh executable"
     
     # -----------------------------
     # Debug directory

@@ -119,18 +119,10 @@ provider "azurerm" {
 }
 
 ## Resource Group
-
+/*
 resource "azurerm_resource_group" "prodmyapp" {
   name     = "myTFResourceGroup"
   location = "Australia East"
-
-  # Custom Timeouts Configuration
-  /*
-  If an operation times out and fails (indicated by a context: deadline exceeded error in the CLI output), 
-  it means the default time was insufficient for the cloud provider's API to complete the task. 
-  In that case, you would use the timeouts block to specify a longer duration.
-  Terraform immediately stops waiting for the cloud provider's API to return a success or failure status.
-  */
 
   #timeouts {
   #  create = "15m"  # Override the default create timeout
@@ -229,7 +221,7 @@ resource "azurerm_role_assignment" "terraform_backend_storage_access" {
   #  prevent_destroy = true
   #}
 }
-
+*/
 
 ###               PHASE-II               ###
 # State Migration & Creation of Key vault to store SP secrets

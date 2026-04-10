@@ -4082,7 +4082,20 @@ resource "azurerm_storage_account" "mytfstate" {
 #  to   = azurerm_storage_account.prodmyapp
 #}
 ---------------------------------------------------------------------------------------------------------------
-
+# Custom Timeouts Configuration
+  /*
+  If an operation times out and fails (indicated by a context: deadline exceeded error in the CLI output), 
+  it means the default time was insufficient for the cloud provider's API to complete the task. 
+  In that case, you would use the timeouts block to specify a longer duration.
+  Terraform immediately stops waiting for the cloud provider's API to return a success or failure status.
+  */
+  
+  #timeouts {
+  #  create = "15m"  # Override the default create timeout
+  #  read   = "5m"   # The default read timeout
+  #  update = "30m"  # Override the default update timeout
+  #  delete = "45m"  # Override the default delete timeout (useful if the RG contains many resources)
+  #}
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------
