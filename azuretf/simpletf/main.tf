@@ -119,7 +119,7 @@ provider "azurerm" {
 }
 
 ## Resource Group
-/*
+
 resource "azurerm_resource_group" "prodmyapp" {
   name     = "myTFResourceGroup"
   location = "Australia East"
