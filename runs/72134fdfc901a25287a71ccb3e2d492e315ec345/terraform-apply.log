@@ -1,0 +1,28 @@
+azurerm_resource_group.prodmyapp: Creating...
+
+Error: A resource with the ID "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup" already exists - to be managed via Terraform this resource needs to be imported into the State. Please see the resource documentation for "azurerm_resource_group" for more information.
+
+  with azurerm_resource_group.prodmyapp,
+  on main.tf line 123, in resource "azurerm_resource_group" "prodmyapp":
+ 123: resource "azurerm_resource_group" "prodmyapp" {
+
+Terraform apply failed.
+===== Terraform Recovery Phase (Step 1: State Sync) =====
+data.azuread_service_principal.prodmyapp: Reading...
+data.azuread_service_principal.prodmyapp: Read complete after 1s [id=3a64aed9-8685-4f60-bad4-c7a0b3e0e4d2]
+
+No changes. Your infrastructure still matches the configuration.
+
+Terraform has checked that the real remote objects still match the result of
+your most recent changes, and found no differences.
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+debug_tags = {
+  "creation_run_id" = "376"
+  "deployment_id" = "prodmyapp"
+  "environment" = "prod"
+  "managed_by" = "terraform"
+}
