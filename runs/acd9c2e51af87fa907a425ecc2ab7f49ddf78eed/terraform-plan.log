@@ -1,0 +1,29 @@
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # azurerm_resource_group.prodmyapp will be created
+  + resource "azurerm_resource_group" "prodmyapp" {
+      + id       = (known after apply)
+      + location = "australiaeast"
+      + name     = "myTFResourceGroup"
+      + tags     = {
+          + "Name"            = "rg-prodmyapp"
+          + "creation_run_id" = "369"
+          + "deployment_id"   = "prodmyapp"
+          + "environment"     = "prod"
+          + "managed_by"      = "terraform"
+        }
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: tfplan.binary
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "tfplan.binary"
