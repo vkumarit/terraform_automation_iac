@@ -228,7 +228,7 @@ resource "azurerm_role_assignment" "terraform_backend_storage_access" {
 
 # After core resource creation configure backened.tf file. Move terraform statefile to Storage Container. 
 # Perform init -upgrade after configuring.
-/*
+
 # backened.tf 
 terraform {
   backend "azurerm" {
@@ -242,7 +242,7 @@ terraform {
     #when keeping separate statefile for each environment
 
     #use_azuread_auth     = true                      # When want to use entra id for authentication
-    use_cli = true
+    #use_cli = true
     # use_cli uses logged-in az cli context for authentication, comment out when switching to pipeline
   }
 }
