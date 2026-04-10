@@ -1,0 +1,4 @@
+
+Error: Invalid init options
+
+The -migrate-state and -reconfigure options are mutually-exclusive.
