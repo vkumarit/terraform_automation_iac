@@ -119,7 +119,7 @@ provider "azurerm" {
 }
 
 ## Resource Group
-/*
+
 resource "azurerm_resource_group" "prodmyapp" {
   name     = "myTFResourceGroup"
   location = "Australia East"
@@ -143,7 +143,7 @@ resource "azurerm_resource_group" "prodmyapp" {
 }
 
 ## Storage Account
-
+/*
 # Create User-Assigned Identity: Grant access to Key Vault.
 resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   name                = "my-storage-identity"
