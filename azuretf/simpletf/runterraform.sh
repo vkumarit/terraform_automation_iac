@@ -241,7 +241,7 @@ elif [[ "$COMMAND" == "plan" ]]; then
   else
     echo "Backend reachable. Running terraform plan..."
   
-    terraform plan -input=false -parallelism=1 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan.binary 2>&1 | tee "$LOG_FILE"
+    terraform plan -input=false -parallelism=1 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan 2>&1 | tee "$LOG_FILE"
     # -parallelism=5 (only with plan & apply) > reduce memory usage 
     # -detailed-exitcode:
     #   0 > no changes
@@ -285,8 +285,8 @@ elif [[ "$COMMAND" == "apply" ]]; then
   # ------------------------------------------
   # Ensure plan file exists
   # ------------------------------------------
-  if [[ ! -f "tfplan.binary" ]]; then
-    echo "ERROR: tfplan.binary not found. Plan stage must run first."
+  if [[ ! -f "tfplan" ]]; then
+    echo "ERROR: tfplan not found. Plan stage must run first."
     exit 1
   fi
 
@@ -294,7 +294,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
   # Block bulk destroy operations &
   # prevent pipeline crash from parsing issues.
   # -----------------------------
-  DESTROY_COUNT=$(terraform show -json tfplan.binary 2>/dev/null | jq '
+  DESTROY_COUNT=$(terraform show -json tfplan 2>/dev/null | jq '
   [
     .resource_changes[]
     | select(.change.actions | index("delete"))
@@ -312,7 +312,7 @@ elif [[ "$COMMAND" == "apply" ]]; then
   # ------------------------------------------
   # Run terraform apply 
   # ------------------------------------------
-  terraform apply -input=false -parallelism=1 -refresh=false -no-color -auto-approve -lock-timeout=10m tfplan.binary 2>&1 | tee "$LOG_FILE"
+  terraform apply -input=false -parallelism=1 -refresh=false -no-color -auto-approve -lock-timeout=10m tfplan 2>&1 | tee "$LOG_FILE"
   # -input=false 
   # -parallelism=5 (only with plan & apply) > reduce memory usage
   # -auto-approve skips manual confirmation
