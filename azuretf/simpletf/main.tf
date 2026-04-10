@@ -119,7 +119,7 @@ provider "azurerm" {
 }
 
 ## Resource Group
-/*
+
 resource "azurerm_resource_group" "prodmyapp" {
   name     = "myTFResourceGroup"
   location = "Australia East"
@@ -138,7 +138,7 @@ resource "azurerm_resource_group" "prodmyapp" {
   #  update = "30m"  # Override the default update timeout
   #  delete = "45m"  # Override the default delete timeout (useful if the RG contains many resources)
   #}
-/*
+
   tags = merge(local.common_tags, {
     Name = "rg-prodmyapp"
   })
@@ -197,44 +197,8 @@ resource "azurerm_storage_account" "prodmyapp" {
   }
 }
 
-# every team member has to add this and after renaming it can be removed
-#moved {
-#  from = azurerm_storage_account.prodmyapp
-#  to   = azurerm_storage_account.prodmyapp
-#}
-
-
-/*
-# How to solve the problem of storage account name already taken?
-# Avoiding name already taken error by using random_string resource block with conditions #
-resource "random_string" "suffix" {
-  length  = 4
-  special = false
-  upper   = false
-  keepers = {
-    # Recreate storage account only if preferred name becomes available and 
-    # random-named storage account is deleted before recreating preferred name storage account.
-    preferred_exists = length(data.azurerm_storage_account.preferred)
-  }
-  #The random_string.keepers prevents unnecessary recreation.
-}
-
-# random-naming of storage account
-resource "azurerm_storage_account" "mytfstate" {
-  name                 = "prodmyapptfstate${random_string.suffix.result}"
-  resource_group_name  = azurerm_resource_group.mytfstate.name
-  location             = azurerm_resource_group.mytfstate.location  # Use RG data/variable
-  account_tier         = "Standard"
-  account_replication_type = "LRS"
-  allow_nested_items_to_be_public = false
-  depends_on = [azurerm_resource_group.mytfstate]  # Ensure RG exists first
-  
-  # Add other config (sku, tags, network_rules, etc.)
-}
-*/
-
 ## Storage Container
-/*
+
 resource "azurerm_storage_container" "prodmyapp" {
   name                  = "mytfstate"
   storage_account_name  = azurerm_storage_account.prodmyapp.name
