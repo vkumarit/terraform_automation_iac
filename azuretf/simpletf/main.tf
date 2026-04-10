@@ -319,7 +319,7 @@ resource "azurerm_role_assignment" "human_kv_crypto_officer" {
 */
 
 # Create key with explicit rotation policy
-
+/*
 resource "azurerm_key_vault_key" "prodmyapp_key" {
   name         = "my-storage-cmk"
   key_vault_id = azurerm_key_vault.prodmyapp.id
@@ -357,7 +357,7 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
     ]
   }
 }
-
+*/
 resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
   storage_account_id = azurerm_storage_account.prodmyapp.id
   key_vault_id       = azurerm_key_vault.prodmyapp.id
@@ -383,7 +383,7 @@ resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
 
 # Get current authenticated principal details automatically from 
 # data "azurerm_client_config" "current" {} , mentioned above in code
-
+/*
 # Store current SP Client ID (if using SP login) or app ID
 resource "azurerm_key_vault_secret" "sp_client_id" {
   name  = "sp-client-id"
