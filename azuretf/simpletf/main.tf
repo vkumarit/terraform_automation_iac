@@ -357,7 +357,7 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
     ]
   }
 }
-*/
+
 resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
   storage_account_id = azurerm_storage_account.prodmyapp.id
   key_vault_id       = azurerm_key_vault.prodmyapp.id
