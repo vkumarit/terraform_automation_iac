@@ -1,0 +1,71 @@
+Acquiring state lock. This may take a few moments...
+data.azuread_service_principal.prodmyapp: Reading...
+data.azuread_service_principal.prodmyapp: Read complete after 3s [id=3a64aed9-8685-4f60-bad4-c7a0b3e0e4d2]
+data.azurerm_client_config.current: Reading...
+azurerm_resource_group.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup]
+data.azurerm_client_config.current: Read complete after 3s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9M2E2NGFlZDktODY4NS00ZjYwLWJhZDQtYzdhMGIzZTBlNGQyO3N1YnNjcmlwdGlvbklkPTJiMmYwMmY3LWRkZTItNDdkYi05NzRjLTQ3ZDIxODI3MjFhZTt0ZW5hbnRJZD1mMTc1YzU2ZC00MDEzLTQyZmEtYTBlOC00MTAzZDIyNzZhMGQ=]
+azurerm_user_assigned_identity.prodmyapp_sa_identity: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/my-storage-identity]
+azurerm_key_vault.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv]
+azurerm_storage_account.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01]
+azurerm_role_assignment.storage_kv_crypto: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/554777e3-49aa-8f9b-c65d-8629f1276f0e]
+azurerm_key_vault_secret.sp_client_secret: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-client-secret/cba089f0151e4676822167273a1caf93]
+azurerm_key_vault_secret.sp_subscription_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-subscription-id/c2bfb3b8310943659b61723965e05a04]
+azurerm_key_vault_secret.sp_client_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-client-id/29da921e86f946e09b1bc43b9147b717]
+azurerm_role_assignment.tf_kv_admin: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/e10b1d03-85ac-a278-5b58-f7d044fa6554]
+azurerm_key_vault_secret.sp_tenant_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-tenant-id/4342a6b2b3f8451cac56de320e679973]
+azurerm_key_vault_secret.github_token: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/githubtoken/7088fc7521a2438f91d17285571c505c]
+time_sleep.wait_for_kv_rbac: Refreshing state... [id=2026-04-10T08:00:44Z]
+azurerm_key_vault_key.prodmyapp_key: Refreshing state... [id=https://prodmyappkv.vault.azure.net/keys/my-storage-cmk/51e0da2d9d5a4b53bfedce7faa0471cc]
+azurerm_storage_container.prodmyapp: Refreshing state... [id=https://prodmyappsacmk01.blob.core.windows.net/mytfstate]
+azurerm_storage_account_customer_managed_key.prodmyapp_sa_cmk: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01]
+azurerm_role_assignment.terraform_backend_storage_access: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01/blobServices/default/containers/mytfstate/providers/Microsoft.Authorization/roleAssignments/a4d43f5a-a1fd-e042-8c51-f175d62fa52d]
+
+Note: Objects have changed outside of Terraform
+
+Terraform detected the following changes made outside of Terraform since the
+last "terraform apply" which may have affected this plan:
+
+  # azurerm_key_vault_secret.github_token has changed
+  ~ resource "azurerm_key_vault_secret" "github_token" {
+        id                      = "https://prodmyappkv.vault.azure.net/secrets/githubtoken/7088fc7521a2438f91d17285571c505c"
+        name                    = "githubtoken"
+      + tags                    = {}
+        # (7 unchanged attributes hidden)
+    }
+
+  # azurerm_key_vault_secret.sp_client_secret has changed
+  ~ resource "azurerm_key_vault_secret" "sp_client_secret" {
+        id                      = "https://prodmyappkv.vault.azure.net/secrets/sp-client-secret/cba089f0151e4676822167273a1caf93"
+        name                    = "sp-client-secret"
+      + tags                    = {}
+        # (7 unchanged attributes hidden)
+    }
+
+
+This is a refresh-only plan, so Terraform will not take any actions to undo
+these. If you were expecting these changes then you can apply this plan to
+record the updated values in the Terraform state without changing any remote
+objects.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Changes to Outputs:
+  ~ debug_tags = {
+      ~ creation_run_id = "local-2026-04-10T08:41:33Z-default" -> "371"
+        # (3 unchanged attributes hidden)
+    }
+
+You can apply this plan to save these new output values to the Terraform
+state, without changing any real infrastructure.
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+debug_tags = {
+  "creation_run_id" = "371"
+  "deployment_id" = "prodmyapp"
+  "environment" = "prod"
+  "managed_by" = "terraform"
+}
