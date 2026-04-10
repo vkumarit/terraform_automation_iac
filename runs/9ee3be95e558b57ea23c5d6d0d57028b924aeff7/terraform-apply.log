@@ -1,0 +1,14 @@
+azurerm_resource_group.prodmyapp: Creating...
+azurerm_resource_group.prodmyapp: Still creating... [00m10s elapsed]
+azurerm_resource_group.prodmyapp: Creation complete after 14s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup]
+
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+debug_tags = {
+  "creation_run_id" = "363"
+  "deployment_id" = "prodmyapp"
+  "environment" = "prod"
+  "managed_by" = "terraform"
+}
