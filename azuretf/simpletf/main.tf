@@ -64,7 +64,7 @@ variable "deployment_id" {
 variable "environment" {
   description = "Environment for pipeline"
   type        = string
-} 
+}
 
 # Tagging Resources
 locals {
