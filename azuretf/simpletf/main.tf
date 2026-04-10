@@ -319,7 +319,7 @@ resource "azurerm_role_assignment" "human_kv_crypto_officer" {
 */
 
 # Create key with explicit rotation policy
-/*
+
 resource "azurerm_key_vault_key" "prodmyapp_key" {
   name         = "my-storage-cmk"
   key_vault_id = azurerm_key_vault.prodmyapp.id
@@ -416,7 +416,7 @@ resource "azurerm_key_vault_secret" "sp_subscription_id" {
   depends_on   = [azurerm_key_vault.prodmyapp]
 }
 
-
+/*
 # Store current Client Secret 
 variable "arm_client_secret" {
   type        = string
