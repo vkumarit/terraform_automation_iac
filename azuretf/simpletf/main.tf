@@ -143,7 +143,7 @@ resource "azurerm_resource_group" "prodmyapp" {
 }
 
 ## Storage Account
-/*
+/
 # Create User-Assigned Identity: Grant access to Key Vault.
 resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   name                = "my-storage-identity"
@@ -228,7 +228,7 @@ resource "azurerm_role_assignment" "terraform_backend_storage_access" {
 
 # After core resource creation configure backened.tf file. Move terraform statefile to Storage Container. 
 # Perform init -upgrade after configuring.
-
+/*
 # backened.tf 
 terraform {
   backend "azurerm" {
