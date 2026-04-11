@@ -236,7 +236,7 @@ terraform {
     storage_account_name = "prodmyappsacmk01"
     container_name       = "mytfstate"
 
-    key = "${var.environment}/terraform.tfstate" # folder/file name/directory inside container
+    key = "prod/terraform.tfstate" # folder/file name/directory inside container
 
     #key = "${var.environment}/terraform.tfstate"    
     #when keeping separate statefile for each environment
