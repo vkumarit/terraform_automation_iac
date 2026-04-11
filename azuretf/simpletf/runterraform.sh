@@ -76,6 +76,111 @@ WORK_DIR="$(pwd)"
 # Capture original working directory.
 
 #=========================================
+# Terraform Pre-check (CRITICAL SAFETY)
+#=========================================
+precheck_or_fail() {
+  echo "========== TERRAFORM PRE-CHECK START =========="
+
+  STORAGE_ACCOUNT="prodmyappsacmk01"
+  CONTAINER_NAME="mytfstate"
+  STATE_KEY="prod/terraform.tfstate"
+
+  fail() {
+    echo "❌ PRE-CHECK FAILED: $1"
+    echo "🚫 Aborting to prevent accidental deletion"
+    exit 1
+  }
+
+  pass() {
+    echo "✅ $1"
+  }
+
+  # 1. INIT CHECK
+  echo "➡️ terraform init validation..."
+  if ! terraform init -input=false -no-color >/dev/null 2>&1; then
+    fail "Terraform init failed (backend unreachable)"
+  fi
+  pass "Terraform init OK"
+
+  # 2. STATE LIST
+  echo "➡️ Checking terraform state list..."
+  STATE_LIST=$(terraform state list 2>/dev/null || true)
+  if [[ -z "$STATE_LIST" ]]; then
+    fail "Terraform state EMPTY (backend not loaded)"
+  fi
+  pass "State list OK"
+
+  # 3. STATE PULL
+  echo "➡️ Pulling state..."
+  if ! terraform state pull > /tmp/tfstate.json 2>/dev/null; then
+    fail "Cannot pull remote state"
+  fi
+
+  if ! grep -q '"resources"' /tmp/tfstate.json; then
+    fail "State JSON invalid"
+  fi
+  pass "State pull OK"
+
+  # 4. BACKEND ACCESS
+  echo "➡️ Checking storage access..."
+  if ! az storage blob list \
+    --account-name "$STORAGE_ACCOUNT" \
+    --container-name "$CONTAINER_NAME" \
+    --auth-mode login \
+    --output none 2>/dev/null; then
+    fail "Storage backend not accessible"
+  fi
+  pass "Storage access OK"
+
+  # 5. STATE FILE EXISTS
+  echo "➡️ Checking state blob exists..."
+  if ! az storage blob show \
+    --account-name "$STORAGE_ACCOUNT" \
+    --container-name "$CONTAINER_NAME" \
+    --name "$STATE_KEY" \
+    --auth-mode login \
+    --output none 2>/dev/null; then
+    fail "State file missing in backend"
+  fi
+  pass "State blob exists"
+
+  # 6. PLAN SAFETY
+  echo "➡️ Running plan safety check..."
+  PLAN_OUTPUT=$(terraform plan -no-color -input=false || true)
+
+  if echo "$PLAN_OUTPUT" | grep -q "Plan: .* to add, 0 to change, 0 to destroy"; then
+    fail "Terraform thinks everything is NEW → state mismatch"
+  fi
+
+  if echo "$PLAN_OUTPUT" | grep -q "to destroy"; then
+    echo "$PLAN_OUTPUT"
+    fail "Plan includes DESTROY actions"
+  fi
+
+  pass "Plan safe"
+
+  # 7. AZURE vs TF COUNT
+  echo "➡️ Comparing Azure vs Terraform..."
+
+  AZ_COUNT=$(az resource list \
+    --resource-group myTFResourceGroup \
+    --query "[].id" -o tsv | wc -l)
+
+  TF_COUNT=$(terraform state list | wc -l)
+
+  echo "Azure count: $AZ_COUNT"
+  echo "TF count: $TF_COUNT"
+
+  if [[ "$TF_COUNT" -eq 0 && "$AZ_COUNT" -gt 0 ]]; then
+    fail "CRITICAL: Azure has resources but TF state is EMPTY"
+  fi
+
+  pass "Counts consistent"
+
+  echo "========== PRE-CHECK PASSED =========="
+}
+
+#=========================================
 # Cleanup function
 #=========================================
 
@@ -221,6 +326,8 @@ elif [[ "$COMMAND" == "plan" ]]; then
   set +e
   
   echo "===== PRE-CLEAN PHASE ====="
+  
+  precheck_or_fail
   
   echo "Refreshing Terraform state..."
   if ! terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color \
