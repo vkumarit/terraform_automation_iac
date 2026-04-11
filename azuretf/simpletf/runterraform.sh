@@ -79,7 +79,7 @@ WORK_DIR="$(pwd)"
 # Terraform Pre-check (CRITICAL SAFETY)
 #=========================================
 precheck_or_fail() {
-  echo "========== TERRAFORM PRE-CHECK START =========="
+  echo "----- TERRAFORM PRE-CHECK START -----"
 
   STORAGE_ACCOUNT="prodmyappsacmk01"
   CONTAINER_NAME="mytfstate"
@@ -96,11 +96,11 @@ precheck_or_fail() {
   }
 
   # 1. INIT CHECK
-  echo "➡️ terraform init validation..."
-  if ! terraform init -input=false -no-color >/dev/null 2>&1; then
-    fail "Terraform init failed (backend unreachable)"
-  fi
-  pass "Terraform init OK"
+  #echo "➡️ terraform init validation..."
+  #if ! terraform init -input=false -no-color >/dev/null 2>&1; then
+    #fail "Terraform init failed (backend unreachable)"
+  #fi
+  #pass "Terraform init OK"
 
   # 2. STATE LIST
   echo "➡️ Checking terraform state list..."
@@ -123,11 +123,22 @@ precheck_or_fail() {
   echo "Azure count: $AZ_COUNT"
   echo "TF count: $TF_COUNT"
 
+  # REAL consistency check
   if [[ "$TF_COUNT" -eq 0 && "$AZ_COUNT" -gt 0 ]]; then
-    fail "CRITICAL: Azure has resources but TF state is EMPTY"
+    fail "CRITICAL: Azure has resources but TF state has NO ARM resources"
   fi
 
-  pass "Counts consistent"
+  if [[ "$TF_COUNT" -lt "$AZ_COUNT" ]]; then
+    echo "⚠️ WARNING: Azure has more resources than Terraform state"
+    echo "Cleanup may delete unmanaged resources"
+  fi
+
+  if [[ "$TF_COUNT" -gt "$AZ_COUNT" ]]; then
+    echo "⚠️ WARNING: Terraform state has more resources than Azure"
+    echo "Possible drift or missing Azure resources"
+  fi
+
+  pass "Counts sanity check completed"
   
   # 3. STATE PULL
   echo "➡️ Pulling state..."
@@ -178,7 +189,7 @@ precheck_or_fail() {
 
   pass "Plan safe"
 
-  echo "========== PRE-CHECK PASSED =========="
+  echo "----- PRE-CHECK PASSED -----"
 }
 
 #=========================================
@@ -186,9 +197,9 @@ precheck_or_fail() {
 #=========================================
 
 cleanup_orphans() {
-  echo "========================================="
+  echo "--------------------------------"
   echo "Running STATE vs AZURE cleanup"
-  echo "========================================="
+  echo "--------------------------------"
 
   echo "Cleanup mode: $CLEANUP_MODE"
 
@@ -234,7 +245,9 @@ cleanup_orphans() {
   fi
   
   echo "Azure resource count: $(wc -l < /tmp/az_ids.txt)"
+  echo "----- AZ IDs -----"
   cat /tmp/az_ids.txt
+  echo "----- ------ -----"
   
   echo "Building Terraform state ID list..."
 
@@ -247,14 +260,27 @@ cleanup_orphans() {
     ID=$(terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty')
 
     # Only keep ARM-style IDs
-    if [[ "$ID" == /subscriptions/* ]]; then
+    if [[ -n "$ID" ]]; then
       echo "$ID"
     fi
-  done | sort -u > /tmp/tf_ids.txt
+  done | sort -u > /tmp/tf_ids.txt # file exists, non-empty, valid content
+  
+  # file integrity / state validity
+  if [[ ! -s /tmp/tf_ids.txt ]]; then
+    echo "🚫 SAFETY STOP: Terraform state file is empty or invalid"
+    echo "Reason: state not loaded / backend issue / migration in progress"
+    return 0
+  fi
+  
+  #TF_COUNT=$(wc -l < /tmp/tf_ids.txt)
   
   echo "TF resource count: $(wc -l < /tmp/tf_ids.txt)"
+  echo "----- TF IDs -----"
   cat /tmp/tf_ids.txt
+  echo "----- ------ -----"
   
+  #AZ_COUNT=$(wc -l < /tmp/az_ids.txt)
+
   echo "Finding orphan resources..."
 
   grep -Fxv -f /tmp/tf_ids.txt /tmp/az_ids.txt > /tmp/orphan_ids.txt || true
@@ -265,7 +291,9 @@ cleanup_orphans() {
   fi
 
   echo "Orphan resources detected: $(wc -l < /tmp/orphan_ids.txt)"
+  echo "----- Orphan IDs -----"
   cat /tmp/orphan_ids.txt
+  echo "----- ---------- -----"
 
   echo "Deleting orphan resources..."
 
@@ -277,7 +305,7 @@ cleanup_orphans() {
     sleep 2
   done
 
-  echo "Cleanup complete."
+  echo "----- Cleanup complete -----"
 }
 
 echo "========================================="
@@ -336,9 +364,9 @@ elif [[ "$COMMAND" == "plan" ]]; then
 
   set +e
   
-  echo "===== PRE-CLEAN PHASE ====="
+  precheck_or_fail
   
-  #precheck_or_fail
+  echo "===== PRE-CLEAN PHASE ====="
   
   echo "Refreshing Terraform state..."
   if ! terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color \
@@ -347,7 +375,7 @@ elif [[ "$COMMAND" == "plan" ]]; then
     echo "WARNING: refresh-only failed, proceeding with cleanup cautiously"
   fi
   
-  CLEANUP_MODE=safe cleanup_orphans
+  #CLEANUP_MODE=safe cleanup_orphans
 
   echo "Pre-check: verifying backend state access..."
   terraform state pull > /dev/null 2>&1
