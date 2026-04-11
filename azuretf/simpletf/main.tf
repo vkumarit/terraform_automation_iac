@@ -162,7 +162,7 @@ resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   # Add lifecycle block from the beginning, 
   # when creating a new resource.
 }
-/*
+
 # Can manually check available name using az cli, then enter here.
 # Create Storage Account (CMK): Set backened then Link the identity and key later.
 resource "azurerm_storage_account" "prodmyapp" {
@@ -190,7 +190,7 @@ resource "azurerm_storage_account" "prodmyapp" {
 }
 
 ## Storage Container
-/*
+
 resource "azurerm_storage_container" "prodmyapp" {
   name                  = "mytfstate"
   storage_account_name  = azurerm_storage_account.prodmyapp.name
