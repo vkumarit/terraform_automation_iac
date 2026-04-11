@@ -143,7 +143,7 @@ resource "azurerm_resource_group" "prodmyapp" {
 }
 
 ## Storage Account
-
+/*
 # Create User-Assigned Identity: Grant access to Key Vault.
 resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   name                = "my-storage-identity"
@@ -162,7 +162,7 @@ resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   # Add lifecycle block from the beginning, 
   # when creating a new resource.
 }
-
+/*
 # Can manually check available name using az cli, then enter here.
 # Create Storage Account (CMK): Set backened then Link the identity and key later.
 resource "azurerm_storage_account" "prodmyapp" {
@@ -190,7 +190,7 @@ resource "azurerm_storage_account" "prodmyapp" {
 }
 
 ## Storage Container
-
+/*
 resource "azurerm_storage_container" "prodmyapp" {
   name                  = "mytfstate"
   storage_account_name  = azurerm_storage_account.prodmyapp.name
@@ -236,7 +236,7 @@ terraform {
     storage_account_name = "prodmyappsacmk01"
     container_name       = "mytfstate"
 
-    key = "/prod/terraform.tfstate" # folder/file name/directory inside container
+    key = "${var.environment}/terraform.tfstate" # folder/file name/directory inside container
 
     #key = "${var.environment}/terraform.tfstate"    
     #when keeping separate statefile for each environment
