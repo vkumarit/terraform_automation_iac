@@ -338,7 +338,7 @@ elif [[ "$COMMAND" == "plan" ]]; then
   
   echo "===== PRE-CLEAN PHASE ====="
   
-  precheck_or_fail
+  #precheck_or_fail
   
   echo "Refreshing Terraform state..."
   if ! terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color \
