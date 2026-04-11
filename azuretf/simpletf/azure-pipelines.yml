@@ -218,6 +218,7 @@ stages:
        TF_VAR_size_alias: $(SIZE_ALIAS)
        TF_VAR_run_id: $(Build.BuildId)
        RUN_ID: $(Build.BuildId)
+       ALLOW_EMPTY_STATE: "true"
 
     # -----------------------------
     # Terraform Apply

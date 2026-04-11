@@ -179,7 +179,13 @@ precheck_or_fail() {
   PLAN_OUTPUT=$(terraform plan -no-color -input=false || true)
 
   if echo "$PLAN_OUTPUT" | grep -q "Plan: .* to add, 0 to change, 0 to destroy"; then
-    fail "Terraform thinks everything is NEW → state mismatch"
+    echo "⚠️ Terraform thinks everything is NEW"
+
+    if [[ "${ALLOW_EMPTY_STATE:-false}" == "true" ]]; then
+      echo "⚠️ Allowed: bootstrap / migration phase"
+    else
+      fail "State mismatch: refusing to recreate all resources"
+    fi
   fi
 
   if echo "$PLAN_OUTPUT" | grep -q "to destroy"; then
