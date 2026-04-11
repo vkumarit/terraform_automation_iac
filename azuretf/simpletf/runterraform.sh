@@ -239,7 +239,17 @@ cleanup_orphans() {
   echo "Building Terraform state ID list..."
 
   terraform state list | while read r; do
-    terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty'
+    # Skip data resources
+    if [[ "$r" == data.* ]]; then
+      continue
+    fi
+
+    ID=$(terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty')
+
+    # Only keep ARM-style IDs
+    if [[ "$ID" == /subscriptions/* ]]; then
+      echo "$ID"
+    fi
   done | sort -u > /tmp/tf_ids.txt
   
   echo "TF resource count: $(wc -l < /tmp/tf_ids.txt)"
