@@ -108,8 +108,27 @@ precheck_or_fail() {
   if [[ -z "$STATE_LIST" ]]; then
     fail "Terraform state EMPTY (backend not loaded)"
   fi
+  echo "$STATE_LIST"
   pass "State list OK"
 
+  # 7. AZURE vs TF COUNT
+  echo "➡️ Comparing Azure vs Terraform..."
+
+  AZ_COUNT=$(az resource list \
+    --resource-group myTFResourceGroup \
+    --query "[].id" -o tsv | wc -l)
+
+  TF_COUNT=$(terraform state list | wc -l)
+
+  echo "Azure count: $AZ_COUNT"
+  echo "TF count: $TF_COUNT"
+
+  if [[ "$TF_COUNT" -eq 0 && "$AZ_COUNT" -gt 0 ]]; then
+    fail "CRITICAL: Azure has resources but TF state is EMPTY"
+  fi
+
+  pass "Counts consistent"
+  
   # 3. STATE PULL
   echo "➡️ Pulling state..."
   if ! terraform state pull > /tmp/tfstate.json 2>/dev/null; then
@@ -158,24 +177,6 @@ precheck_or_fail() {
   fi
 
   pass "Plan safe"
-
-  # 7. AZURE vs TF COUNT
-  echo "➡️ Comparing Azure vs Terraform..."
-
-  AZ_COUNT=$(az resource list \
-    --resource-group myTFResourceGroup \
-    --query "[].id" -o tsv | wc -l)
-
-  TF_COUNT=$(terraform state list | wc -l)
-
-  echo "Azure count: $AZ_COUNT"
-  echo "TF count: $TF_COUNT"
-
-  if [[ "$TF_COUNT" -eq 0 && "$AZ_COUNT" -gt 0 ]]; then
-    fail "CRITICAL: Azure has resources but TF state is EMPTY"
-  fi
-
-  pass "Counts consistent"
 
   echo "========== PRE-CHECK PASSED =========="
 }
