@@ -21,7 +21,7 @@ variables:
 - name: SIZE_ALIAS
   value: small
 - name: BOOTSTRAP_MODE
-  value: 'true'                # `true` > migartion & `false` > normal after that
+  value: 'false'                # `true` > migartion & `false` > normal after that
 - name: Build_ID
   value: $(Build.BuildId)
 

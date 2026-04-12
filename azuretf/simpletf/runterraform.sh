@@ -80,7 +80,7 @@ WORK_DIR="$(pwd)"
 # Terraform Pre-check (CRITICAL SAFETY)
 #=========================================
 precheck_or_fail() {
-  echo "----- TERRAFORM PRE-CHECK START -----"
+  echo "----- PRE-CHECK START -----"
 
   STORAGE_ACCOUNT="prodmyappsacmk01"
   CONTAINER_NAME="mytfstate"
