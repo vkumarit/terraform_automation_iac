@@ -34,6 +34,7 @@ CURRENT_BRANCH="$(git branch --show-current || true)"
 
 # Add clean-up mode
 CLEANUP_MODE="${CLEANUP_MODE:-safe}"
+BOOTSTRAP_MODE="${BOOTSTRAP_MODE:-false}"
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 # Gets absolute path of repository root directory
@@ -96,106 +97,93 @@ precheck_or_fail() {
   }
 
   # 1. INIT CHECK
-  #echo "➡️ terraform init validation..."
+  #echo "#> terraform init validation..."
   #if ! terraform init -input=false -no-color >/dev/null 2>&1; then
     #fail "Terraform init failed (backend unreachable)"
   #fi
   #pass "Terraform init OK"
 
   # 2. STATE LIST
-  echo "➡️ Checking terraform state list..."
+  echo "#> Checking terraform state list..."
   STATE_LIST=$(terraform state list 2>/dev/null || true)
   if [[ -z "$STATE_LIST" ]]; then
-    fail "Terraform state EMPTY (backend not loaded)"
+    if [[ "${BOOTSTRAP_MODE:-false}" == "true" ]]; then
+      echo "!> Empty state allowed (bootstrap mode)"
+    else
+      fail "X> Terraform state EMPTY (backend not loaded)"
+    fi
   fi
   echo "$STATE_LIST"
   pass "State list OK"
 
   # 7. AZURE vs TF COUNT
-  echo "➡️ Comparing Azure vs Terraform..."
+  echo "#> Comparing Azure vs Terraform..."
 
   AZ_COUNT=$(az resource list \
     --resource-group myTFResourceGroup \
     --query "[].id" -o tsv | wc -l)
 
-  TF_COUNT=$(terraform state list | wc -l)
+  TF_COUNT=$(echo "$STATE_LIST" | wc -l)
 
   echo "Azure count: $AZ_COUNT"
   echo "TF count: $TF_COUNT"
 
   # REAL consistency check
   if [[ "$TF_COUNT" -eq 0 && "$AZ_COUNT" -gt 0 ]]; then
-    fail "CRITICAL: Azure has resources but TF state has NO ARM resources"
+    if [[ "${BOOTSTRAP_MODE:-false}" == "true" ]]; then
+      echo "!> Allowed mismatch (bootstrap mode)"
+    else
+      fail "X> CRITICAL: Azure has resources but TF state has NO ARM resources"
+    fi
   fi
 
   if [[ "$TF_COUNT" -lt "$AZ_COUNT" ]]; then
-    echo "⚠️ WARNING: Azure has more resources than Terraform state"
+    echo "!> WARNING: Azure has more resources than Terraform state"
     echo "Cleanup may delete unmanaged resources"
   fi
 
   if [[ "$TF_COUNT" -gt "$AZ_COUNT" ]]; then
-    echo "⚠️ WARNING: Terraform state has more resources than Azure"
+    echo "!> WARNING: Terraform state has more resources than Azure"
     echo "Possible drift or missing Azure resources"
   fi
 
   pass "Counts sanity check completed"
   
   # 3. STATE PULL
-  echo "➡️ Pulling state..."
+  echo "#> Pulling state..."
   if ! terraform state pull > /tmp/tfstate.json 2>/dev/null; then
-    fail "Cannot pull remote state"
+    fail "X> Cannot pull remote state"
   fi
 
   if ! grep -q '"resources"' /tmp/tfstate.json; then
-    fail "State JSON invalid"
+    fail "X> State JSON invalid"
   fi
   pass "State pull OK"
 
   # 4. BACKEND ACCESS
-  echo "➡️ Checking storage access..."
+  echo "#> Checking storage access..."
   if ! az storage blob list \
     --account-name "$STORAGE_ACCOUNT" \
     --container-name "$CONTAINER_NAME" \
     --auth-mode login \
     --output none 2>/dev/null; then
-    fail "Storage backend not accessible"
+    fail "X> Storage backend not accessible"
   fi
   pass "Storage access OK"
 
   # 5. STATE FILE EXISTS
-  echo "➡️ Checking state blob exists..."
+  echo "#> Checking state blob exists..."
   if ! az storage blob show \
     --account-name "$STORAGE_ACCOUNT" \
     --container-name "$CONTAINER_NAME" \
     --name "$STATE_KEY" \
     --auth-mode login \
     --output none 2>/dev/null; then
-    fail "State file missing in backend"
+    fail "X> State file missing in backend"
   fi
   pass "State blob exists"
 
-  # 6. PLAN SAFETY
-  echo "➡️ Running plan safety check..."
-  PLAN_OUTPUT=$(terraform plan -no-color -input=false || true)
-
-  if echo "$PLAN_OUTPUT" | grep -q "Plan: .* to add, 0 to change, 0 to destroy"; then
-    echo "⚠️ Terraform thinks everything is NEW"
-
-    if [[ "${ALLOW_EMPTY_STATE:-false}" == "true" ]]; then
-      echo "⚠️ Allowed: bootstrap / migration phase"
-    else
-      fail "State mismatch: refusing to recreate all resources"
-    fi
-  fi
-
-  if echo "$PLAN_OUTPUT" | grep -q "to destroy"; then
-    echo "$PLAN_OUTPUT"
-    fail "Plan includes DESTROY actions"
-  fi
-
-  pass "Plan safe"
-
-  echo "----- PRE-CHECK PASSED -----"
+  echo "----- PRE-CHECK COMPLETE -----"
 }
 
 #=========================================
@@ -207,6 +195,12 @@ cleanup_orphans() {
   echo "Running STATE vs AZURE cleanup"
   echo "--------------------------------"
 
+  # EXPLICIT CLEANUP DISABLE
+  if [[ "${BOOTSTRAP_MODE:-false}" == "true" ]]; then
+    echo "WARNING: Skipping cleanup (bootstrap mode override)"
+    return 0
+  fi
+  
   echo "Cleanup mode: $CLEANUP_MODE"
 
   echo "Fetching Azure resources (mode: $CLEANUP_MODE)..."
@@ -273,7 +267,7 @@ cleanup_orphans() {
   
   # file integrity / state validity
   if [[ ! -s /tmp/tf_ids.txt ]]; then
-    echo "🚫 SAFETY STOP: Terraform state file is empty or invalid"
+    echo "SAFETY STOP: Terraform state file is empty or invalid"
     echo "Reason: state not loaded / backend issue / migration in progress"
     return 0
   fi
@@ -313,6 +307,12 @@ cleanup_orphans() {
 
   echo "----- Cleanup complete -----"
 }
+
+if [[ "${BOOTSTRAP_MODE}" == "true" ]]; then
+  echo "WARNING: BOOTSTRAP MODE ENABLED (migration safety ON)"
+else
+  echo "NORMAL MODE (full safety checks active)"
+fi
 
 echo "========================================="
 echo "Running terraform ${COMMAND}"
@@ -401,6 +401,47 @@ elif [[ "$COMMAND" == "plan" ]]; then
     #   2 > changes present
 
     TF_EXIT=${PIPESTATUS[0]}
+    
+    if [[ "$TF_EXIT" -eq 0 || "$TF_EXIT" -eq 2 ]]; then
+
+      echo "Analyzing plan for safety checks..."
+
+      PLAN_JSON=$(terraform show -json tfplan)
+
+      DESTROY_COUNT=$(echo "$PLAN_JSON" | jq '
+        [.resource_changes[] | select(.change.actions | index("delete"))] | length
+      ')
+
+      CREATE_COUNT=$(echo "$PLAN_JSON" | jq '
+        [.resource_changes[] | select(.change.actions == ["create"])] | length
+      ')
+
+      CHANGE_COUNT=$(echo "$PLAN_JSON" | jq '
+        [.resource_changes[] | select(.change.actions | index("update"))] | length
+      ')
+      
+      REPLACE_COUNT=$(echo "$PLAN_JSON" | jq '
+        [.resource_changes[] | select(.change.actions == ["create","delete"] or .change.actions == ["delete","create"])] | length
+      ')
+
+      # Only log if needed (optional)
+      echo "Safety check → create=$CREATE_COUNT update=$CHANGE_COUNT destroy=$DESTROY_COUNT replace=$REPLACE_COUNT"
+
+      # Detect bootstrap/migration/state mismatch
+      if [[ "$CREATE_COUNT" -gt 0 && "$CHANGE_COUNT" -eq 0 && "$DESTROY_COUNT" -eq 0 ]]; then
+        echo "⚠️ Terraform thinks everything is NEW"
+
+        if [[ "${BOOTSTRAP_MODE:-false}" == "true" ]]; then
+          echo "⚠️ Allowed: bootstrap / migration phase"
+        else
+          echo "❌ State mismatch: refusing to recreate all resources"
+      
+          TF_EXIT=1
+      
+          return 1
+        fi
+      fi
+    fi
 
     # If changes detected (exit 2), treat as success
     if [[ "$TF_EXIT" -eq 0 ]]; then

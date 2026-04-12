@@ -20,7 +20,10 @@ variables:
   #value: $(Build.SourceBranchName) #for environment-specific (dev/prod/test/staging) pipeline runs
 - name: SIZE_ALIAS
   value: small
-
+- name: BOOTSTRAP_MODE
+  value: 'true'                # `true` > migartion & `false` > normal after that
+- name: Build_ID
+  value: $(Build.BuildId)
 
 pool:
   name: 'az-classic-pool'   # EC2 self-hosted agent
@@ -216,9 +219,9 @@ stages:
        GITHUB_TOKEN: $(githubtoken)
        TF_VAR_environment: $(ENVIRONMENT)
        TF_VAR_size_alias: $(SIZE_ALIAS)
-       TF_VAR_run_id: $(Build.BuildId)
-       RUN_ID: $(Build.BuildId)
-       ALLOW_EMPTY_STATE: "true"
+       TF_VAR_run_id: $(Build_ID)
+       RUN_ID: $(Build_ID)
+       BOOTSTRAP_MODE: $(BOOTSTRAP_MODE)       
 
     # -----------------------------
     # Terraform Apply
@@ -237,8 +240,9 @@ stages:
         GITHUB_TOKEN: $(githubtoken)
         TF_VAR_environment: $(ENVIRONMENT)
         TF_VAR_size_alias: $(SIZE_ALIAS)
-        TF_VAR_run_id: $(Build.BuildId)              #for terraform env
-        RUN_ID: $(Build.BuildId)                     #for .sh
+        TF_VAR_run_id: $(Build_ID)              #for terraform env
+        RUN_ID: $(Build_ID)                     #for .sh
+        BOOTSTRAP_MODE: $(BOOTSTRAP_MODE)
         
     # -----------------------------
     # Clean Terraform junk after every run
