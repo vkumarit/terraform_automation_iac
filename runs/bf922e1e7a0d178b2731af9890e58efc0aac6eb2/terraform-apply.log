@@ -1,0 +1,46 @@
+Acquiring state lock. This may take a few moments...
+azurerm_key_vault.prodmyapp: Creating...
+azurerm_key_vault.prodmyapp: Still creating... [00m10s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [00m20s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [00m30s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [00m40s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [00m50s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [01m00s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [01m10s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [01m20s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [01m30s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [01m40s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [01m50s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [02m00s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [02m10s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [02m20s elapsed]
+azurerm_key_vault.prodmyapp: Creation complete after 2m21s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv]
+azurerm_role_assignment.storage_kv_crypto: Creating...
+azurerm_role_assignment.storage_kv_crypto: Still creating... [00m10s elapsed]
+azurerm_role_assignment.storage_kv_crypto: Still creating... [00m20s elapsed]
+azurerm_role_assignment.storage_kv_crypto: Still creating... [00m30s elapsed]
+azurerm_role_assignment.storage_kv_crypto: Creation complete after 31s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/31fc14ae-1a56-73cf-d1cd-3d62db252970]
+azurerm_role_assignment.tf_kv_admin: Creating...
+azurerm_role_assignment.tf_kv_admin: Still creating... [00m10s elapsed]
+azurerm_role_assignment.tf_kv_admin: Still creating... [00m20s elapsed]
+azurerm_role_assignment.tf_kv_admin: Creation complete after 30s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/de8b8885-fd48-ff4e-5104-d42982bb126d]
+time_sleep.wait_for_kv_rbac: Creating...
+time_sleep.wait_for_kv_rbac: Still creating... [00m10s elapsed]
+time_sleep.wait_for_kv_rbac: Still creating... [00m20s elapsed]
+time_sleep.wait_for_kv_rbac: Still creating... [00m30s elapsed]
+time_sleep.wait_for_kv_rbac: Still creating... [00m40s elapsed]
+time_sleep.wait_for_kv_rbac: Still creating... [00m50s elapsed]
+time_sleep.wait_for_kv_rbac: Still creating... [01m00s elapsed]
+time_sleep.wait_for_kv_rbac: Creation complete after 1m0s [id=2026-04-12T07:28:24Z]
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+debug_tags = {
+  "creation_run_id" = "384"
+  "deployment_id" = "prodmyapp"
+  "environment" = "prod"
+  "managed_by" = "terraform"
+}
