@@ -3227,7 +3227,16 @@ ONE-LINE SUMMARY
 "Production Terraform is not about running apply,
 it’s about controlling WHEN and HOW apply is allowed."
 ---------------------------------------------------------------------------------------------------------------
+Import Role Assignment to terraform: 
 
+example for azurerm_role_assignment.terraform_backend_storage_access,
+
+$ terraform import azurerm_role_assignment.terraform_backend_storage_access \
+/subscriptions/<SUBSCRIPTION_ID>/providers/Microsoft.Authorization/roleAssignments/<ROLE_ASSIGNMENT_ID>
+  
+$ terraform import azurerm_role_assignment.terraform_backend_storage_access\
+/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization\
+/roleAssignments/0a47c68df68e820facdddd3054f0b96e
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------

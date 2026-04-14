@@ -12,6 +12,21 @@ $ az ad sp create-for-rbac --name "tf-bootstrap-sp" --role Contributor --scopes 
 Create service connection:
 $ az devops ?
 
+---
+Get role assignment address id for import purpose having GUID 0a47c68d-f68e-820f-acdd-dd3054f0b96e
+az role assignment list --all --query "[?contains(id, '0a47c68d')].id" -o tsv
+we get, 
+/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers
+/Microsoft.Storage/storageAccounts/prodmyappsacmk01/blobServices/default/containers/mytfstate
+/providers/Microsoft.Authorization/roleAssignments/0a47c68d-f68e-820f-acdd-dd3054f0b96e
+
+then we import, 
+terraform import azurerm_role_assignment.terraform_backend_storage_access /subscriptions
+/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage
+/storageAccounts/prodmyappsacmk01/blobServices/default/containers/mytfstate/providers/Microsoft.Authorization
+/roleAssignments/0a47c68d-f68e-820f-acdd-dd3054f0b96e
+---
+
 Role Assignment: 
 $ az role assignment create \
   --role "Key Vault Crypto Officer" \
