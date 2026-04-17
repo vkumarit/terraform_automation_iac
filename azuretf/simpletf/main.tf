@@ -119,7 +119,7 @@ provider "azurerm" {
 }
 
 ## Resource Group
-/*
+
 resource "azurerm_resource_group" "prodmyapp" {
   name     = "myTFResourceGroup"
   location = "Australia East"
@@ -143,7 +143,7 @@ resource "azurerm_resource_group" "prodmyapp" {
 }
 
 ## Storage Account
-
+/*
 # Create User-Assigned Identity: Grant access to Key Vault.
 resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   name                = "my-storage-identity"
@@ -246,13 +246,13 @@ terraform {
     # use_cli uses logged-in az cli context for authentication, comment out when switching to pipeline
   }
 }
-
+*/
 #Get current authenticated principal details automatically from authenticated session via AZ CLI
 #data source needs the provider to be configured first, place it in secrets.tf or main.tf after provider block
 data "azurerm_client_config" "current" {}
 
 ## Key Vault
-/*
+
 resource "azurerm_key_vault" "prodmyapp" {
   name                        = "prodmyappkv"
   location                    = azurerm_resource_group.prodmyapp.location
