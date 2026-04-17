@@ -34,7 +34,6 @@ CURRENT_BRANCH="$(git branch --show-current || true)"
 
 # Add clean-up mode
 CLEANUP_MODE="${CLEANUP_MODE:-safe}"
-BOOTSTRAP_MODE="${BOOTSTRAP_MODE:-false}"
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 # Gets absolute path of repository root directory
@@ -92,76 +91,92 @@ precheck_or_fail() {
     exit 1
   }
 
+  warn() {
+    echo "⚠️ WARNING: $1"
+  }
+  
   pass() {
     echo "✅ $1"
   }
 
-  # 1. INIT CHECK
-  #echo "#> terraform init validation..."
-  #if ! terraform init -input=false -no-color >/dev/null 2>&1; then
-    #fail "Terraform init failed (backend unreachable)"
-  #fi
-  #pass "Terraform init OK"
+  # ------------------------------------------
+  # 1. VALIDATE WORKSPACE
+  # ------------------------------------------
+  CURRENT_WS=$(terraform workspace show 2>/dev/null || echo "unknown")
 
-  # 2. STATE LIST
-  echo "#> Checking terraform state list..."
-  STATE_LIST=$(terraform state list 2>/dev/null || true)
-  if [[ -z "$STATE_LIST" ]]; then
-    if [[ "${BOOTSTRAP_MODE:-false}" == "true" ]]; then
-      echo "!> Empty state allowed (bootstrap mode)"
-    else
-      fail "X> Terraform state EMPTY (backend not loaded)"
-    fi
+  if [[ "$CURRENT_WS" != "prod" ]]; then
+    fail "Wrong Terraform workspace: $CURRENT_WS (expected: prod)"
   fi
+  
+  # ------------------------------------------
+  # 2. STATE LIST & COUNTS
+  # ------------------------------------------
+  echo "#> Checking terraform state list and TF Count..."
+  
+  TF_STATE_EXIT=0
+  STATE_LIST=$(terraform state list 2>/dev/null) || TF_STATE_EXIT=$?
+
+  TF_STATE_EXIT=${TF_STATE_EXIT:-0}
+
+  if [[ "$TF_STATE_EXIT" -ne 0 ]]; then
+    fail "Terraform not initialized or backend not accessible"
+  fi
+  
   echo "$STATE_LIST"
+  TF_COUNT=$(echo "$STATE_LIST" | grep -c .)
   pass "State list OK"
 
-  # 7. AZURE vs TF COUNT
-  echo "#> Comparing Azure vs Terraform..."
+  # AZURE vs TF COUNT
+  echo "#> Fetching Azure resource count..."
 
   AZ_COUNT=$(az resource list \
-    --resource-group myTFResourceGroup \
-    --query "[].id" -o tsv | wc -l)
-
-  TF_COUNT=$(echo "$STATE_LIST" | wc -l)
+  --resource-group myTFResourceGroup \
+  --query "[].id" -o tsv 2>/dev/null | wc -l) || fail "Failed to fetch Azure resources (auth / RG issue)"
 
   echo "Azure count: $AZ_COUNT"
   echo "TF count: $TF_COUNT"
 
-  # REAL consistency check
+  # ------------------------------------------
+  # 3. CRITICAL SAFETY CHECK
+  # ------------------------------------------
   if [[ "$TF_COUNT" -eq 0 && "$AZ_COUNT" -gt 0 ]]; then
-    if [[ "${BOOTSTRAP_MODE:-false}" == "true" ]]; then
-      echo "!> Allowed mismatch (bootstrap mode)"
-    else
-      fail "X> CRITICAL: Azure has resources but TF state has NO ARM resources"
-    fi
+    fail "CRITICAL: Azure has resources but Terraform state is EMPTY"
   fi
 
+  # ------------------------------------------
+  # 4. DRIFT WARNINGS (non-blocking)
+  # ------------------------------------------
   if [[ "$TF_COUNT" -lt "$AZ_COUNT" ]]; then
-    echo "!> WARNING: Azure has more resources than Terraform state"
-    echo "Cleanup may delete unmanaged resources"
+    warn "Azure has MORE resources than Terraform state (possible unmanaged resources)"
   fi
 
   if [[ "$TF_COUNT" -gt "$AZ_COUNT" ]]; then
-    echo "!> WARNING: Terraform state has more resources than Azure"
-    echo "Possible drift or missing Azure resources"
+    warn "Terraform state has MORE resources than Azure (possible drift or deletions)"
   fi
 
   pass "Counts sanity check completed"
+
   
-  # 3. STATE PULL
+  # ------------------------------------------
+  # 5. STATE PULL VALIDATION
+  # ------------------------------------------
   echo "#> Pulling state..."
+
   if ! terraform state pull > /tmp/tfstate.json 2>/dev/null; then
-    fail "X> Cannot pull remote state"
+    fail "Cannot pull remote state"
   fi
 
   if ! grep -q '"resources"' /tmp/tfstate.json; then
-    fail "X> State JSON invalid"
+    fail "State JSON invalid"
   fi
+
   pass "State pull OK"
 
-  # 4. BACKEND ACCESS
+  # ------------------------------------------
+  # 6. BACKEND ACCESS
+  # ------------------------------------------
   echo "#> Checking storage access..."
+  
   if ! az storage blob list \
     --account-name "$STORAGE_ACCOUNT" \
     --container-name "$CONTAINER_NAME" \
@@ -169,10 +184,14 @@ precheck_or_fail() {
     --output none 2>/dev/null; then
     fail "X> Storage backend not accessible"
   fi
+  
   pass "Storage access OK"
 
-  # 5. STATE FILE EXISTS
+  # ------------------------------------------
+  # 7. STATE FILE EXISTS
+  # ------------------------------------------
   echo "#> Checking state blob exists..."
+  
   if ! az storage blob show \
     --account-name "$STORAGE_ACCOUNT" \
     --container-name "$CONTAINER_NAME" \
@@ -181,6 +200,7 @@ precheck_or_fail() {
     --output none 2>/dev/null; then
     fail "X> State file missing in backend"
   fi
+  
   pass "State blob exists"
 
   echo "----- PRE-CHECK COMPLETE -----"
@@ -190,129 +210,110 @@ precheck_or_fail() {
 # Cleanup function
 #=========================================
 
-cleanup_orphans() {
+cleanup() {
   echo "--------------------------------"
-  echo "Running STATE vs AZURE cleanup"
+  echo "Running SAFE orphan cleanup"
   echo "--------------------------------"
 
-  # EXPLICIT CLEANUP DISABLE
-  if [[ "${BOOTSTRAP_MODE:-false}" == "true" ]]; then
-    echo "WARNING: Skipping cleanup (bootstrap mode override)"
-    return 0
-  fi
-  
-  echo "Cleanup mode: $CLEANUP_MODE"
-
-  echo "Fetching Azure resources (mode: $CLEANUP_MODE)..."
-
-  if [[ "$CLEANUP_MODE" == "safe" ]]; then
-    
-    # RUN_ID CHECK
-    if [[ -z "$RUN_ID" ]]; then
-      echo "ERROR: RUN_ID missing → refusing cleanup"
-      exit 1
-    fi
-    
-    echo "SMART cleanup (run-aware)"
-    
-    echo "Filtering by tags:"
-    echo "  managed_by=$TAG_MANAGED_BY"
-    echo "  deployment_id=$TAG_DEPLOYMENT_ID"
-
-    az resource list \
-      --resource-group myTFResourceGroup \
-      --query "[?tags.managed_by=='$TAG_MANAGED_BY' && tags.deployment_id=='$TAG_DEPLOYMENT_ID'].{id:id, run:tags.creation_run_id}" \
-      -o json > /tmp/az_resources.json
-
-    #--------------------------------
-    # Extract only old-run resources
-    #--------------------------------
-    
-    CURRENT_RUN="$RUN_ID"
-
-    jq -r --arg RUN "$CURRENT_RUN" '
-      .[]
-      | select(.run != $RUN)
-      | .id
-    ' /tmp/az_resources.json > /tmp/az_ids.txt
-    
-  else
-    echo "WARNING: Running AGGRESSIVE cleanup (no tag filter)"
-
-    az resource list \
-      --resource-group myTFResourceGroup \
-      --query "[].id" -o tsv > /tmp/az_ids.txt
-  fi
-  
-  echo "Azure resource count: $(wc -l < /tmp/az_ids.txt)"
-  echo "----- AZ IDs -----"
-  cat /tmp/az_ids.txt
-  echo "----- ------ -----"
-  
-  echo "Building Terraform state ID list..."
-
+  # ------------------------------------------
+  # 1. Build Terraform state IDs
+  # ------------------------------------------
   terraform state list | while read r; do
-    # Skip data resources
-    if [[ "$r" == data.* ]]; then
-      continue
-    fi
+    [[ "$r" == data.* ]] && continue
 
     ID=$(terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty')
+    [[ -n "$ID" ]] && echo "$ID"
+  done | sort -u > /tmp/tf_ids.txt
 
-    # Only keep ARM-style IDs
-    if [[ -n "$ID" ]]; then
-      echo "$ID"
-    fi
-  done | sort -u > /tmp/tf_ids.txt # file exists, non-empty, valid content
-  
-  # file integrity / state validity
   if [[ ! -s /tmp/tf_ids.txt ]]; then
-    echo "SAFETY STOP: Terraform state file is empty or invalid"
-    echo "Reason: state not loaded / backend issue / migration in progress"
+    echo "CRITICAL: Terraform state empty → abort cleanup"
+    exit 1
+  fi
+
+  TF_COUNT=$(wc -l < /tmp/tf_ids.txt)
+  echo "TF_COUNT=$TF_COUNT"
+
+  # ------------------------------------------
+  # 2. Build Azure managed resource list
+  # (ONLY what Terraform should manage)
+  # ------------------------------------------
+  az resource list \
+    --resource-group myTFResourceGroup \
+    --query "[?tags.managed_by=='$TAG_MANAGED_BY' && tags.deployment_id=='$TAG_DEPLOYMENT_ID'].{id:id, created:tags.creation_time}" \
+    -o json > /tmp/az_resources.json
+
+  AZ_COUNT=$(jq length /tmp/az_resources.json)
+  echo "AZ_COUNT=$AZ_COUNT"
+
+  if [[ "$AZ_COUNT" -eq 0 ]]; then
+    echo "No managed Azure resources found."
     return 0
   fi
-  
-  #TF_COUNT=$(wc -l < /tmp/tf_ids.txt)
-  
-  echo "TF resource count: $(wc -l < /tmp/tf_ids.txt)"
-  echo "----- TF IDs -----"
-  cat /tmp/tf_ids.txt
-  echo "----- ------ -----"
-  
-  #AZ_COUNT=$(wc -l < /tmp/az_ids.txt)
 
-  echo "Finding orphan resources..."
+  
 
+  # ------------------------------------------
+  # 4. Extract Azure IDs
+  # ------------------------------------------
+  jq -r '.[].id' /tmp/az_resources.json | sort -u > /tmp/az_ids.txt
+
+  # ------------------------------------------
+  # 5. Detect TRUE orphans (Azure - TF)
+  # ------------------------------------------
   grep -Fxv -f /tmp/tf_ids.txt /tmp/az_ids.txt > /tmp/orphan_ids.txt || true
 
   if [[ ! -s /tmp/orphan_ids.txt ]]; then
     echo "No orphan resources found."
-    return
+    return 0
   fi
 
-  echo "Orphan resources detected: $(wc -l < /tmp/orphan_ids.txt)"
-  echo "----- Orphan IDs -----"
+  echo "Potential orphans:"
   cat /tmp/orphan_ids.txt
-  echo "----- ---------- -----"
 
-  echo "Deleting orphan resources..."
+  # ------------------------------------------
+  # 6. SAFETY: Skip very recent resources
+  # ------------------------------------------
+  echo "Filtering out recent resources (<10 min)..."
 
-  for i in {1..3}; do
-    while read -r id; do
-      echo "Deleting: $id"
-      az resource delete --ids "$id" || true
-    done < /tmp/orphan_ids.txt
-    sleep 2
-  done
+  > /tmp/safe_delete_ids.txt
 
-  echo "----- Cleanup complete -----"
+  NOW_EPOCH=$(date +%s)
+
+  while read -r id; do
+    CREATED=$(jq -r --arg ID "$id" '.[] | select(.id==$ID) | .created' /tmp/az_resources.json)
+
+    if [[ -z "$CREATED" || "$CREATED" == "null" ]]; then
+      echo "Skipping (no timestamp): $id"
+      continue
+    fi
+
+    CREATED_EPOCH=$(date -d "$CREATED" +%s 2>/dev/null || echo 0)
+    AGE=$(( NOW_EPOCH - CREATED_EPOCH ))
+
+    if [[ "$AGE" -gt 600 ]]; then
+      echo "$id" >> /tmp/safe_delete_ids.txt
+    else
+      echo "Skipping recent: $id"
+    fi
+  done < /tmp/orphan_ids.txt
+
+  if [[ ! -s /tmp/safe_delete_ids.txt ]]; then
+    echo "No safe resources to delete."
+    return 0
+  fi
+
+  # ------------------------------------------
+  # 7. DELETE (final step)
+  # ------------------------------------------
+  echo "Deleting verified orphan resources..."
+
+  while read -r id; do
+    echo "Deleting: $id"
+    az resource delete --ids "$id" || true
+  done < /tmp/safe_delete_ids.txt
+
+  echo "Cleanup complete."
 }
-
-if [[ "${BOOTSTRAP_MODE}" == "true" ]]; then
-  echo "WARNING: BOOTSTRAP MODE ENABLED (migration safety ON)"
-else
-  echo "NORMAL MODE (full safety checks active)"
-fi
 
 echo "========================================="
 echo "Running terraform ${COMMAND}"
@@ -370,96 +371,77 @@ elif [[ "$COMMAND" == "plan" ]]; then
 
   set +e
   
+  echo "Running pre-check..."
   precheck_or_fail
   
-  echo "===== PRE-CLEAN PHASE ====="
-  
   echo "Refreshing Terraform state..."
-  if ! terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color \
-    2>&1 | tee -a "$LOG_FILE"; then
-
-    echo "WARNING: refresh-only failed, proceeding with cleanup cautiously"
-  fi
-  
-  #CLEANUP_MODE=safe cleanup_orphans
-
-  echo "Pre-check: verifying backend state access..."
-  terraform state pull > /dev/null 2>&1
-  if [[ $? -ne 0 ]]; then
-  #Or 
-  #if ! terraform state pull > /dev/null 2>&1; then
-    echo "ERROR: Cannot access remote state. It may be locked or backend unreachable."
-    TF_EXIT=1
-  else
-    echo "Backend reachable. Running terraform plan..."
-  
-    terraform plan -input=false -parallelism=1 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan 2>&1 | tee "$LOG_FILE"
-    # -parallelism=5 (only with plan & apply) > reduce memory usage 
-    # -detailed-exitcode:
-    #   0 > no changes
-    #   1 > error
-    #   2 > changes present
-
-    TF_EXIT=${PIPESTATUS[0]}
+  terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color \
+    2>&1 | tee -a "$LOG_FILE" || true
     
-    if [[ "$TF_EXIT" -eq 0 || "$TF_EXIT" -eq 2 ]]; then
+  echo "Running terraform plan..."
+  
+  terraform plan -input=false -parallelism=1 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan 2>&1 | tee "$LOG_FILE"
+  # -parallelism=5 (only with plan & apply) > reduce memory usage 
+  # -detailed-exitcode:
+  #   0 > no changes
+  #   1 > error
+  #   2 > changes present
 
-      echo "Analyzing plan for safety checks..."
-
-      PLAN_JSON=$(terraform show -json tfplan)
-
-      DESTROY_COUNT=$(echo "$PLAN_JSON" | jq '
-        [.resource_changes[] | select(.change.actions | index("delete"))] | length
-      ')
-
-      CREATE_COUNT=$(echo "$PLAN_JSON" | jq '
-        [.resource_changes[] | select(.change.actions == ["create"])] | length
-      ')
-
-      CHANGE_COUNT=$(echo "$PLAN_JSON" | jq '
-        [.resource_changes[] | select(.change.actions | index("update"))] | length
-      ')
-      
-      REPLACE_COUNT=$(echo "$PLAN_JSON" | jq '
-        [.resource_changes[] | select(.change.actions == ["create","delete"] or .change.actions == ["delete","create"])] | length
-      ')
-
-      # Only log if needed (optional)
-      echo "Safety check → create=$CREATE_COUNT update=$CHANGE_COUNT destroy=$DESTROY_COUNT replace=$REPLACE_COUNT"
-
-      # Detect bootstrap/migration/state mismatch
-      if [[ "$CREATE_COUNT" -gt 0 && "$CHANGE_COUNT" -eq 0 && "$DESTROY_COUNT" -eq 0 ]]; then
-        echo "⚠️ Terraform thinks everything is NEW"
-
-        if [[ "${BOOTSTRAP_MODE:-false}" == "true" ]]; then
-          echo "⚠️ Allowed: bootstrap / migration phase"
-        else
-          echo "❌ State mismatch: refusing to recreate all resources"
-      
-          TF_EXIT=1
-      
-          return 1
-        fi
-      fi
-    fi
-
-    # If changes detected (exit 2), treat as success
-    if [[ "$TF_EXIT" -eq 0 ]]; then
-      echo "NO_CHANGES" > "${LOG_ROOT}/plan.status"
-    elif [[ "$TF_EXIT" -eq 2 ]]; then
-      echo "CHANGES_PRESENT" > "${LOG_ROOT}/plan.status"
-      TF_EXIT=0
-    else
-      echo "FAILED" > "${LOG_ROOT}/plan.status"
-    fi
+  TF_EXIT=${PIPESTATUS[0]}
+    
+  # ------------------------------------------
+  # Handle terraform plan exit codes FIRST
+  # ------------------------------------------
+  if [[ "$TF_EXIT" -eq 1 ]]; then
+    echo "Terraform plan failed"
+    echo "FAILED" > "${LOG_ROOT}/plan.status"
+    exit 1
   fi
-  # .status writing
+  
+  # ------------------------------------------
+  # Analyze plan ONLY if plan succeeded
+  # (0 = no changes, 2 = changes present)
+  # ------------------------------------------
+  echo "Analyzing plan for safety..."
+
+  PLAN_JSON=$(terraform show -json tfplan)
+
+  DESTROY_COUNT=$(echo "$PLAN_JSON" | jq '
+    [.resource_changes[] | select(.change.actions | index("delete"))] | length
+  ')
+
+  REPLACE_COUNT=$(echo "$PLAN_JSON" | jq '
+    [.resource_changes[] | select(.change.actions == ["create","delete"] or .change.actions == ["delete","create"])] | length
+  ')
+
+  echo "Safety → destroy=$DESTROY_COUNT replace=$REPLACE_COUNT"
+
+  if [[ "$DESTROY_COUNT" -gt 0 || "$REPLACE_COUNT" -gt 0 ]]; then
+    echo "❌ Destructive plan detected → blocking"
+    echo "FAILED" > "${LOG_ROOT}/plan.status"
+    exit 1
+  fi
+
+  # ------------------------------------------
+  # Write status cleanly
+  # ------------------------------------------
+  if [[ "$TF_EXIT" -eq 0 ]]; then
+    echo "NO_CHANGES" > "${LOG_ROOT}/plan.status"
+  else
+    echo "CHANGES_PRESENT" > "${LOG_ROOT}/plan.status"
+  fi
+
+  # Normalize exit code (important for pipeline)
+  TF_EXIT=0
   
   set -e
 
 elif [[ "$COMMAND" == "apply" ]]; then
 
   set +e
+  
+  echo "Running pre-check before apply..."
+  precheck_or_fail
 
   # ------------------------------------------
   # Ensure plan status before apply
@@ -483,25 +465,6 @@ elif [[ "$COMMAND" == "apply" ]]; then
     exit 1
   fi
 
-  # -----------------------------
-  # Block bulk destroy operations &
-  # prevent pipeline crash from parsing issues.
-  # -----------------------------
-  DESTROY_COUNT=$(terraform show -json tfplan 2>/dev/null | jq '
-  [
-    .resource_changes[]
-    | select(.change.actions | index("delete"))
-  ] | length
-  ' || echo 0)
-
-  # Limit delete/replace 
-  MAX_DESTROY=5
-
-  if [[ "$DESTROY_COUNT" -gt "$MAX_DESTROY" ]]; then
-    echo "ERROR: Too many destructive changes detected ($DESTROY_COUNT resources)."
-    exit 1
-  fi
-  
   # ------------------------------------------
   # Run terraform apply 
   # ------------------------------------------
@@ -527,17 +490,12 @@ elif [[ "$COMMAND" == "apply" ]]; then
   
     #terraform destroy -parallelism=5 -auto-approve -no-color 2>&1 | tee -a "$LOG_FILE"
 
-    echo "Terraform apply failed." | tee -a "$LOG_FILE"
-    echo "===== Terraform Recovery Phase (Step 1: State Sync) =====" | tee -a "$LOG_FILE"
-
-    echo "Synchronizing Terraform state with Azure..."
-    
+    echo "Terraform apply failed. Synchronizing Terraform state with Azure..." | tee -a "$LOG_FILE"
+      
     # Only read the real infrastructure and update the state file with -refresh-only.
     # Do NOT create, modify, or destroy infrastructure.
     terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color 2>&1 | tee -a "$LOG_FILE" || true
     
-    echo "Recovery Step 1 complete. Starting Step 2 in fresh process..."
-
     # Re-exec script (clean process), frees memory, avoids Terraform/JQ leaks
     RUN_ID="$RUN_ID" exec "$0" recovery
   else
@@ -550,31 +508,32 @@ elif [[ "$COMMAND" == "apply" ]]; then
 elif [[ "$COMMAND" == "recovery" ]]; then
   
   set +e      
-  # allows recovery steps to continue even if something fails
-  
   TF_EXIT=1    
-  # ensures final pipeline status = FAILED no matter what
-  
-  # ------------------------------------------
-  # Auto-detect and clean partially created resources
-  # ------------------------------------------
 
   echo "===== POST-FAIL CLEANUP ====="
 
-  echo "Post-fail: state has been refreshed from Azure"
-  echo "Now enforcing: AZURE == TERRAFORM STATE"
+  echo "Step 1: Refresh state from Azure..."
 
-  echo "Collecting and comparing resources..."
-  
-  CLEANUP_MODE=aggressive cleanup_orphans
+  REFRESH_EXIT=0
+  terraform apply -refresh-only -auto-approve -lock-timeout=10m -no-color \
+    2>&1 | tee -a "$LOG_FILE" || REFRESH_EXIT=$?
+
+  if [[ "$REFRESH_EXIT" -ne 0 ]]; then
+    echo "CRITICAL: refresh-only failed → skipping cleanup"
+    exit 1
+  fi
+
+  echo "Step 2: Running safety precheck..."
+  precheck_or_fail
+
+  echo "Step 3: Running cleanup..."
+
+  cleanup
 
   echo "Post-fail cleanup completed"
-  echo "All resources not present in Terraform state have been removed"
-
   echo "Recovery finished. Pipeline ready for next run after fix."
 
   rm -f "$RESOURCE_CACHE_FILE"
-
 fi
 
 # ------------------------------------------
