@@ -246,7 +246,7 @@ terraform {
     # use_cli uses logged-in az cli context for authentication, comment out when switching to pipeline
   }
 }
-
+/*
 #Get current authenticated principal details automatically from authenticated session via AZ CLI
 #data source needs the provider to be configured first, place it in secrets.tf or main.tf after provider block
 data "azurerm_client_config" "current" {}
