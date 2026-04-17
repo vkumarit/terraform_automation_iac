@@ -1,0 +1,16 @@
+Acquiring state lock. This may take a few moments...
+data.azuread_service_principal.prodmyapp: Reading...
+data.azuread_service_principal.prodmyapp: Read complete after 0s [id=3a64aed9-8685-4f60-bad4-c7a0b3e0e4d2]
+data.azurerm_client_config.current: Reading...
+data.azurerm_client_config.current: Read complete after 1s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9M2E2NGFlZDktODY4NS00ZjYwLWJhZDQtYzdhMGIzZTBlNGQyO3N1YnNjcmlwdGlvbklkPTJiMmYwMmY3LWRkZTItNDdkYi05NzRjLTQ3ZDIxODI3MjFhZTt0ZW5hbnRJZD1mMTc1YzU2ZC00MDEzLTQyZmEtYTBlOC00MTAzZDIyNzZhMGQ=]
+azurerm_resource_group.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup]
+azurerm_user_assigned_identity.prodmyapp_sa_identity: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/my-storage-identity]
+azurerm_storage_account.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01]
+azurerm_storage_container.prodmyapp: Refreshing state... [id=https://prodmyappsacmk01.blob.core.windows.net/mytfstate]
+azurerm_role_assignment.terraform_backend_storage_access: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01/blobServices/default/containers/mytfstate/providers/Microsoft.Authorization/roleAssignments/cba41aaa-2c02-08c7-27f2-fdf7eeacf5cd]
+
+No changes. Your infrastructure matches the configuration.
+
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+Releasing state lock. This may take a few moments...
