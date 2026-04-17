@@ -20,8 +20,6 @@ variables:
   #value: $(Build.SourceBranchName) #for environment-specific (dev/prod/test/staging) pipeline runs
 - name: SIZE_ALIAS
   value: small
-- name: BOOTSTRAP_MODE
-  value: 'false'                # `true` > migartion & `false` > normal after that
 - name: Build_ID
   value: $(Build.BuildId)
 
@@ -186,6 +184,10 @@ stages:
     - script: terraform validate -no-color
       displayName: "Terraform Validate"    
     
+    - script: |
+        rm -rf azuretf/simpletf/.terraform azuretf/simpletf/.terraform.lock.hcl
+      displayName: "Force clean Terraform init"
+    
     # -----------------------------
     # Terraform Init
     # -----------------------------
@@ -220,8 +222,7 @@ stages:
        TF_VAR_environment: $(ENVIRONMENT)
        TF_VAR_size_alias: $(SIZE_ALIAS)
        TF_VAR_run_id: $(Build_ID)
-       RUN_ID: $(Build_ID)
-       BOOTSTRAP_MODE: $(BOOTSTRAP_MODE)       
+       RUN_ID: $(Build_ID)       
 
     # -----------------------------
     # Terraform Apply
@@ -242,7 +243,6 @@ stages:
         TF_VAR_size_alias: $(SIZE_ALIAS)
         TF_VAR_run_id: $(Build_ID)              #for terraform env
         RUN_ID: $(Build_ID)                     #for .sh
-        BOOTSTRAP_MODE: $(BOOTSTRAP_MODE)
         
     # -----------------------------
     # Clean Terraform junk after every run
