@@ -228,7 +228,7 @@ resource "azurerm_role_assignment" "terraform_backend_storage_access" {
 
 # After core resource creation configure backened.tf file. Move terraform statefile to Storage Container. 
 # Perform init -upgrade after configuring.
-
+/*
 # backened.tf 
 terraform {
   backend "azurerm" {
