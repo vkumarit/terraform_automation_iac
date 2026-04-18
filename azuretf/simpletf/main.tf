@@ -218,7 +218,7 @@ resource "azurerm_resource_group_policy_assignment" "rg_environment" {
 }
 
 ## Storage Account
-/*
+
 # Create User-Assigned Identity: Grant access to Key Vault.
 resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
   name                = "my-storage-identity"
