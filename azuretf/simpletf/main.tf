@@ -144,6 +144,79 @@ resource "azurerm_resource_group" "prodmyapp" {
   }
 }
 
+## DENY Policy for Tagging at Resource Group (`policy-deny-tags-rg.tf`)
+
+resource "azurerm_policy_definition" "require_managed_by" {
+  name         = "require-managed-by-tag"
+  policy_type  = "Custom"
+  mode         = "Indexed"
+  display_name = "Require managed_by tag"
+
+  policy_rule = jsonencode({
+    if = {
+      field  = "tags['managed_by']"
+      exists = "false"
+    }
+    then = {
+      effect = "deny"
+    }
+  })
+}
+
+resource "azurerm_policy_definition" "require_deployment_id" {
+  name         = "require-deployment-id-tag"
+  policy_type  = "Custom"
+  mode         = "Indexed"
+  display_name = "Require deployment_id tag"
+
+  policy_rule = jsonencode({
+    if = {
+      field  = "tags['deployment_id']"
+      exists = "false"
+    }
+    then = {
+      effect = "deny"
+    }
+  })
+}
+
+resource "azurerm_policy_definition" "require_environment" {
+  name         = "require-environment-tag"
+  policy_type  = "Custom"
+  mode         = "Indexed"
+  display_name = "Require environment tag"
+
+  policy_rule = jsonencode({
+    if = {
+      field  = "tags['environment']"
+      exists = "false"
+    }
+    then = {
+      effect = "deny"
+    }
+  })
+}
+
+# Assign policies to Resource Group
+
+resource "azurerm_resource_group_policy_assignment" "rg_managed_by" {
+  name                 = "rg-require-managed-by"
+  resource_group_id    = azurerm_resource_group.prodmyapp.id
+  policy_definition_id = azurerm_policy_definition.require_managed_by.id
+}
+
+resource "azurerm_resource_group_policy_assignment" "rg_deployment_id" {
+  name                 = "rg-require-deployment-id"
+  resource_group_id    = azurerm_resource_group.prodmyapp.id
+  policy_definition_id = azurerm_policy_definition.require_deployment_id.id
+}
+
+resource "azurerm_resource_group_policy_assignment" "rg_environment" {
+  name                 = "rg-require-environment"
+  resource_group_id    = azurerm_resource_group.prodmyapp.id
+  policy_definition_id = azurerm_policy_definition.require_environment.id
+}
+
 ## Storage Account
 /*
 # Create User-Assigned Identity: Grant access to Key Vault.

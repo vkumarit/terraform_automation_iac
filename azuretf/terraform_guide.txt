@@ -4187,7 +4187,7 @@ RESULT:
 WARNING:
 
 * This WILL break deployments if Terraform is not tagging correctly.
-* STEP 1 — Create Resource Group (NO policy yet), 
+* STEP 1 — Create Resource Group (NO policy yet) via terraform code, 
 
 * STEP 2 — Apply DENY Policy at RG level
 (Create a new file `policy-deny-tags-rg.tf` or add below blocks to main.tf)
