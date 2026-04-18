@@ -22,6 +22,8 @@ variables:
   value: small
 - name: Build_ID
   value: $(Build.BuildId)
+- name: CLEANUP_MODE
+  value: dry-run  # alternalte `safe`
 
 pool:
   name: 'az-classic-pool'   # EC2 self-hosted agent
@@ -243,6 +245,7 @@ stages:
         TF_VAR_size_alias: $(SIZE_ALIAS)
         TF_VAR_run_id: $(Build_ID)              #for terraform env
         RUN_ID: $(Build_ID)                     #for .sh
+        CLEANUP_MODE: $(CLEANUP_MODE)
         
     # -----------------------------
     # Clean Terraform junk after every run

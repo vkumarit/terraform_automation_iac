@@ -34,6 +34,7 @@ CURRENT_BRANCH="$(git branch --show-current || true)"
 
 # Add clean-up mode
 CLEANUP_MODE="${CLEANUP_MODE:-safe}"
+echo "Cleanup mode: $CLEANUP_MODE"
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 # Gets absolute path of repository root directory
@@ -250,7 +251,21 @@ cleanup() {
     return 0
   fi
 
-  
+  echo "--------------------------------"
+  echo "Checking for UNTAGGED resources..."
+  echo "--------------------------------"
+
+  az resource list \
+    --resource-group myTFResourceGroup \
+    --query "[?tags.managed_by==null].id" \
+    -o tsv > /tmp/untagged.txt
+
+  if [[ -s /tmp/untagged.txt ]]; then
+    echo "⚠️ Untagged resources detected (manual review required):"
+    cat /tmp/untagged.txt
+  else
+    echo "No untagged resources found."
+  fi
 
   # ------------------------------------------
   # 4. Extract Azure IDs
@@ -303,8 +318,25 @@ cleanup() {
   fi
 
   # ------------------------------------------
+  # Count IDs once (DRY)
+  # ------------------------------------------
+  COUNT=$(wc -l < /tmp/safe_delete_ids.txt)
+  
+  # ------------------------------------------
+  # DRY-RUN MODE
+  # ------------------------------------------
+  if [[ "$CLEANUP_MODE" == "dry-run" ]]; then
+    echo "DRY RUN: $COUNT resources would be deleted:"
+    cat /tmp/safe_delete_ids.txt
+    return 0
+  fi
+
+  # ------------------------------------------
   # 7. DELETE (final step)
   # ------------------------------------------
+  
+  echo "Final delete count: $COUNT"
+  
   echo "Deleting verified orphan resources..."
 
   while read -r id; do
