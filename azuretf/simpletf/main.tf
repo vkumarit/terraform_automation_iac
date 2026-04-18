@@ -305,7 +305,7 @@ resource "azurerm_role_assignment" "terraform_backend_storage_access" {
 
 # After core resource creation configure backened.tf file. Move terraform statefile to Storage Container. 
 # Perform init -upgrade after configuring.
-/*
+
 # backened.tf 
 terraform {
   backend "azurerm" {
@@ -323,7 +323,7 @@ terraform {
     # use_cli uses logged-in az cli context for authentication, comment out when switching to pipeline
   }
 }
-
+/*
 #Get current authenticated principal details automatically from authenticated session via AZ CLI
 #data source needs the provider to be configured first, place it in secrets.tf or main.tf after provider block
 data "azurerm_client_config" "current" {}
