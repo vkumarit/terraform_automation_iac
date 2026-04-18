@@ -79,6 +79,7 @@ locals {
     deployment_id   = var.deployment_id
     environment     = var.environment
     creation_run_id = local.effective_run_id
+    creation_time   = timestamp() 
   }
 }
 
@@ -119,7 +120,7 @@ provider "azurerm" {
 }
 
 ## Resource Group
-/*
+
 resource "azurerm_resource_group" "prodmyapp" {
   name     = "myTFResourceGroup"
   location = "Australia East"
@@ -137,7 +138,8 @@ resource "azurerm_resource_group" "prodmyapp" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -156,8 +158,9 @@ resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
-    ]
+      tags["creation_run_id"],
+      tags["creation_time"]
+    ]    
   }
   # Add lifecycle block from the beginning, 
   # when creating a new resource.
@@ -184,7 +187,8 @@ resource "azurerm_storage_account" "prodmyapp" {
   lifecycle {
     ignore_changes = [
       customer_managed_key,
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -273,7 +277,8 @@ resource "azurerm_key_vault" "prodmyapp" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 
@@ -353,7 +358,8 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -560,7 +566,8 @@ resource "azurerm_network_security_group" "prodmyapp_sg_linux" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -588,7 +595,8 @@ resource "azurerm_virtual_network" "prodmyapp_vnet" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -608,7 +616,8 @@ resource "azurerm_subnet" "pub_subnet" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -626,7 +635,8 @@ resource "azurerm_subnet" "pvt_subnet" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -662,7 +672,8 @@ resource "azurerm_public_ip" "prodmyapp_pub_ips" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -706,7 +717,8 @@ resource "azurerm_network_interface" "prodmyapp_nic_linux" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -913,7 +925,8 @@ resource "azurerm_disk_encryption_set" "prod_des" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -1030,7 +1043,8 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     prevent_destroy       = false # `true` for prod, protection against `terraform destroy`
 
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -1078,7 +1092,8 @@ resource "azurerm_network_security_group" "prodmyapp_nsg_windows" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -1096,7 +1111,8 @@ resource "azurerm_public_ip" "prodmyapp_pub_ip_windows" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -1120,7 +1136,8 @@ resource "azurerm_network_interface" "prodmyapp_nic_windows" {
 
   lifecycle {
     ignore_changes = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }
@@ -1200,7 +1217,8 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
     prevent_destroy       = false  # `true` for prod, protection against `terraform destroy`
     
     ignore_changes        = [
-      tags["creation_run_id"]
+      tags["creation_run_id"],
+      tags["creation_time"]
     ]
   }
 }

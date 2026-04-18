@@ -186,9 +186,9 @@ stages:
     - script: terraform validate -no-color
       displayName: "Terraform Validate"    
     
-    - script: |
-        rm -rf azuretf/simpletf/.terraform azuretf/simpletf/.terraform.lock.hcl
-      displayName: "Force clean Terraform init"
+    #- script: |
+        #rm -rf azuretf/simpletf/.terraform azuretf/simpletf/.terraform.lock.hcl
+      #displayName: "Force clean Terraform init"
     
     # -----------------------------
     # Terraform Init

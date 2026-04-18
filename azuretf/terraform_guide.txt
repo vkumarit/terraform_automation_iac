@@ -4106,6 +4106,296 @@ resource "azurerm_storage_account" "mytfstate" {
   #  delete = "45m"  # Override the default delete timeout (useful if the RG contains many resources)
   #}
 ---------------------------------------------------------------------------------------------------------------
+Azure Tagging Policies:
+.......................
+
+-----
+
+STRATEGY A — DENY (Strict Enforcement)
+
+TITLE: Azure Policy - Enforce Required Tags (DENY)
+
+GOAL:
+Prevent creation of any resource without required tags.
+
+REQUIRED TAGS:
+
+* managed_by = terraform
+* deployment_id = prodmyapp
+
+STEPS:
+
+1. Go to Azure Portal
+
+2. Search → Policy
+
+3. Click → Definitions
+
+4. Click → + Policy Definition
+
+5. Use this JSON:
+
+{
+"properties": {
+"displayName": "Deny resources without required Terraform tags",
+"policyType": "Custom",
+"mode": "Indexed",
+"description": "Ensures all resources have required Terraform tags",
+"metadata": {
+"category": "Tags"
+},
+"parameters": {},
+"policyRule": {
+"if": {
+"anyOf": [
+{
+"field": "tags.managed_by",
+"notEquals": "terraform"
+},
+{
+"field": "tags.deployment_id",
+"notEquals": "prodmyapp"
+}
+]
+},
+"then": {
+"effect": "deny"
+}
+}
+}
+}
+
+6. Save policy
+
+7. Go to → Assignments
+
+8. Click → Assign Policy
+
+9. Scope:
+
+   * Resource Group: myTFResourceGroup (recommended start)
+
+10. Effect:
+
+* Deny
+
+RESULT:
+
+* Any resource without correct tags → BLOCKED
+* Terraform apply fails early (good)
+
+WARNING:
+
+* This WILL break deployments if Terraform is not tagging correctly.
+* STEP 1 — Create Resource Group (NO policy yet), 
+
+* STEP 2 — Apply DENY Policy at RG level
+(Create a new file `policy-deny-tags-rg.tf` or add below blocks to main.tf)
+----------------------------------------------------------------------
+
+resource "azurerm_policy_definition" "require_managed_by" {
+  name         = "require-managed-by-tag"
+  policy_type  = "Custom"
+  mode         = "Indexed"
+  display_name = "Require managed_by tag"
+
+  policy_rule = jsonencode({
+    if = {
+      field  = "tags['managed_by']"
+      exists = "false"
+    }
+    then = {
+      effect = "deny"
+    }
+  })
+}
+
+resource "azurerm_policy_definition" "require_deployment_id" {
+  name         = "require-deployment-id-tag"
+  policy_type  = "Custom"
+  mode         = "Indexed"
+  display_name = "Require deployment_id tag"
+
+  policy_rule = jsonencode({
+    if = {
+      field  = "tags['deployment_id']"
+      exists = "false"
+    }
+    then = {
+      effect = "deny"
+    }
+  })
+}
+
+resource "azurerm_policy_definition" "require_environment" {
+  name         = "require-environment-tag"
+  policy_type  = "Custom"
+  mode         = "Indexed"
+  display_name = "Require environment tag"
+
+  policy_rule = jsonencode({
+    if = {
+      field  = "tags['environment']"
+      exists = "false"
+    }
+    then = {
+      effect = "deny"
+    }
+  })
+}
+
+# Assign policies to Resource Group
+
+resource "azurerm_resource_group_policy_assignment" "rg_managed_by" {
+  name                 = "rg-require-managed-by"
+  resource_group_id    = azurerm_resource_group.prodmyapp.id
+  policy_definition_id = azurerm_policy_definition.require_managed_by.id
+}
+
+resource "azurerm_resource_group_policy_assignment" "rg_deployment_id" {
+  name                 = "rg-require-deployment-id"
+  resource_group_id    = azurerm_resource_group.prodmyapp.id
+  policy_definition_id = azurerm_policy_definition.require_deployment_id.id
+}
+
+resource "azurerm_resource_group_policy_assignment" "rg_environment" {
+  name                 = "rg-require-environment"
+  resource_group_id    = azurerm_resource_group.prodmyapp.id
+  policy_definition_id = azurerm_policy_definition.require_environment.id
+}
+----------------------------------------------------------------------
+
+---
+
+POLICY TYPE: Deny missing required tags
+
+SCOPE: Subscription (global enforcement)
+
+STEPS:
+
+1. Go to Subscriptions
+2. Select your subscription
+3. Go to "Policies" → "Assignments"
+4. Assign same policies as Resource Group
+
+IMPORTANT:
+
+- This affects ALL resource groups
+- Use carefully in shared environments
+
+RESULT:
+
+- No untagged resources anywhere
+
+-----
+
+STRATEGY B — AUTO-TAG (Modify)
+
+TITLE: Azure Policy - Auto Add Tags (MODIFY)
+
+GOAL:
+Automatically add missing tags to resources.
+
+BEHAVIOR:
+
+* If tag missing → Azure adds it
+* Resource creation NOT blocked
+
+STEPS:
+
+1. Go to Azure Portal
+
+2. Search → Policy
+
+3. Click → Definitions
+
+4. Click → + Policy Definition
+
+5. Use this JSON:
+
+{
+"properties": {
+"displayName": "Add default Terraform tags",
+"policyType": "Custom",
+"mode": "Indexed",
+"description": "Automatically adds required Terraform tags",
+"metadata": {
+"category": "Tags"
+},
+"parameters": {},
+"policyRule": {
+"if": {
+"anyOf": [
+{
+"field": "tags.managed_by",
+"exists": "false"
+},
+{
+"field": "tags.deployment_id",
+"exists": "false"
+}
+]
+},
+"then": {
+"effect": "modify",
+"details": {
+"roleDefinitionIds": [
+"/providers/microsoft.authorization/roleDefinitions/fd9d2a1e-4d2c-4d7c-bf6c-2d4f6e2e7c4f"
+],
+"operations": [
+{
+"operation": "addOrReplace",
+"field": "tags.managed_by",
+"value": "terraform"
+},
+{
+"operation": "addOrReplace",
+"field": "tags.deployment_id",
+"value": "prodmyapp"
+}
+]
+}
+}
+}
+}
+}
+
+6. Assign policy (same as above)
+
+IMPORTANT:
+
+* Requires Managed Identity on policy assignment
+* Assign "Contributor" role to that identity
+
+RESULT:
+
+* Missing tags are auto-added
+* No pipeline failure
+
+
+---
+
+POLICY TYPE: Auto-tag at subscription level
+
+SCOPE: Entire subscription
+
+STEPS:
+
+1. Go to Subscriptions
+2. Policies → Assign
+3. Use "Add a tag to resources"
+
+NOTES:
+
+- Ensures baseline tagging everywhere
+- Useful for shared environments
+
+WARNING:
+
+- Tags may be generic (not useful for cleanup)
+- Combine with alerts for better control
+
+---
 
 ---------------------------------------------------------------------------------------------------------------
 
