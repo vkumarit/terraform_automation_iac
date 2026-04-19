@@ -79,7 +79,7 @@ locals {
     deployment_id   = var.deployment_id
     environment     = var.environment
     creation_run_id = local.effective_run_id
-    creation_time   = timestamp() 
+    creation_time   = timestamp()
   }
 }
 
@@ -233,7 +233,7 @@ resource "azurerm_user_assigned_identity" "prodmyapp_sa_identity" {
     ignore_changes = [
       tags["creation_run_id"],
       tags["creation_time"]
-    ]    
+    ]
   }
   # Add lifecycle block from the beginning, 
   # when creating a new resource.
