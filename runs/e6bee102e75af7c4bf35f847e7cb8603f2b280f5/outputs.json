@@ -1,0 +1,22 @@
+{
+  "debug_tags": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "creation_run_id": "string",
+        "creation_time": "string",
+        "deployment_id": "string",
+        "environment": "string",
+        "managed_by": "string"
+      }
+    ],
+    "value": {
+      "creation_run_id": "392",
+      "creation_time": "2026-04-19T18:13:10Z",
+      "deployment_id": "prodmyapp",
+      "environment": "prod",
+      "managed_by": "terraform"
+    }
+  }
+}

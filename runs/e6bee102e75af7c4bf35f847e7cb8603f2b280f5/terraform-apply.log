@@ -1,0 +1,30 @@
+Acquiring state lock. This may take a few moments...
+azurerm_key_vault.prodmyapp: Creating...
+azurerm_key_vault.prodmyapp: Still creating... [00m10s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [00m20s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [00m30s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [00m40s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [00m50s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [01m00s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [01m10s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [01m20s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [01m30s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [01m40s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [01m50s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [02m00s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [02m10s elapsed]
+azurerm_key_vault.prodmyapp: Still creating... [02m20s elapsed]
+azurerm_key_vault.prodmyapp: Creation complete after 2m25s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv]
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+debug_tags = {
+  "creation_run_id" = "392"
+  "creation_time" = "2026-04-19T18:13:10Z"
+  "deployment_id" = "prodmyapp"
+  "environment" = "prod"
+  "managed_by" = "terraform"
+}
