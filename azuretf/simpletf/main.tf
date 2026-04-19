@@ -392,7 +392,7 @@ resource "azurerm_role_assignment" "storage_kv_crypto" {
 resource "azurerm_role_assignment" "human_kv_crypto_officer" {
   scope                = azurerm_key_vault.prodmyapp.id
   role_definition_name = "Key Vault Crypto Officer"
-  principal_id         = "USER_OBJECT_ID_HERE"        
+  principal_id         = "USER_OBJECT_ID_HERE"
   # Hardcode object IDs of known humans or service accounts. 
   # Like DevOps lead or security engineer’s object IDs. 
 }
