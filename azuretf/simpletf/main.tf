@@ -396,7 +396,7 @@ resource "azurerm_role_assignment" "human_kv_crypto_officer" {
   # Hardcode object IDs of known humans or service accounts. 
   # Like DevOps lead or security engineer’s object IDs. 
 }
-*/
+
 
 # Create key with explicit rotation policy
 
