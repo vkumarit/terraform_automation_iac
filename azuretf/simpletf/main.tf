@@ -217,6 +217,8 @@ resource "azurerm_resource_group_policy_assignment" "rg_environment" {
   policy_definition_id = azurerm_policy_definition.require_environment.id
 }
 
+
+
 ## Storage Account
 
 # Create User-Assigned Identity: Grant access to Key Vault.
@@ -358,7 +360,7 @@ resource "azurerm_key_vault" "prodmyapp" {
 }
 
 ###               PHASE-III               ###
-/*
+
 ## User Enable encyption to storage account
 
 # After setting-up pipeline,
@@ -386,7 +388,7 @@ resource "azurerm_role_assignment" "storage_kv_crypto" {
 }
 
 # Helps with permissions for viewing the keys via dashboard
-/*
+
 resource "azurerm_role_assignment" "human_kv_crypto_officer" {
   scope                = azurerm_key_vault.prodmyapp.id
   role_definition_name = "Key Vault Crypto Officer"
@@ -397,7 +399,7 @@ resource "azurerm_role_assignment" "human_kv_crypto_officer" {
 */
 
 # Create key with explicit rotation policy
-/*
+
 resource "azurerm_key_vault_key" "prodmyapp_key" {
   name         = "my-storage-cmk"
   key_vault_id = azurerm_key_vault.prodmyapp.id
