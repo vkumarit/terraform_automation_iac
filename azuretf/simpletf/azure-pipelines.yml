@@ -177,12 +177,10 @@ stages:
     # -----------------------------
     # Terraform Validate/Lint
     # -----------------------------
-    - script: |
-        terraform fmt -diff -recursive
+    - script: terraform fmt -diff -recursive
       displayName: "Terraform Format Troubleshoot"
       
     - script: terraform fmt -check -recursive    
-      #workingDirectory: azuretf/simpletf
       displayName: "Terraform Format Check"
 
     - script: terraform init -backend=false -no-color
