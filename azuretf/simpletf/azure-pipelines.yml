@@ -177,12 +177,9 @@ stages:
     # -----------------------------
     # Terraform Validate/Lint
     # -----------------------------
-    #- script: terraform fmt -diff -recursive
-    #  displayName: "Terraform Format Troubleshoot"
+    - script: terraform fmt -check -diff -recursive
+      displayName: "Terraform Format Troubleshoot"
       
-    - script: terraform fmt -check -recursive    
-      displayName: "Terraform Format Check"
-
     - script: terraform init -backend=false -no-color
       displayName: "Terraform Init (Validation Only)"
 
