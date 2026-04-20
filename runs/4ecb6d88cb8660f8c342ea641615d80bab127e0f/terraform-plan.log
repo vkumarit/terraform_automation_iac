@@ -1,0 +1,179 @@
+Acquiring state lock. This may take a few moments...
+azurerm_policy_definition.require_deployment_id: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-deployment-id-tag]
+azurerm_policy_definition.require_environment: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-environment-tag]
+data.azurerm_client_config.current: Reading...
+data.azurerm_client_config.current: Read complete after 1s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9M2E2NGFlZDktODY4NS00ZjYwLWJhZDQtYzdhMGIzZTBlNGQyO3N1YnNjcmlwdGlvbklkPTJiMmYwMmY3LWRkZTItNDdkYi05NzRjLTQ3ZDIxODI3MjFhZTt0ZW5hbnRJZD1mMTc1YzU2ZC00MDEzLTQyZmEtYTBlOC00MTAzZDIyNzZhMGQ=]
+azurerm_policy_definition.require_managed_by: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-managed-by-tag]
+data.azuread_service_principal.prodmyapp: Reading...
+data.azuread_service_principal.prodmyapp: Read complete after 1s [id=3a64aed9-8685-4f60-bad4-c7a0b3e0e4d2]
+azurerm_resource_group.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup]
+azurerm_resource_group_policy_assignment.rg_deployment_id: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-deployment-id]
+azurerm_resource_group_policy_assignment.rg_managed_by: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-managed-by]
+azurerm_key_vault.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv]
+azurerm_resource_group_policy_assignment.rg_environment: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-environment]
+azurerm_user_assigned_identity.prodmyapp_sa_identity: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/my-storage-identity]
+azurerm_storage_account.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01]
+azurerm_storage_container.prodmyapp: Refreshing state... [id=https://prodmyappsacmk01.blob.core.windows.net/mytfstate]
+azurerm_role_assignment.terraform_backend_storage_access: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01/blobServices/default/containers/mytfstate/providers/Microsoft.Authorization/roleAssignments/ff6a425c-a7e8-1383-4d04-8509f8714321]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # azurerm_key_vault_key.prodmyapp_key will be created
+  + resource "azurerm_key_vault_key" "prodmyapp_key" {
+      + curve                   = (known after apply)
+      + e                       = (known after apply)
+      + id                      = (known after apply)
+      + key_opts                = [
+          + "encrypt",
+          + "decrypt",
+          + "wrapKey",
+          + "unwrapKey",
+        ]
+      + key_size                = 2048
+      + key_type                = "RSA"
+      + key_vault_id            = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv"
+      + n                       = (known after apply)
+      + name                    = "my-storage-cmk"
+      + public_key_openssh      = (known after apply)
+      + public_key_pem          = (known after apply)
+      + resource_id             = (known after apply)
+      + resource_versionless_id = (known after apply)
+      + tags                    = (known after apply)
+      + version                 = (known after apply)
+      + versionless_id          = (known after apply)
+      + x                       = (known after apply)
+      + y                       = (known after apply)
+    }
+
+  # azurerm_key_vault_secret.github_token will be created
+  + resource "azurerm_key_vault_secret" "github_token" {
+      + id                      = (known after apply)
+      + key_vault_id            = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv"
+      + name                    = "githubtoken"
+      + resource_id             = (known after apply)
+      + resource_versionless_id = (known after apply)
+      + version                 = (known after apply)
+      + versionless_id          = (known after apply)
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_key_vault_secret.sp_client_id will be created
+  + resource "azurerm_key_vault_secret" "sp_client_id" {
+      + id                      = (known after apply)
+      + key_vault_id            = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv"
+      + name                    = "sp-client-id"
+      + resource_id             = (known after apply)
+      + resource_versionless_id = (known after apply)
+      + value                   = (sensitive value)
+      + version                 = (known after apply)
+      + versionless_id          = (known after apply)
+    }
+
+  # azurerm_key_vault_secret.sp_client_secret will be created
+  + resource "azurerm_key_vault_secret" "sp_client_secret" {
+      + id                      = (known after apply)
+      + key_vault_id            = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv"
+      + name                    = "sp-client-secret"
+      + resource_id             = (known after apply)
+      + resource_versionless_id = (known after apply)
+      + version                 = (known after apply)
+      + versionless_id          = (known after apply)
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_key_vault_secret.sp_subscription_id will be created
+  + resource "azurerm_key_vault_secret" "sp_subscription_id" {
+      + id                      = (known after apply)
+      + key_vault_id            = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv"
+      + name                    = "sp-subscription-id"
+      + resource_id             = (known after apply)
+      + resource_versionless_id = (known after apply)
+      + value                   = (sensitive value)
+      + version                 = (known after apply)
+      + versionless_id          = (known after apply)
+    }
+
+  # azurerm_key_vault_secret.sp_tenant_id will be created
+  + resource "azurerm_key_vault_secret" "sp_tenant_id" {
+      + id                      = (known after apply)
+      + key_vault_id            = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv"
+      + name                    = "sp-tenant-id"
+      + resource_id             = (known after apply)
+      + resource_versionless_id = (known after apply)
+      + value                   = (sensitive value)
+      + version                 = (known after apply)
+      + versionless_id          = (known after apply)
+    }
+
+  # azurerm_role_assignment.human_kv_crypto_officer will be created
+  + resource "azurerm_role_assignment" "human_kv_crypto_officer" {
+      + id                               = (known after apply)
+      + name                             = (known after apply)
+      + principal_id                     = "USER_OBJECT_ID_HERE"
+      + principal_type                   = (known after apply)
+      + role_definition_id               = (known after apply)
+      + role_definition_name             = "Key Vault Crypto Officer"
+      + scope                            = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv"
+      + skip_service_principal_aad_check = (known after apply)
+    }
+
+  # azurerm_role_assignment.storage_kv_crypto will be created
+  + resource "azurerm_role_assignment" "storage_kv_crypto" {
+      + id                               = (known after apply)
+      + name                             = (known after apply)
+      + principal_id                     = "c2ea1f30-bff9-4f04-b5c3-a7c3430a66aa"
+      + principal_type                   = (known after apply)
+      + role_definition_id               = (known after apply)
+      + role_definition_name             = "Key Vault Crypto Service Encryption User"
+      + scope                            = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv"
+      + skip_service_principal_aad_check = (known after apply)
+    }
+
+  # azurerm_role_assignment.tf_kv_admin will be created
+  + resource "azurerm_role_assignment" "tf_kv_admin" {
+      + id                               = (known after apply)
+      + name                             = (known after apply)
+      + principal_id                     = "3a64aed9-8685-4f60-bad4-c7a0b3e0e4d2"
+      + principal_type                   = (known after apply)
+      + role_definition_id               = (known after apply)
+      + role_definition_name             = "Key Vault Administrator"
+      + scope                            = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv"
+      + skip_service_principal_aad_check = (known after apply)
+    }
+
+  # azurerm_storage_account_customer_managed_key.prodmyapp_sa_cmk will be created
+  + resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
+      + id                        = (known after apply)
+      + key_name                  = "my-storage-cmk"
+      + key_vault_id              = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv"
+      + key_vault_uri             = (known after apply)
+      + key_version               = (known after apply)
+      + storage_account_id        = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01"
+      + user_assigned_identity_id = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/my-storage-identity"
+    }
+
+  # time_sleep.wait_for_kv_rbac will be created
+  + resource "time_sleep" "wait_for_kv_rbac" {
+      + create_duration = "60s"
+      + id              = (known after apply)
+    }
+
+Plan: 11 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  ~ debug_tags = {
+      ~ creation_time   = "2026-04-20T10:40:20Z" -> (known after apply)
+        # (4 unchanged attributes hidden)
+    }
+
+─────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: tfplan
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "tfplan"
+Releasing state lock. This may take a few moments...
