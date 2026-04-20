@@ -177,6 +177,11 @@ stages:
     # -----------------------------
     # Terraform Validate/Lint
     # -----------------------------
+    - script: |
+        file azuretf/simpletf/main.tf
+        cat -A azuretf/simpletf/main.tf | head -n 20
+      displayName: "Terraform Format Troubleshoot"
+      
     - script: terraform fmt -check -recursive    
       #workingDirectory: azuretf/simpletf
       displayName: "Terraform Format Check"
