@@ -807,7 +807,7 @@ resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_li
   network_interface_id      = azurerm_network_interface.prodmyapp_nic_linux.id
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg_linux.id
 }
-
+*/
 
 ###               PHASE-V               ###
 
@@ -1129,6 +1129,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
 }
 
 # to SSH login do - `ssh -i ~/.ssh/prodmyapp_vm1.pem adminuser@20.5.121.162`
+*/
 
 ## Windows VM
 /*

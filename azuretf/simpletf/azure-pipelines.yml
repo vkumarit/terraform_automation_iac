@@ -177,19 +177,15 @@ stages:
     # -----------------------------
     # Terraform Validate/Lint
     # -----------------------------
-    #- script: cd azuretf/simpletf && terraform fmt -check -recursive    
+    - script: terraform fmt -check -recursive    
       #workingDirectory: azuretf/simpletf
-    #  displayName: "Terraform Format Check"
+      displayName: "Terraform Format Check"
 
-    #- script: cd azuretf/simpletf && terraform init -backend=false -no-color
-    #  displayName: "Terraform Init (Validation Only)"
+    - script: terraform init -backend=false -no-color
+      displayName: "Terraform Init (Validation Only)"
 
-    #- script: cd azuretf/simpletf && terraform validate -no-color
-    #  displayName: "Terraform Validate"    
-    
-    #- script: |
-        #rm -rf azuretf/simpletf/.terraform azuretf/simpletf/.terraform.lock.hcl
-      #displayName: "Force clean Terraform init"
+    - script: terraform validate -no-color
+      displayName: "Terraform Validate"    
     
     # -----------------------------
     # Terraform Init
