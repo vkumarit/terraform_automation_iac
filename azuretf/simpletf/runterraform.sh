@@ -39,7 +39,7 @@ echo "Cleanup mode: $CLEANUP_MODE"
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 # Gets absolute path of repository root directory
 
-LOG_ROOT="${ROOT_DIR}/.terraform-run-logs/${COMMIT_SHA}"
+LOG_ROOT="${ROOT_DIR}/.terraform-run-logs/${COMMIT_SHA}/${RUN_ID}"
 mkdir -p "$LOG_ROOT"
 LOG_FILE="${LOG_ROOT}/terraform-${COMMAND}.log"
 # Log file name per command
@@ -227,8 +227,8 @@ cleanup() {
   done | sort -u > /tmp/tf_ids.txt
 
   if [[ ! -s /tmp/tf_ids.txt ]]; then
-    echo "CRITICAL: Terraform state empty → abort cleanup"
-    exit 1
+    echo "WARNING: No Terraform-managed resources found. Skipping cleanup."
+    return 0
   fi
 
   TF_COUNT=$(wc -l < /tmp/tf_ids.txt)
@@ -571,7 +571,8 @@ fi
 # ------------------------------------------
 # Create summary file for logs
 # ------------------------------------------
-LOG_ROOT="${ROOT_DIR}/.terraform-run-logs/${COMMIT_SHA}"
+
+LOG_ROOT="${ROOT_DIR}/.terraform-run-logs/${COMMIT_SHA}/${RUN_ID}"
 
 INIT_STATUS=$(cat "${LOG_ROOT}/init.status" 2>/dev/null || echo "INIT SKIPPED")
 PLAN_STATUS=$(cat "${LOG_ROOT}/plan.status" 2>/dev/null || echo "PLAN SKIPPED")
