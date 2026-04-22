@@ -39,12 +39,6 @@ echo "Cleanup mode: $CLEANUP_MODE"
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 # Gets absolute path of repository root directory
 
-LOG_ROOT="${ROOT_DIR}/.terraform-run-logs/${COMMIT_SHA}/${RUN_ID}"
-mkdir -p "$LOG_ROOT"
-LOG_FILE="${LOG_ROOT}/terraform-${COMMAND}.log"
-# Log file name per command
-# Example: terraform-init.log
-
 # ------------------------------------------
 # RUN_ID handling (single source of truth)
 # ------------------------------------------
@@ -60,6 +54,15 @@ fi
 
 # Export for Terraform
 export TF_VAR_run_id="$RUN_ID"
+
+# ------------------------------------------
+# Create a directory and log file 
+# ------------------------------------------
+LOG_ROOT="${ROOT_DIR}/.terraform-run-logs/${COMMIT_SHA}/${RUN_ID}"
+mkdir -p "$LOG_ROOT"
+LOG_FILE="${LOG_ROOT}/terraform-${COMMAND}.log"
+# Log file name per command
+# Example: terraform-init.log
 
 RESOURCE_CACHE_FILE="${RESOURCE_CACHE_FILE:-/tmp/resource_cache.json}"
 
