@@ -1,0 +1,101 @@
+Acquiring state lock. This may take a few moments...
+azurerm_key_vault_key.prodmyapp_key: Creating...
+azurerm_key_vault_secret.github_token: Creating...
+azurerm_key_vault_secret.sp_subscription_id: Creating...
+azurerm_key_vault_secret.sp_client_secret: Creating...
+azurerm_key_vault_secret.sp_client_id: Creating...
+azurerm_key_vault_secret.sp_tenant_id: Creating...
+azurerm_role_assignment.human_kv_crypto_officer: Creating...
+
+Error: authorization.RoleAssignmentsClient#Create: Failure responding to request: StatusCode=400 -- Original Error: autorest/azure: Service returned an error. Status=400 Code="InvalidPrincipalId" Message="The Principal ID 'USER_OBJECT_ID_HERE' is not valid. Principal ID must be a GUID."
+
+  with azurerm_role_assignment.human_kv_crypto_officer,
+  on main.tf line 396, in resource "azurerm_role_assignment" "human_kv_crypto_officer":
+ 396: resource "azurerm_role_assignment" "human_kv_crypto_officer" {
+
+
+Error: A resource with the ID "https://prodmyappkv.vault.azure.net/keys/my-storage-cmk/51e0da2d9d5a4b53bfedce7faa0471cc" already exists - to be managed via Terraform this resource needs to be imported into the State. Please see the resource documentation for "azurerm_key_vault_key" for more information.
+
+  with azurerm_key_vault_key.prodmyapp_key,
+  on main.tf line 407, in resource "azurerm_key_vault_key" "prodmyapp_key":
+ 407: resource "azurerm_key_vault_key" "prodmyapp_key" {
+
+
+Error: A resource with the ID "https://prodmyappkv.vault.azure.net/secrets/sp-client-id/29da921e86f946e09b1bc43b9147b717" already exists - to be managed via Terraform this resource needs to be imported into the State. Please see the resource documentation for "azurerm_key_vault_secret" for more information.
+
+  with azurerm_key_vault_secret.sp_client_id,
+  on main.tf line 473, in resource "azurerm_key_vault_secret" "sp_client_id":
+ 473: resource "azurerm_key_vault_secret" "sp_client_id" {
+
+
+Error: A resource with the ID "https://prodmyappkv.vault.azure.net/secrets/sp-tenant-id/4342a6b2b3f8451cac56de320e679973" already exists - to be managed via Terraform this resource needs to be imported into the State. Please see the resource documentation for "azurerm_key_vault_secret" for more information.
+
+  with azurerm_key_vault_secret.sp_tenant_id,
+  on main.tf line 484, in resource "azurerm_key_vault_secret" "sp_tenant_id":
+ 484: resource "azurerm_key_vault_secret" "sp_tenant_id" {
+
+
+Error: A resource with the ID "https://prodmyappkv.vault.azure.net/secrets/sp-subscription-id/c2bfb3b8310943659b61723965e05a04" already exists - to be managed via Terraform this resource needs to be imported into the State. Please see the resource documentation for "azurerm_key_vault_secret" for more information.
+
+  with azurerm_key_vault_secret.sp_subscription_id,
+  on main.tf line 493, in resource "azurerm_key_vault_secret" "sp_subscription_id":
+ 493: resource "azurerm_key_vault_secret" "sp_subscription_id" {
+
+
+Error: A resource with the ID "https://prodmyappkv.vault.azure.net/secrets/sp-client-secret/cba089f0151e4676822167273a1caf93" already exists - to be managed via Terraform this resource needs to be imported into the State. Please see the resource documentation for "azurerm_key_vault_secret" for more information.
+
+  with azurerm_key_vault_secret.sp_client_secret,
+  on main.tf line 521, in resource "azurerm_key_vault_secret" "sp_client_secret":
+ 521: resource "azurerm_key_vault_secret" "sp_client_secret" {
+
+
+Error: A resource with the ID "https://prodmyappkv.vault.azure.net/secrets/githubtoken/7088fc7521a2438f91d17285571c505c" already exists - to be managed via Terraform this resource needs to be imported into the State. Please see the resource documentation for "azurerm_key_vault_secret" for more information.
+
+  with azurerm_key_vault_secret.github_token,
+  on main.tf line 566, in resource "azurerm_key_vault_secret" "github_token":
+ 566: resource "azurerm_key_vault_secret" "github_token" {
+
+Releasing state lock. This may take a few moments...
+Terraform apply failed. Synchronizing Terraform state with Azure...
+Acquiring state lock. This may take a few moments...
+data.azuread_service_principal.prodmyapp: Reading...
+data.azuread_service_principal.prodmyapp: Read complete after 3s [id=3a64aed9-8685-4f60-bad4-c7a0b3e0e4d2]
+data.azurerm_client_config.current: Reading...
+azurerm_policy_definition.require_managed_by: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-managed-by-tag]
+azurerm_policy_definition.require_deployment_id: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-deployment-id-tag]
+azurerm_policy_definition.require_environment: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-environment-tag]
+azurerm_resource_group.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup]
+data.azurerm_client_config.current: Read complete after 5s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9M2E2NGFlZDktODY4NS00ZjYwLWJhZDQtYzdhMGIzZTBlNGQyO3N1YnNjcmlwdGlvbklkPTJiMmYwMmY3LWRkZTItNDdkYi05NzRjLTQ3ZDIxODI3MjFhZTt0ZW5hbnRJZD1mMTc1YzU2ZC00MDEzLTQyZmEtYTBlOC00MTAzZDIyNzZhMGQ=]
+azurerm_key_vault.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv]
+azurerm_user_assigned_identity.prodmyapp_sa_identity: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/my-storage-identity]
+azurerm_resource_group_policy_assignment.rg_deployment_id: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-deployment-id]
+azurerm_resource_group_policy_assignment.rg_environment: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-environment]
+azurerm_resource_group_policy_assignment.rg_managed_by: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-managed-by]
+azurerm_storage_account.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01]
+azurerm_role_assignment.tf_kv_admin: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/d9e169d9-c689-f1ee-c3a7-3bb1f5b6f37b]
+azurerm_role_assignment.storage_kv_crypto: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/d1648830-65b8-0064-48c5-441d75dea67a]
+time_sleep.wait_for_kv_rbac: Refreshing state... [id=2026-04-20T10:45:24Z]
+azurerm_storage_container.prodmyapp: Refreshing state... [id=https://prodmyappsacmk01.blob.core.windows.net/mytfstate]
+azurerm_role_assignment.terraform_backend_storage_access: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01/blobServices/default/containers/mytfstate/providers/Microsoft.Authorization/roleAssignments/ff6a425c-a7e8-1383-4d04-8509f8714321]
+
+Changes to Outputs:
+  ~ debug_tags = {
+      ~ creation_time   = "2026-04-22T10:24:41Z" -> (known after apply)
+        # (4 unchanged attributes hidden)
+    }
+
+You can apply this plan to save these new output values to the Terraform
+state, without changing any real infrastructure.
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+debug_tags = {
+  "creation_run_id" = "409"
+  "creation_time" = "2026-04-22T10:26:45Z"
+  "deployment_id" = "prodmyapp"
+  "environment" = "prod"
+  "managed_by" = "terraform"
+}
