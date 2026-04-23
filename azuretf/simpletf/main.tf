@@ -392,7 +392,7 @@ resource "azurerm_role_assignment" "storage_kv_crypto" {
 }
 
 # Helps with permissions for viewing the keys via dashboard
-
+/*
 resource "azurerm_role_assignment" "human_kv_crypto_officer" {
   scope                = azurerm_key_vault.prodmyapp.id
   role_definition_name = "Key Vault Crypto Officer"
@@ -400,7 +400,7 @@ resource "azurerm_role_assignment" "human_kv_crypto_officer" {
   # Hardcode object IDs of known humans or service accounts. 
   # Like DevOps lead or security engineer’s object IDs. 
 }
-
+*/
 
 # Create key with explicit rotation policy
 
