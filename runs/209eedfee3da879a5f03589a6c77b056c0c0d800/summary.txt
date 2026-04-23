@@ -3,7 +3,7 @@ Terraform Run Summary
 ---------------------
 Commit : 209eedfee3da879a5f03589a6c77b056c0c0d800
 
-INIT  : SUCCEEDED
-PLAN  : PLAN SKIPPED
+INIT  : INIT SKIPPED
+PLAN  : CHANGES_PRESENT
 APPLY : APPLY SKIPPED
 =========================================
