@@ -403,7 +403,7 @@ resource "azurerm_role_assignment" "human_kv_crypto_officer" {
 */
 
 # Create key with explicit rotation policy
-/*
+
 resource "azurerm_key_vault_key" "prodmyapp_key" {
   name         = "my-storage-cmk"
   key_vault_id = azurerm_key_vault.prodmyapp.id
@@ -457,7 +457,7 @@ resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
     azurerm_storage_account.prodmyapp
   ]
 }
-
+/*
 # Move Secrets to Key Vault (secrets.tf)
 # Secrets as code (version controlled) - Secret rotation 
 # Update ARM_CLIENT_SECRET env var > terraform apply > Key Vault updates automatically.
