@@ -457,7 +457,7 @@ resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
     azurerm_storage_account.prodmyapp
   ]
 }
-/*
+
 # Move Secrets to Key Vault (secrets.tf)
 # Secrets as code (version controlled) - Secret rotation 
 # Update ARM_CLIENT_SECRET env var > terraform apply > Key Vault updates automatically.
@@ -542,7 +542,7 @@ resource "azurerm_key_vault_secret" "sp_client_secret" {
 
   depends_on = [azurerm_key_vault.prodmyapp]
 }
-
+/*
 # Store GitHub Token 
 variable "github_token" {
   type      = string
