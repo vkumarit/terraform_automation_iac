@@ -409,9 +409,9 @@ elif [[ "$COMMAND" == "plan" ]]; then
   #echo "Running pre-check..."
   #precheck_or_fail
   
-  echo "Refreshing Terraform state..."
-  terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color \
-    2>&1 | tee -a "$LOG_FILE" || true
+  #echo "Refreshing Terraform state..."
+  #terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color \
+  #  2>&1 | tee -a "$LOG_FILE" || true
     
   echo "Running terraform plan..."
   
