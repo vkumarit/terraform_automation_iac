@@ -1129,7 +1129,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
 }
 
 # to SSH login do - `ssh -i ~/.ssh/prodmyapp_vm1.pem adminuser@20.5.121.162`
-*/
+
 
 ## Windows VM
 /*
