@@ -865,7 +865,7 @@ variable "environment" {
     error_message = "Environment must be dev, test, or prod."
   }
 }
-
+/*
 variable "size_alias" {
   description = "Logical VM size"
   type        = string
