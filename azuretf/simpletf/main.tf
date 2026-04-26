@@ -693,12 +693,12 @@ resource "azurerm_subnet" "pub_subnet" {
     #Name = "pub_subnet_prodmyapp"
   #})
 
-  lifecycle {
-    ignore_changes = [
-      tags["creation_run_id"],
-      tags["creation_time"]
-    ]
-  }
+  #lifecycle {
+  #  ignore_changes = [
+  #    tags["creation_run_id"],
+  #    tags["creation_time"]
+  #  ]
+  #}
 }
 
 # private subnet (10.0.2.0/24) 
@@ -708,16 +708,16 @@ resource "azurerm_subnet" "pvt_subnet" {
   virtual_network_name = azurerm_virtual_network.prodmyapp_vnet.name
   address_prefixes     = ["10.0.2.0/24"]
   
-  tags = merge(local.common_tags, {
-    Name = "pvt_subnet_prodmyapp"
-  })
+  #tags = merge(local.common_tags, {
+  #  Name = "pvt_subnet_prodmyapp"
+  #})
 
-  lifecycle {
-    ignore_changes = [
-      tags["creation_run_id"],
-      tags["creation_time"]
-    ]
-  }
+  #lifecycle {
+  #  ignore_changes = [
+  #    tags["creation_run_id"],
+  #    tags["creation_time"]
+  #  ]
+  #}
 }
 
 # Separate Subnet NSG associations 
