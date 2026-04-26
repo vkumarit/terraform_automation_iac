@@ -5,5 +5,5 @@ Commit : 02cb6bf9ba048cf1f1d3cb0a9fd072e370846ca9
 
 INIT  : INIT SKIPPED
 PLAN  : CHANGES_PRESENT
-APPLY : APPLY SKIPPED
+APPLY : FAILED
 =========================================
