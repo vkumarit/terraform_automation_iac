@@ -529,9 +529,9 @@ resource "azurerm_key_vault_secret" "sp_client_secret" {
   key_vault_id = azurerm_key_vault.prodmyapp.id
 
   lifecycle {
-    ignore_changes = [] # Allow rotation, available value will be taken
+    #ignore_changes = [] # Allow rotation, available value will be taken
 
-    #ignore_changes = [value]
+    ignore_changes = [value]
     #Never update the secret after first creation, freeze secret forever
     #Used when not managing secret rotation using terraform, az cli used for secret rotation
 
@@ -542,7 +542,7 @@ resource "azurerm_key_vault_secret" "sp_client_secret" {
 
   depends_on = [azurerm_key_vault.prodmyapp]
 }
-/*
+
 # Store GitHub Token 
 variable "github_token" {
   type      = string
