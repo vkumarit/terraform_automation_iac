@@ -65,10 +65,10 @@ variable "deployment_id" {
   default = "prodmyapp"
 }
 
-variable "environment" {
-  description = "Environment for pipeline"
-  type        = string
-}
+#variable "environment" {
+#  description = "Environment for pipeline"
+#  type        = string
+#}
 
 # Tagging Resources
 locals {
@@ -830,7 +830,7 @@ Create linux VM resource using all above and other keys and values.
 */
 
 ## SSH Key Generation (tls provider block required)
-/*
+
 # Creating Key
 resource "tls_private_key" "vm_ssh" {
   algorithm = "RSA"
