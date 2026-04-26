@@ -603,7 +603,7 @@ azurerm_network_interface_security_group_association: Links NSGs to network inte
 */
 
 ## Virtual Network w/ cidr 10.0.0.0/16 and Subnets
-/*
+
 # Network Security Group (All allowed for testing)
 resource "azurerm_network_security_group" "prodmyapp_sg_linux" {
   name                = "open-security-group"
@@ -807,7 +807,7 @@ resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_li
   network_interface_id      = azurerm_network_interface.prodmyapp_nic_linux.id
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg_linux.id
 }
-*/
+
 
 ###               PHASE-V               ###
 
