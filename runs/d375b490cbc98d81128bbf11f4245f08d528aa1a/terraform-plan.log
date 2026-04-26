@@ -1,35 +1,34 @@
 Acquiring state lock. This may take a few moments...
 data.azuread_service_principal.prodmyapp: Reading...
-data.azuread_service_principal.prodmyapp: Read complete after 3s [id=3a64aed9-8685-4f60-bad4-c7a0b3e0e4d2]
-data.azurerm_client_config.current: Reading...
-data.azurerm_client_config.current: Still reading... [00m10s elapsed]
-data.azurerm_client_config.current: Read complete after 13s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9M2E2NGFlZDktODY4NS00ZjYwLWJhZDQtYzdhMGIzZTBlNGQyO3N1YnNjcmlwdGlvbklkPTJiMmYwMmY3LWRkZTItNDdkYi05NzRjLTQ3ZDIxODI3MjFhZTt0ZW5hbnRJZD1mMTc1YzU2ZC00MDEzLTQyZmEtYTBlOC00MTAzZDIyNzZhMGQ=]
+data.azuread_service_principal.prodmyapp: Read complete after 5s [id=3a64aed9-8685-4f60-bad4-c7a0b3e0e4d2]
+tls_private_key.vm_ssh: Refreshing state... [id=8a72a3cf1152e41fd222a518179fd129a98db199]
+azurerm_policy_definition.require_deployment_id: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-deployment-id-tag]
 azurerm_policy_definition.require_managed_by: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-managed-by-tag]
 azurerm_policy_definition.require_environment: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-environment-tag]
-azurerm_policy_definition.require_deployment_id: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-deployment-id-tag]
-tls_private_key.vm_ssh: Refreshing state... [id=8a72a3cf1152e41fd222a518179fd129a98db199]
+data.azurerm_client_config.current: Reading...
+data.azurerm_client_config.current: Read complete after 4s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9M2E2NGFlZDktODY4NS00ZjYwLWJhZDQtYzdhMGIzZTBlNGQyO3N1YnNjcmlwdGlvbklkPTJiMmYwMmY3LWRkZTItNDdkYi05NzRjLTQ3ZDIxODI3MjFhZTt0ZW5hbnRJZD1mMTc1YzU2ZC00MDEzLTQyZmEtYTBlOC00MTAzZDIyNzZhMGQ=]
 local_file.public_key_openssh: Refreshing state... [id=1ba6347b847919ec833c26c2cdbb61e6a6906f7e]
 azurerm_resource_group.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup]
-azurerm_resource_group_policy_assignment.rg_deployment_id: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-deployment-id]
 azurerm_virtual_network.prodmyapp_vnet: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network]
 azurerm_user_assigned_identity.prodmyapp_sa_identity: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/my-storage-identity]
-azurerm_resource_group_policy_assignment.rg_managed_by: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-managed-by]
+azurerm_resource_group_policy_assignment.rg_deployment_id: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-deployment-id]
 azurerm_network_security_group.prodmyapp_sg_linux: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group]
-azurerm_public_ip.prodmyapp_pub_ips: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/publicIPAddresses/prodmyapp_public_ip1]
 azurerm_key_vault.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv]
+azurerm_resource_group_policy_assignment.rg_managed_by: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-managed-by]
 azurerm_resource_group_policy_assignment.rg_environment: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-environment]
+azurerm_public_ip.prodmyapp_pub_ips: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/publicIPAddresses/prodmyapp_public_ip1]
 azurerm_subnet.pub_subnet: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pub_subnet1]
 azurerm_subnet.pvt_subnet: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pvt_subnet2]
 azurerm_storage_account.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01]
-azurerm_key_vault_secret.sp_client_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-client-id/d7fb0faf32524ce48be82c8a1abaa501]
-azurerm_key_vault_secret.github_token: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/githubtoken/587c6f85ea8b4c5d88740a0fe18cefca]
-azurerm_key_vault_secret.sp_subscription_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-subscription-id/380b5a9f9c6e44d4b10468e2b1df6ca1]
+azurerm_role_assignment.tf_kv_admin: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/d9e169d9-c689-f1ee-c3a7-3bb1f5b6f37b]
 azurerm_key_vault_secret.sp_client_secret: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-client-secret/fdb2e08062544e90a6c3ecfb6a25897f]
 azurerm_key_vault_secret.sp_tenant_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-tenant-id/abe0edc6d4dd450e86dc8ac101fb4212]
-azurerm_role_assignment.tf_kv_admin: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/d9e169d9-c689-f1ee-c3a7-3bb1f5b6f37b]
+azurerm_key_vault_secret.sp_subscription_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-subscription-id/380b5a9f9c6e44d4b10468e2b1df6ca1]
 azurerm_role_assignment.storage_kv_crypto: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/d1648830-65b8-0064-48c5-441d75dea67a]
-azurerm_network_interface.prodmyapp_nic_linux: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-nic1]
+azurerm_key_vault_secret.github_token: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/githubtoken/587c6f85ea8b4c5d88740a0fe18cefca]
+azurerm_key_vault_secret.sp_client_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-client-id/d7fb0faf32524ce48be82c8a1abaa501]
 azurerm_subnet_network_security_group_association.pub_subnet_nsg: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pub_subnet1]
+azurerm_network_interface.prodmyapp_nic_linux: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-nic1]
 azurerm_subnet_network_security_group_association.pvt_subnet_nsg: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pvt_subnet2]
 azurerm_storage_container.prodmyapp: Refreshing state... [id=https://prodmyappsacmk01.blob.core.windows.net/mytfstate]
 time_sleep.wait_for_kv_rbac: Refreshing state... [id=2026-04-20T10:45:24Z]
@@ -43,6 +42,23 @@ plan. Resource actions are indicated with the following symbols:
   + create
 
 Terraform will perform the following actions:
+
+  # local_file.public_key_openssh will be created
+  + resource "local_file" "public_key_openssh" {
+      + content              = <<-EOT
+            ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDAZGwvi81XoRsmmcE79csbUABUyY1reuhZzHhN8fFS0fTMz0ExHtmLvjE0qGsBQ5cKNd3C9V2syv7AdmAJC8OEgPZznE2JNiXbOrD8FPgjJk5fWExdXzlGtnenYghUTjX49CdlMRM2rQljsnUmn2TK/Loowu8bvHvHusTufEfTBmi0fA4fWd3er0EoK//YJQd8YrTOTmpv/rD+8OVJ6VOK1ZJuwdZmbZhn/Pv80DRIklBH1Bt50ABzcxaEtZnPd8NkTy9w789gH3GXkis5v7kjFqZ4aPTQ627FTyp2PIybhb/W4sogDyKEh3F/c5dnpFZr7vyPYltMr91O24gT+qXZib00VskAdC1HWqcqM5jvvlFR8Tz6fHFLKUUZg4Z8PMwVXgyugQOsh9B27RsBnBb/zfsrWgT+drfGHicX7oYRp6bcMS8S60RITPL112bF6iW0u3bNcOPhm+T2v19nyNfjoSMAZ2TjqfzZKCg7oKVWxCZxwCdHLma7lvV5v2gGbDrIstzF7gYtl3QleKuowBI8upHtFFVUydeGBmUy7b4UjgZmocB+HQx+fUKNCVewx/alT7tsNt74ida/QmvvhdyA7XnVuSvTODtNgv1Fvo7164mZgQqh9tF4dutKIsF8TopAgnryu9fHw2dCYRffF/45GqzYh4NbpizBM5Q5L/+giQ==
+        EOT
+      + content_base64sha256 = (known after apply)
+      + content_base64sha512 = (known after apply)
+      + content_md5          = (known after apply)
+      + content_sha1         = (known after apply)
+      + content_sha256       = (known after apply)
+      + content_sha512       = (known after apply)
+      + directory_permission = "0777"
+      + file_permission      = "0644"
+      + filename             = "/home/cloud-user/.ssh/prodmyapp_vm1.pub"
+      + id                   = (known after apply)
+    }
 
   # local_sensitive_file.private_key_pem will be created
   + resource "local_sensitive_file" "private_key_pem" {
@@ -59,12 +75,12 @@ Terraform will perform the following actions:
       + id                   = (known after apply)
     }
 
-Plan: 1 to add, 0 to change, 0 to destroy.
+Plan: 2 to add, 0 to change, 0 to destroy.
 
 Changes to Outputs:
   ~ debug_tags   = {
-      ~ creation_run_id = "414" -> "415"
-      ~ creation_time   = "2026-04-26T12:20:07Z" -> (known after apply)
+      ~ creation_run_id = "415" -> "416"
+      ~ creation_time   = "2026-04-26T12:38:57Z" -> (known after apply)
         # (3 unchanged attributes hidden)
     }
 
