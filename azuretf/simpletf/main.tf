@@ -689,9 +689,9 @@ resource "azurerm_subnet" "pub_subnet" {
   virtual_network_name = azurerm_virtual_network.prodmyapp_vnet.name
   address_prefixes     = ["10.0.1.0/28"]
   
-  tags = merge(local.common_tags, {
-    Name = "pub_subnet_prodmyapp"
-  })
+  #tags = merge(local.common_tags, {
+    #Name = "pub_subnet_prodmyapp"
+  #})
 
   lifecycle {
     ignore_changes = [
