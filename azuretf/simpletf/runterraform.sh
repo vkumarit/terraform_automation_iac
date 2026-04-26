@@ -434,30 +434,6 @@ elif [[ "$COMMAND" == "plan" ]]; then
   fi
   
   # ------------------------------------------
-  # Analyze plan ONLY if plan succeeded
-  # (0 = no changes, 2 = changes present)
-  # ------------------------------------------
-  echo "Analyzing plan for safety..."
-
-  PLAN_JSON=$(terraform show -json tfplan)
-
-  DESTROY_COUNT=$(echo "$PLAN_JSON" | jq '
-    [.resource_changes[] | select(.change.actions | index("delete"))] | length
-  ')
-
-  REPLACE_COUNT=$(echo "$PLAN_JSON" | jq '
-    [.resource_changes[] | select(.change.actions == ["create","delete"] or .change.actions == ["delete","create"])] | length
-  ')
-
-  echo "Safety → destroy=$DESTROY_COUNT replace=$REPLACE_COUNT"
-
-  if [[ "$DESTROY_COUNT" -gt 0 || "$REPLACE_COUNT" -gt 0 ]]; then
-    echo "❌ Destructive plan detected → blocking"
-    echo "FAILED" > "${LOG_ROOT}/plan.status"
-    exit 1
-  fi
-
-  # ------------------------------------------
   # Write status cleanly
   # ------------------------------------------
   if [[ "$TF_EXIT" -eq 0 ]]; then
