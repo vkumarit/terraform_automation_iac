@@ -243,6 +243,32 @@ stages:
         RUN_ID: $(Build_ID)                     #for .sh
         CLEANUP_MODE: $(CLEANUP_MODE)
         
+    # ----------------------------- 
+    # Push all Terraform logs (commit) 
+    # -----------------------------
+    - script: |
+          chmod +x ./pushlogs.sh
+          ./pushlogs.sh
+      displayName: "Commit Terraform Logs"
+      condition: always()
+      env:
+          GITHUB_TOKEN: $(githubtoken)
+          BUILD_BUILDID: $(Build_ID)
+          
+          BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory) 
+          # a predefined system variable,
+          # The absolute path on the agent where your repo is checked out,
+          # resolves to example - `/opt/agent/_work/3/s`
+    
+    # ----------------------------- 
+    # Push all logs as artifact
+    # -----------------------------    
+    #- task: PublishBuildArtifacts@1
+    #  inputs:
+    #    pathToPublish: '$(Build.SourcesDirectory)/.terraform-run-logs'
+    #    artifactName: 'terraform-logs'
+    #  condition: always()
+    
     # -----------------------------
     # Clean Terraform junk after every run
     # -----------------------------    

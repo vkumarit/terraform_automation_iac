@@ -4593,6 +4593,52 @@ You want a safety net (not enforcement)
 
 ---------------------------------------------------------------------------------------------------------------
 
+
+BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory) 
+          
+# a predefined system variable,
+# The absolute path on the agent where your repo is checked out,
+# resolves to example - `/opt/agent/_work/3/s` when `- checkout: self`
+
+Real difference (important)
+1. Build.SourcesDirectory (source-focused)
+
+👉 Strictly tied to code checkout
+
+Always points to the repo root
+Only meaningful after checkout: self
+Represents your Git content location
+
+Think:
+
+“Where is my code?”
+
+- You need repo files, git, paths.
+
+2. System.DefaultWorkingDirectory (execution-focused)
+
+👉 Used by pipeline engine as:
+
+Default directory for script, task, etc.
+Where commands run if you don’t specify workingDirectory
+
+Think:
+
+“Where will my commands execute by default?”
+
+- You just need a working folder.
+
+--
+Case 2: Custom checkout path
+- checkout: self
+  path: mycustompath
+
+Now:
+
+Variable	- Build.SourcesDirectory
+Value	    - /.../s/mycustompath
+--
+
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------

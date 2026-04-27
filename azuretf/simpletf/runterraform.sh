@@ -66,7 +66,7 @@ LOG_FILE="${LOG_ROOT}/terraform-${COMMAND}.log"
 
 RESOURCE_CACHE_FILE="${RESOURCE_CACHE_FILE:-/tmp/resource_cache.json}"
 
-REPO="vkumarit/terraform_automation_iac"
+#REPO="vkumarit/terraform_automation_iac"
 # GitHub repository where logs will be pushed
 
 # Tag filters (must match Terraform exactly)
@@ -406,13 +406,6 @@ elif [[ "$COMMAND" == "plan" ]]; then
 
   set +e
   
-  #echo "Running pre-check..."
-  #precheck_or_fail
-  
-  #echo "Refreshing Terraform state..."
-  #terraform apply -input=false -refresh-only -auto-approve -lock-timeout=10m -no-color \
-  #  2>&1 | tee -a "$LOG_FILE" || true
-    
   echo "Running terraform plan..."
   
   terraform plan -input=false -parallelism=1 -no-color -detailed-exitcode -lock-timeout=10m -out=tfplan 2>&1 | tee "$LOG_FILE"
@@ -571,53 +564,10 @@ APPLY_STATUS=$(cat "${LOG_ROOT}/apply.status" 2>/dev/null || echo "APPLY SKIPPED
 
 echo "Summary file created."
 
-# ------------------------------------------
-# Commit and push logs
-# ------------------------------------------
-set +e   # temporarily disable exit-on-error
 
-TMP_DIR=$(mktemp -d)
-echo "Cloning terraform-logs branch..."
+#set +e   # temporarily disable exit-on-error
 
-git clone --branch terraform-logs \
-  "https://${GITHUB_TOKEN}@github.com/${REPO}.git" \
-  "$TMP_DIR" 2>/dev/null || {
-    git clone "https://${GITHUB_TOKEN}@github.com/${REPO}.git" "$TMP_DIR"
-    cd "$TMP_DIR"
-    git checkout -b terraform-logs
-  }
-
-cd "$TMP_DIR"
-
-mkdir -p "runs/${COMMIT_SHA}"
-
-# --------------------------------------------------
-# Copy logs but NEVER copy terraform state files
-# --------------------------------------------------
-rsync -av \
-  --exclude="*.tfstate" \
-  --exclude="*.tfstate.backup" \
-  --exclude="*.tfplan*" \
-  --exclude=".terraform*" \
-  "${LOG_ROOT}/" "runs/${COMMIT_SHA}/"
-
-# Extra protection in case tfstate tfplan still there
-find runs/ -type f -name "*.tfstate*" -delete
-find runs/ -type f -name "*.tfplan*" -delete
-
-git add runs/
-
-git commit -m "Terraform full run logs for ${COMMIT_SHA}" >/dev/null 2>&1 || echo "Nothing to commit"
-
-if git push origin terraform-logs; then
-  echo "Terraform logs pushed successfully."
-else
-  echo "WARNING: Failed to push Terraform logs."
-fi
-
-rm -rf "$TMP_DIR"
-
-set -e   # re-enable strict error handling
+#set -e   # re-enable strict error handling
 
 exit "$TF_EXIT"
 # Exit script with terraform’s actual exit code
