@@ -1132,7 +1132,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
 
 
 ## Windows VM
-/*
+
 # Dedicated NSG for Windows
 resource "azurerm_network_security_group" "prodmyapp_nsg_windows" {
   name                = "windows-secure-nsg"
@@ -1197,6 +1197,11 @@ resource "azurerm_public_ip" "prodmyapp_pub_ip_windows" {
   }
 }
 
+output "win_vm_public_ip" {
+  value = azurerm_public_ip.prodmyapp_pub_ip_windows.ip_address
+}
+
+/*
 # separate NIC for Windows VM
 resource "azurerm_network_interface" "prodmyapp_nic_windows" {
   name                = "prodmyapp-win-nic"
