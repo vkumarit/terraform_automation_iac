@@ -41,16 +41,22 @@ mkdir -p "runs/${COMMIT_SHA}/${RUN_ID}"
 
 echo "Copying logs..."
 
+#If the same commit runs again → don’t overwrite old logs, create a new run folder instead.
+RUN_LOG_DIR="${LOG_BASE}/${RUN_ID}"
+
 # Copy logs but NEVER copy terraform state files
 rsync -av \
   --exclude="*.tfstate" \
   --exclude="*.tfplan*" \
   --exclude=".terraform*" \
-  "$LOG_BASE/." \
+  --exclude="*.status" \
+  "$RUN_LOG_DIR/" \
   "runs/${COMMIT_SHA}/${RUN_ID}/"
 
+# Remove unwanted files just in case
 find runs/ -type f -name "*.tfstate*" -delete
 find runs/ -type f -name "*.tfplan*" -delete
+find runs/ -type f -name "*.status" -delete
 
 git add runs/
 
