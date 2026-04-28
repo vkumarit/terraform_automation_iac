@@ -1165,7 +1165,7 @@ resource "azurerm_network_security_group" "prodmyapp_nsg_windows" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
-  
+
   tags = merge(local.common_tags, {
     Name = "nsg-windows_prodmyapp"
   })
@@ -1184,7 +1184,7 @@ resource "azurerm_public_ip" "prodmyapp_pub_ip_windows" {
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
   allocation_method   = "Static"
-  
+
   tags = merge(local.common_tags, {
     Name = "pub-ip-win_prodmyapp"
   })
