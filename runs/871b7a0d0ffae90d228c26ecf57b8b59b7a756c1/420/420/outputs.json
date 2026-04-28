@@ -1,0 +1,27 @@
+{
+  "debug_tags": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "creation_run_id": "string",
+        "creation_time": "string",
+        "deployment_id": "string",
+        "environment": "string",
+        "managed_by": "string"
+      }
+    ],
+    "value": {
+      "creation_run_id": "420",
+      "creation_time": "2026-04-28T07:44:22Z",
+      "deployment_id": "prodmyapp",
+      "environment": "prod",
+      "managed_by": "terraform"
+    }
+  },
+  "vm_public_ip": {
+    "sensitive": false,
+    "type": "string",
+    "value": "68.218.73.131"
+  }
+}
