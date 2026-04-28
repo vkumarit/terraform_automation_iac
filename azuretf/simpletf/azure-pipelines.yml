@@ -201,6 +201,7 @@ stages:
         ARM_TENANT_ID: $(sp-tenant-id)
         ARM_SUBSCRIPTION_ID: $(sp-subscription-id)
         GITHUB_TOKEN: $(githubtoken)
+        RUN_ID: $(Build_ID)
 
     # -----------------------------
     # Terraform Plan

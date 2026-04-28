@@ -32,6 +32,10 @@ git clone --branch terraform-logs \
 
 cd "$TMP_DIR"
 
+# local config for CI/CD
+git config user.name "terraform-bot"
+git config user.email "terraform-bot@users.noreply.github.com"
+
 RUN_ID="${BUILD_BUILDID:-manual}"
 mkdir -p "runs/${COMMIT_SHA}/${RUN_ID}"
 
@@ -42,7 +46,7 @@ rsync -av \
   --exclude="*.tfstate" \
   --exclude="*.tfplan*" \
   --exclude=".terraform*" \
-  "$LOG_BASE/" \
+  "$LOG_BASE/." \
   "runs/${COMMIT_SHA}/${RUN_ID}/"
 
 find runs/ -type f -name "*.tfstate*" -delete
