@@ -151,7 +151,7 @@ stages:
         echo "DEBUG: ARM_TENANT_ID present: ${ARM_TENANT_ID:+yes}"
         echo "DEBUG: ARM_SUBSCRIPTION_ID present: ${ARM_SUBSCRIPTION_ID:+yes}"
         echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
-        terraform version
+        #terraform version
       workingDirectory: azuretf/simpletf
       displayName: "Debug Terraform Environment variables"
       env:
@@ -190,10 +190,10 @@ stages:
     # Terraform Init
     # -----------------------------
     - script: |
-        cd azuretf/simpletf
+        #cd azuretf/simpletf
         ./runterraform.sh init
         #terraform init -upgrade
-      #workingDirectory: azuretf/simpletf
+      workingDirectory: azuretf/simpletf
       displayName: "Terraform Init"
       env:
         ARM_CLIENT_ID: $(sp-client-id)
