@@ -1214,7 +1214,7 @@ resource "azurerm_network_interface" "prodmyapp_nic_windows" {
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.prodmyapp_pub_ip_windows.id
   }
-  
+
   tags = merge(local.common_tags, {
     Name = "nic-windows_prodmyapp"
   })
