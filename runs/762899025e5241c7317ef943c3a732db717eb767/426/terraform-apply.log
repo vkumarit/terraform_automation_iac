@@ -1,0 +1,20 @@
+Acquiring state lock. This may take a few moments...
+azurerm_network_interface.prodmyapp_nic_windows: Creating...
+azurerm_network_interface.prodmyapp_nic_windows: Creation complete after 4s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-win-nic]
+azurerm_network_interface_security_group_association.nic_nsg_assn_windows: Creating...
+azurerm_network_interface_security_group_association.nic_nsg_assn_windows: Creation complete after 5s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-win-nic|/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/windows-secure-nsg]
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+debug_tags = {
+  "creation_run_id" = "426"
+  "creation_time" = "2026-04-30T02:51:45Z"
+  "deployment_id" = "prodmyapp"
+  "environment" = "prod"
+  "managed_by" = "terraform"
+}
+vm_public_ip = "68.218.73.131"
+win_vm_public_ip = "20.58.163.30"
