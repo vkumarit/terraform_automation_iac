@@ -1201,7 +1201,7 @@ output "win_vm_public_ip" {
   value = azurerm_public_ip.prodmyapp_pub_ip_windows.ip_address
 }
 
-/*
+
 # separate NIC for Windows VM
 resource "azurerm_network_interface" "prodmyapp_nic_windows" {
   name                = "prodmyapp-win-nic"
@@ -1245,6 +1245,7 @@ data "azurerm_key_vault_secret" "win_password" {
   # Terraform reads secret during plan phase, so requires `depends_on`
 }
 
+/*
 resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
   name                = "windows_vm_01"
   computer_name       = "windowsvmdev01"

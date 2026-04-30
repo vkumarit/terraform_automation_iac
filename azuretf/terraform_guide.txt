@@ -3238,7 +3238,24 @@ $ terraform import azurerm_role_assignment.terraform_backend_storage_access\
 /subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization\
 /roleAssignments/0a47c68df68e820facdddd3054f0b96e
 ---------------------------------------------------------------------------------------------------------------
+Reason to Implement When WSL: 
 
+Simple mental model
+`/mnt/d` > Windows drive > insecure for SSH keys
+`~/.ssh` > Linux filesystem > correct place
+
+WSL SSH login:
+
+vips_devops@D-VoS:/mnt/d/DevOps_Practice/bash_here$ cd ~
+vips_devops@D-VoS:~$ mkdir -p ~/.ssh
+vips_devops@D-VoS:~$ cp /mnt/d/DevOps_Practice/bash_here/authUSeast2.pem ~/.ssh/
+vips_devops@D-VoS:~$ chmod 600 ~/.ssh/authUSeast2.pem
+vips_devops@D-VoS:~$ chmod 700 ~/.ssh
+vips_devops@D-VoS:~$ ssh -i ~/.ssh/authUSeast2.pem cloud-user@18.222.251.226
+Activate the web console with: systemctl enable --now cockpit.socket
+
+Last login: Tue Apr 28 11:37:19 2026 from 171.76.85.120
+[cloud-user@ip-172-31-34-84 ~]$
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------
