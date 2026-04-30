@@ -207,10 +207,10 @@ stages:
     # Terraform Plan
     # -----------------------------
     - script: |
-        cd azuretf/simpletf
+        #cd azuretf/simpletf
         ./runterraform.sh plan
         #terraform plan -out=tfplan
-      #workingDirectory: azuretf/simpletf
+      workingDirectory: azuretf/simpletf
       displayName: "Terraform Plan"
       env:
        ARM_CLIENT_ID: $(sp-client-id)
@@ -227,10 +227,10 @@ stages:
     # Terraform Apply
     # -----------------------------
     - script: |
-        cd azuretf/simpletf
+        #cd azuretf/simpletf
         ./runterraform.sh apply
         #terraform apply -auto-approve tfplan
-      #workingDirectory: azuretf/simpletf
+      workingDirectory: azuretf/simpletf
       displayName: "Terraform Apply"
       env:
         ARM_CLIENT_ID: $(sp-client-id)
