@@ -1,0 +1,16 @@
+Acquiring state lock. This may take a few moments...
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+debug_tags = {
+  "creation_run_id" = "427"
+  "creation_time" = "2026-04-30T02:59:04Z"
+  "deployment_id" = "prodmyapp"
+  "environment" = "prod"
+  "managed_by" = "terraform"
+}
+vm_public_ip = "68.218.73.131"
+win_vm_public_ip = "20.58.163.30"
