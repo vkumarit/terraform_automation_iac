@@ -3257,6 +3257,37 @@ Activate the web console with: systemctl enable --now cockpit.socket
 Last login: Tue Apr 28 11:37:19 2026 from 171.76.85.120
 [cloud-user@ip-172-31-34-84 ~]$
 ---------------------------------------------------------------------------------------------------------------
+Secure your Terraform backend properly:
+
+1) Make the Storage Account PRIVATE - 
+In storage account block add `public_network_access_enabled = false`, 
+Or via 
+Azure: a) Disable public access, b) Use private endpoint (best)
+
+2) Restrict access via RBAC -
+Only allow - a) terraform pipeline identity, b) Admins (few people) 
+Assign - a) Storage Blob Data Contributor > for pipeline, b) Avoid broad roles like Owner
+
+3) Enable encryption - Implement `azurerm_storage_account_customer_managed_key` (CMK via Key Vault).
+
+4) Enable versioning & Enable soft delete
+blob_properties {
+  versioning_enabled = true
+  
+  delete_retention_policy {
+    days = 7
+  }
+}
+
+Versioning: Keeps history of state file changes, Let us recover from corruption, bad apply, accidental overwrite.
+Soft delete: delete_retention_policy, Soft delete for blobs, Recover deleted state file.
+
+5) Separate backend from app storage - 
+Create separate storage accounts - a) tfstateprod123 > Terraform only, b) diagprod123 > VM diagnostics
+
+6) Disable public blob access - 
+Implement `allow_blob_public_access = false` in `azurerm_storage_account` 
+Prevents accidental public exposure of blobs, Protects .tfstate
 
 ---------------------------------------------------------------------------------------------------------------
 

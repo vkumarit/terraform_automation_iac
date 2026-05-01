@@ -254,10 +254,26 @@ resource "azurerm_storage_account" "prodmyapp" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
+  #Disable public blob access
+  #allow_blob_public_access = false
+  
+  #disable public network access completely (recommended) (but may break if applied in between)
+  #public_network_access_enabled = false
+
+  
   identity {
     type         = "UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.prodmyapp_sa_identity.id]
   }
+  
+  #Data protection settings
+  #blob_properties {
+  #  versioning_enabled = true
+
+  #  delete_retention_policy {
+  #    days = 7
+  #  }
+  #}
 
   tags = merge(local.common_tags, {
     Name = "st-tfstate-cmk"
@@ -1234,6 +1250,7 @@ resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_wi
 }
 
 # Pull admin password from key vault
+/*
 data "azurerm_key_vault_secret" "win_password" {
   name         = "windowsvmpassword01"
   key_vault_id = azurerm_key_vault.prodmyapp.id
@@ -1244,8 +1261,14 @@ data "azurerm_key_vault_secret" "win_password" {
   ]
   # Terraform reads secret during plan phase, so requires `depends_on`
 }
+*/
 
-/*
+variable "windows_admin_password" {
+  type      = string
+  sensitive = true
+}
+
+
 resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
   name                = "windows_vm_01"
   computer_name       = "windowsvmdev01"
@@ -1254,8 +1277,11 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
   location            = azurerm_resource_group.prodmyapp.location
   size                = local.selected_vm_size
   admin_username      = "adminuser"
+  admin_password      = var.windows_admin_password
+  
   #admin_password      = "Adminuser@1234!"
-  admin_password = data.azurerm_key_vault_secret.win_password.value
+  #admin_password = data.azurerm_key_vault_secret.win_password.value
+  #Plan to move toward Azure AD login (passwordless)
   
   network_interface_ids = [
     azurerm_network_interface.prodmyapp_nic_windows.id,
@@ -1276,7 +1302,7 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
     disk_encryption_set_id = azurerm_disk_encryption_set.prod_des.id
   }
   */
-/*
+
   source_image_reference {
     publisher = local.vm_images[var.environment].windows.publisher
     offer     = local.vm_images[var.environment].windows.offer
@@ -1290,6 +1316,7 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
   }
   
   depends_on = [
+    azurerm_disk_encryption_set.prod_des,
     azurerm_role_assignment.des_kv_crypto,
     time_sleep.wait_for_des_rbac
   ]
@@ -1299,8 +1326,8 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
   })
   
   lifecycle {
-    create_before_destroy = true
-    prevent_destroy       = false  # `true` for prod, protection against `terraform destroy`
+    #create_before_destroy = true
+    #prevent_destroy       = false  # `true` for prod, protection against `terraform destroy`
     
     ignore_changes        = [
       tags["creation_run_id"],
@@ -1308,5 +1335,5 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
     ]
   }
 }
-*/
+
 # Deployment of resources in different regions using loop

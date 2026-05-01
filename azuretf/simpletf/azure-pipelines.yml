@@ -243,6 +243,7 @@ stages:
         TF_VAR_run_id: $(Build_ID)              #for terraform env
         RUN_ID: $(Build_ID)                     #for .sh
         CLEANUP_MODE: $(CLEANUP_MODE)
+        TF_VAR_windows_admin_password: $(windowsvmpassword01)
         
     # ----------------------------- 
     # Push all Terraform logs (commit) 
