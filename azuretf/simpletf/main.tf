@@ -256,16 +256,16 @@ resource "azurerm_storage_account" "prodmyapp" {
 
   #Disable public blob access
   #allow_blob_public_access = false
-  
+
   #disable public network access completely (recommended) (but may break if applied in between)
   #public_network_access_enabled = false
 
-  
+
   identity {
     type         = "UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.prodmyapp_sa_identity.id]
   }
-  
+
   #Data protection settings
   #blob_properties {
   #  versioning_enabled = true
@@ -1270,29 +1270,29 @@ variable "windows_admin_password" {
 
 
 resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
-  name                = "windows_vm_01"
-  computer_name       = "windowsvmdev01"
-  
+  name          = "windows_vm_01"
+  computer_name = "windowsvmdev01"
+
   resource_group_name = azurerm_resource_group.prodmyapp.name
   location            = azurerm_resource_group.prodmyapp.location
   size                = local.selected_vm_size
   admin_username      = "adminuser"
   admin_password      = var.windows_admin_password
-  
+
   #admin_password      = "Adminuser@1234!"
   #admin_password = data.azurerm_key_vault_secret.win_password.value
   #Plan to move toward Azure AD login (passwordless)
-  
+
   network_interface_ids = [
     azurerm_network_interface.prodmyapp_nic_windows.id,
   ]
 
   os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
+    caching                = "ReadWrite"
+    storage_account_type   = "Standard_LRS"
     disk_encryption_set_id = azurerm_disk_encryption_set.prod_des.id
   }
-  
+
   /*
   # for production 
   os_disk {
@@ -1309,27 +1309,27 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
     sku       = local.vm_images[var.environment].windows.sku
     version   = local.vm_images[var.environment].windows.version
   }
-  
+
   # Enable Boot Diagnostics
   boot_diagnostics {
     storage_account_uri = azurerm_storage_account.prodmyapp.primary_blob_endpoint
   }
-  
+
   depends_on = [
     azurerm_disk_encryption_set.prod_des,
     azurerm_role_assignment.des_kv_crypto,
     time_sleep.wait_for_des_rbac
   ]
-  
+
   tags = merge(local.common_tags, {
-    Name            = "vm-windows"
+    Name = "vm-windows"
   })
-  
+
   lifecycle {
     #create_before_destroy = true
     #prevent_destroy       = false  # `true` for prod, protection against `terraform destroy`
-    
-    ignore_changes        = [
+
+    ignore_changes = [
       tags["creation_run_id"],
       tags["creation_time"]
     ]
