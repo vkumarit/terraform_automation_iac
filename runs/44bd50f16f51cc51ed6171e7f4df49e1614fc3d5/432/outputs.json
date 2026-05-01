@@ -1,0 +1,32 @@
+{
+  "debug_tags": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "creation_run_id": "string",
+        "creation_time": "string",
+        "deployment_id": "string",
+        "environment": "string",
+        "managed_by": "string"
+      }
+    ],
+    "value": {
+      "creation_run_id": "432",
+      "creation_time": "2026-05-01T11:18:07Z",
+      "deployment_id": "prodmyapp",
+      "environment": "prod",
+      "managed_by": "terraform"
+    }
+  },
+  "vm_public_ip": {
+    "sensitive": false,
+    "type": "string",
+    "value": "68.218.73.131"
+  },
+  "win_vm_public_ip": {
+    "sensitive": false,
+    "type": "string",
+    "value": "20.58.163.30"
+  }
+}
