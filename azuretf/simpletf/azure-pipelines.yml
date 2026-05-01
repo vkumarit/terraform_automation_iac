@@ -151,7 +151,7 @@ stages:
         echo "DEBUG: ARM_TENANT_ID present: ${ARM_TENANT_ID:+yes}"
         echo "DEBUG: ARM_SUBSCRIPTION_ID present: ${ARM_SUBSCRIPTION_ID:+yes}"
         echo "DEBUG: GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
-        echo "DEBUG: TF_VAR_windows_admin_password length: ${#windowsvmpassword01}"
+        echo "DEBUG: TF_VAR_windows_admin_password length: ${#TF_VAR_windows_admin_password}"
         #terraform version
       workingDirectory: azuretf/simpletf
       displayName: "Debug Terraform Environment variables"
@@ -180,12 +180,15 @@ stages:
     # Terraform Validate/Lint
     # -----------------------------
     - script: terraform fmt -check -diff -recursive
+      workingDirectory: azuretf/simpletf
       displayName: "Terraform Format Troubleshoot"
       
     - script: terraform init -backend=false -no-color
+      workingDirectory: azuretf/simpletf
       displayName: "Terraform Init (Validation Only)"
 
     - script: terraform validate -no-color
+      workingDirectory: azuretf/simpletf
       displayName: "Terraform Validate"    
     
     # -----------------------------
@@ -223,6 +226,7 @@ stages:
        TF_VAR_environment: $(ENVIRONMENT)
        TF_VAR_size_alias: $(SIZE_ALIAS)
        TF_VAR_run_id: $(Build_ID)
+       TF_VAR_windows_admin_password: $(windowsvmpassword01)
        RUN_ID: $(Build_ID)       
 
     # -----------------------------
