@@ -627,19 +627,8 @@ resource "azurerm_network_security_group" "prodmyapp_nsg_shared" {
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
 
-  #Protect PRIVATE subnet
-  security_rule {
-    name                   = "Deny-Private-Subnet-Inbound"
-    priority               = 90
-    direction              = "Inbound"
-    access                 = "Deny"
-    protocol               = "*"
-    source_port_range      = "*"
-    destination_port_range = "*"
-
-    source_address_prefix      = "*"
-    destination_address_prefix = "10.0.2.0/24"
-  }
+  # Put ALLOW rules (lower priority number) first
+  # Order rules carefully (Allow → then Deny)
 
   security_rule {
     name                   = "Allow-SSH"
@@ -668,6 +657,20 @@ resource "azurerm_network_security_group" "prodmyapp_nsg_shared" {
     destination_port_range     = "3389"
     source_address_prefix      = "*" #"YOUR_PUBLIC_IP/32"  # strongly recommended
     destination_address_prefix = "*"
+  }
+
+  #Protect PRIVATE subnet
+  security_rule {
+    name                   = "Deny-Inbound-Private-Subnet"
+    priority               = 120
+    direction              = "Inbound"
+    access                 = "Deny"
+    protocol               = "*"
+    source_port_range      = "*"
+    destination_port_range = "*"
+
+    source_address_prefix      = "Internet" # an Azure service tag meaning public internet only
+    destination_address_prefix = "10.0.2.0/24"
   }
 
   security_rule {
@@ -769,12 +772,12 @@ resource "azurerm_subnet" "pvt_subnet" {
 
 resource "azurerm_subnet_network_security_group_association" "pub_subnet_nsg" {
   subnet_id                 = azurerm_subnet.pub_subnet.id
-  network_security_group_id = azurerm_network_security_group.prodmyapp_sg_linux.id
+  network_security_group_id = azurerm_network_security_group.prodmyapp_nsg_shared.id
 }
 
 resource "azurerm_subnet_network_security_group_association" "pvt_subnet_nsg" {
   subnet_id                 = azurerm_subnet.pvt_subnet.id
-  network_security_group_id = azurerm_network_security_group.prodmyapp_sg_linux.id
+  network_security_group_id = azurerm_network_security_group.prodmyapp_nsg_shared.id
 }
 
 # Public IP (used to expose VMs' to internet)
