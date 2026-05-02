@@ -629,26 +629,26 @@ resource "azurerm_network_security_group" "prodmyapp_nsg_shared" {
 
   #Protect PRIVATE subnet
   security_rule {
-    name                       = "Deny-Private-Subnet-Inbound"
-    priority                   = 90
-    direction                  = "Inbound"
-    access                     = "Deny"
-    protocol                   = "*"
-    source_port_range          = "*"
-    destination_port_range     = "*"
+    name                   = "Deny-Private-Subnet-Inbound"
+    priority               = 90
+    direction              = "Inbound"
+    access                 = "Deny"
+    protocol               = "*"
+    source_port_range      = "*"
+    destination_port_range = "*"
 
     source_address_prefix      = "*"
     destination_address_prefix = "10.0.2.0/24"
   }
-  
+
   security_rule {
     name                   = "Allow-SSH"
     priority               = 100 # ranges 100-4096; lower process first (i.e, 100 before 101)
     direction              = "Inbound"
     access                 = "Allow"
-    protocol               = "Tcp"  # Tcp, Udp, Icmp, Esp, Ah
-    source_port_range      = "*"  # ports ranges 0-65535, `*` equivalent to "0-65535"
-    destination_port_range = "22" # `22` for SSH (Only Inbound)
+    protocol               = "Tcp" # Tcp, Udp, Icmp, Esp, Ah
+    source_port_range      = "*"   # ports ranges 0-65535, `*` equivalent to "0-65535"
+    destination_port_range = "22"  # `22` for SSH (Only Inbound)
 
     source_address_prefix = "*"
     # "AzureCloud" (Azure DevOps Microsoft-hosted agent) / "*" (`*` equivalent to  "0.0.0.0/0") 
@@ -666,10 +666,10 @@ resource "azurerm_network_security_group" "prodmyapp_nsg_shared" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "3389"
-    source_address_prefix      = "*"        #"YOUR_PUBLIC_IP/32"  # strongly recommended
+    source_address_prefix      = "*" #"YOUR_PUBLIC_IP/32"  # strongly recommended
     destination_address_prefix = "*"
   }
-  
+
   security_rule {
     name                       = "AllowAllOutbound"
     priority                   = 200 # ranges 100-4096; lower process first (i.e, 100 before 101)
