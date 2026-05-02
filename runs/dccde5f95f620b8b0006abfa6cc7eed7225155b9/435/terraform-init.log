@@ -1,39 +1,43 @@
 Initializing provider plugins found in the configuration...
-- Finding latest version of hashicorp/null...
-- Finding latest version of hashicorp/time...
-- Finding hashicorp/azurerm versions matching "4.1.0"...
-- Finding hashicorp/azuread versions matching "~> 2.50"...
-- Finding hashicorp/tls versions matching "~> 4.0"...
-- Finding hashicorp/local versions matching "~> 2.0"...
-- Using previously-installed hashicorp/null v3.2.4
-- Using previously-installed hashicorp/time v0.13.1
-- Using previously-installed hashicorp/azurerm v4.1.0
-- Using previously-installed hashicorp/azuread v2.53.1
-- Using previously-installed hashicorp/tls v4.2.1
-- Using previously-installed hashicorp/local v2.8.0
-
-Initializing the backend...
-
-
-Error: unable to build authorizer for Resource Manager API: could not configure AzureCli Authorizer: obtaining subscription ID: obtaining account details: running Azure CLI: exit status 1: ERROR: Please run 'az login' to setup account.
-
-Terraform init with migrate-state failed, retrying with reconfigure...
-Initializing provider plugins found in the configuration...
-- Finding hashicorp/azurerm versions matching "4.1.0"...
-- Finding latest version of hashicorp/null...
 - Finding hashicorp/azuread versions matching "~> 2.50"...
 - Finding hashicorp/tls versions matching "~> 4.0"...
 - Finding hashicorp/local versions matching "~> 2.0"...
 - Finding latest version of hashicorp/time...
-- Using previously-installed hashicorp/null v3.2.4
+- Finding hashicorp/azurerm versions matching "4.1.0"...
+- Finding latest version of hashicorp/null...
 - Using previously-installed hashicorp/azuread v2.53.1
 - Using previously-installed hashicorp/tls v4.2.1
 - Using previously-installed hashicorp/local v2.8.0
 - Using previously-installed hashicorp/time v0.13.1
 - Using previously-installed hashicorp/azurerm v4.1.0
+- Using previously-installed hashicorp/null v3.2.4
 
 Initializing the backend...
 
+Successfully configured the backend "azurerm"! Terraform will automatically
+use this backend unless the backend configuration changes.
 
-Error: unable to build authorizer for Resource Manager API: could not configure AzureCli Authorizer: obtaining subscription ID: obtaining account details: running Azure CLI: exit status 1: ERROR: Please run 'az login' to setup account.
+Initializing provider plugins found in the state...
+- Reusing previous version of hashicorp/azuread
+- Reusing previous version of hashicorp/azurerm
+- Reusing previous version of hashicorp/local
+- Reusing previous version of hashicorp/null
+- Reusing previous version of hashicorp/time
+- Reusing previous version of hashicorp/tls
+- Using previously-installed hashicorp/azuread v2.53.1
+- Using previously-installed hashicorp/azurerm v4.1.0
+- Using previously-installed hashicorp/local v2.8.0
+- Using previously-installed hashicorp/null v3.2.4
+- Using previously-installed hashicorp/time v0.13.1
+- Using previously-installed hashicorp/tls v4.2.1
 
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.

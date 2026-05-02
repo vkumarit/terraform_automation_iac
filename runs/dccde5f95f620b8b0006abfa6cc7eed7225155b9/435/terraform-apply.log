@@ -1,0 +1,48 @@
+Acquiring state lock. This may take a few moments...
+azurerm_network_interface_security_group_association.nic_nsg_assn_linux: Destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-nic1|/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group]
+azurerm_network_interface_security_group_association.nic_nsg_assn_linux: Still destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-...workSecurityGroups/open-security-group, 00m11s elapsed]
+azurerm_network_interface_security_group_association.nic_nsg_assn_linux: Destruction complete after 20s
+azurerm_subnet_network_security_group_association.pub_subnet_nsg: Destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pub_subnet1]
+azurerm_subnet_network_security_group_association.pub_subnet_nsg: Still destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-...-network/subnets/prodmyapp_pub_subnet1, 00m10s elapsed]
+azurerm_subnet_network_security_group_association.pub_subnet_nsg: Destruction complete after 14s
+azurerm_network_interface_security_group_association.nic_nsg_assn_windows: Destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-win-nic|/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/windows-secure-nsg]
+azurerm_network_interface_security_group_association.nic_nsg_assn_windows: Still destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-...tworkSecurityGroups/windows-secure-nsg, 00m11s elapsed]
+azurerm_network_interface_security_group_association.nic_nsg_assn_windows: Still destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-...tworkSecurityGroups/windows-secure-nsg, 00m22s elapsed]
+azurerm_network_interface_security_group_association.nic_nsg_assn_windows: Destruction complete after 22s
+azurerm_subnet_network_security_group_association.pvt_subnet_nsg: Destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pvt_subnet2]
+azurerm_subnet_network_security_group_association.pvt_subnet_nsg: Still destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-...-network/subnets/prodmyapp_pvt_subnet2, 00m11s elapsed]
+azurerm_subnet_network_security_group_association.pvt_subnet_nsg: Destruction complete after 16s
+local_sensitive_file.private_key_pem: Creating...
+local_sensitive_file.private_key_pem: Creation complete after 0s [id=111a3808046448c31cdb04f8ac4aeda2e4997d7b]
+local_file.public_key_openssh: Creating...
+local_file.public_key_openssh: Creation complete after 0s [id=1ba6347b847919ec833c26c2cdbb61e6a6906f7e]
+azurerm_network_security_group.prodmyapp_nsg_windows: Destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/windows-secure-nsg]
+azurerm_network_security_group.prodmyapp_nsg_windows: Still destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-...tworkSecurityGroups/windows-secure-nsg, 00m10s elapsed]
+azurerm_network_security_group.prodmyapp_nsg_windows: Destruction complete after 19s
+azurerm_network_security_group.prodmyapp_sg_linux: Destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group]
+azurerm_network_security_group.prodmyapp_sg_linux: Still destroying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-...workSecurityGroups/open-security-group, 00m10s elapsed]
+azurerm_network_security_group.prodmyapp_sg_linux: Destruction complete after 11s
+azurerm_network_security_group.prodmyapp_nsg_shared: Creating...
+azurerm_network_security_group.prodmyapp_nsg_shared: Creation complete after 4s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group]
+azurerm_windows_virtual_machine.prodmyapp_windows_vm: Modifying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/windows_vm_01]
+azurerm_windows_virtual_machine.prodmyapp_windows_vm: Still modifying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-....Compute/virtualMachines/windows_vm_01, 00m10s elapsed]
+azurerm_windows_virtual_machine.prodmyapp_windows_vm: Modifications complete after 14s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/windows_vm_01]
+azurerm_subnet_network_security_group_association.pub_subnet_nsg: Creating...
+azurerm_subnet_network_security_group_association.pub_subnet_nsg: Creation complete after 7s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pub_subnet1]
+azurerm_subnet_network_security_group_association.pvt_subnet_nsg: Creating...
+azurerm_subnet_network_security_group_association.pvt_subnet_nsg: Creation complete after 6s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pvt_subnet2]
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 5 added, 1 changed, 6 destroyed.
+
+Outputs:
+
+debug_tags = {
+  "creation_run_id" = "435"
+  "creation_time" = "2026-05-02T14:45:24Z"
+  "deployment_id" = "prodmyapp"
+  "environment" = "prod"
+  "managed_by" = "terraform"
+}
+vm_public_ip = "68.218.73.131"
+win_vm_public_ip = "20.58.163.30"

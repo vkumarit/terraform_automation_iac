@@ -1,0 +1,348 @@
+Acquiring state lock. This may take a few moments...
+azurerm_network_security_group.prodmyapp_sg_linux: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group]
+azurerm_network_security_group.prodmyapp_nsg_windows: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/windows-secure-nsg]
+data.azurerm_client_config.current: Reading...
+data.azurerm_client_config.current: Read complete after 7s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9M2E2NGFlZDktODY4NS00ZjYwLWJhZDQtYzdhMGIzZTBlNGQyO3N1YnNjcmlwdGlvbklkPTJiMmYwMmY3LWRkZTItNDdkYi05NzRjLTQ3ZDIxODI3MjFhZTt0ZW5hbnRJZD1mMTc1YzU2ZC00MDEzLTQyZmEtYTBlOC00MTAzZDIyNzZhMGQ=]
+azurerm_policy_definition.require_managed_by: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-managed-by-tag]
+azurerm_network_interface_security_group_association.nic_nsg_assn_linux: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-nic1|/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group]
+azurerm_policy_definition.require_environment: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-environment-tag]
+azurerm_policy_definition.require_deployment_id: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization/policyDefinitions/require-deployment-id-tag]
+azurerm_network_interface_security_group_association.nic_nsg_assn_windows: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-win-nic|/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/windows-secure-nsg]
+data.azuread_service_principal.prodmyapp: Reading...
+data.azuread_service_principal.prodmyapp: Read complete after 2s [id=3a64aed9-8685-4f60-bad4-c7a0b3e0e4d2]
+tls_private_key.vm_ssh: Refreshing state... [id=8a72a3cf1152e41fd222a518179fd129a98db199]
+local_sensitive_file.private_key_pem: Refreshing state... [id=111a3808046448c31cdb04f8ac4aeda2e4997d7b]
+local_file.public_key_openssh: Refreshing state... [id=1ba6347b847919ec833c26c2cdbb61e6a6906f7e]
+null_resource.validate_vm_size: Refreshing state... [id=2258612548479758890]
+azurerm_resource_group.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup]
+azurerm_user_assigned_identity.prodmyapp_sa_identity: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/my-storage-identity]
+azurerm_resource_group_policy_assignment.rg_deployment_id: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-deployment-id]
+azurerm_public_ip.prodmyapp_pub_ip_windows: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/publicIPAddresses/win-public-ip]
+azurerm_virtual_network.prodmyapp_vnet: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network]
+azurerm_key_vault.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv]
+azurerm_resource_group_policy_assignment.rg_managed_by: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-managed-by]
+azurerm_public_ip.prodmyapp_pub_ips: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/publicIPAddresses/prodmyapp_public_ip1]
+azurerm_resource_group_policy_assignment.rg_environment: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Authorization/policyAssignments/rg-require-environment]
+azurerm_storage_account.prodmyapp: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01]
+azurerm_subnet.pub_subnet: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pub_subnet1]
+azurerm_subnet.pvt_subnet: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pvt_subnet2]
+azurerm_role_assignment.storage_kv_crypto: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/d1648830-65b8-0064-48c5-441d75dea67a]
+azurerm_key_vault_secret.sp_subscription_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-subscription-id/380b5a9f9c6e44d4b10468e2b1df6ca1]
+azurerm_key_vault_secret.sp_tenant_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-tenant-id/abe0edc6d4dd450e86dc8ac101fb4212]
+azurerm_key_vault_secret.github_token: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/githubtoken/587c6f85ea8b4c5d88740a0fe18cefca]
+azurerm_role_assignment.tf_kv_admin: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/d9e169d9-c689-f1ee-c3a7-3bb1f5b6f37b]
+azurerm_key_vault_secret.sp_client_id: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-client-id/d7fb0faf32524ce48be82c8a1abaa501]
+azurerm_key_vault_secret.sp_client_secret: Refreshing state... [id=https://prodmyappkv.vault.azure.net/secrets/sp-client-secret/fdb2e08062544e90a6c3ecfb6a25897f]
+azurerm_storage_container.prodmyapp: Refreshing state... [id=https://prodmyappsacmk01.blob.core.windows.net/mytfstate]
+azurerm_network_interface.prodmyapp_nic_linux: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-nic1]
+azurerm_network_interface.prodmyapp_nic_windows: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-win-nic]
+azurerm_subnet_network_security_group_association.pub_subnet_nsg: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pub_subnet1]
+azurerm_subnet_network_security_group_association.pvt_subnet_nsg: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pvt_subnet2]
+time_sleep.wait_for_kv_rbac: Refreshing state... [id=2026-04-20T10:45:24Z]
+azurerm_role_assignment.terraform_backend_storage_access: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01/blobServices/default/containers/mytfstate/providers/Microsoft.Authorization/roleAssignments/ff6a425c-a7e8-1383-4d04-8509f8714321]
+azurerm_key_vault_key.prodmyapp_key: Refreshing state... [id=https://prodmyappkv.vault.azure.net/keys/my-storage-cmk/51e0da2d9d5a4b53bfedce7faa0471cc]
+azurerm_storage_account_customer_managed_key.prodmyapp_sa_cmk: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Storage/storageAccounts/prodmyappsacmk01]
+azurerm_disk_encryption_set.prod_des: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/diskEncryptionSets/prod-des]
+azurerm_role_assignment.des_kv_crypto: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.KeyVault/vaults/prodmyappkv/providers/Microsoft.Authorization/roleAssignments/6cad63bb-2172-dd68-e0d5-eb1c0c662ed3]
+time_sleep.wait_for_des_rbac: Refreshing state... [id=2026-04-26T15:25:29Z]
+azurerm_windows_virtual_machine.prodmyapp_windows_vm: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/windows_vm_01]
+azurerm_linux_virtual_machine.linux_vm: Refreshing state... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/linux_vm_01]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+  ~ update in-place
+  - destroy
+-/+ destroy and then create replacement
+
+Terraform will perform the following actions:
+
+  # azurerm_network_interface_security_group_association.nic_nsg_assn_linux will be destroyed
+  # (because azurerm_network_interface_security_group_association.nic_nsg_assn_linux is not in configuration)
+  - resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_linux" {
+      - id                        = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-nic1|/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group" -> null
+      - network_interface_id      = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-nic1" -> null
+      - network_security_group_id = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group" -> null
+    }
+
+  # azurerm_network_interface_security_group_association.nic_nsg_assn_windows will be destroyed
+  # (because azurerm_network_interface_security_group_association.nic_nsg_assn_windows is not in configuration)
+  - resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_windows" {
+      - id                        = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-win-nic|/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/windows-secure-nsg" -> null
+      - network_interface_id      = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkInterfaces/prodmyapp-win-nic" -> null
+      - network_security_group_id = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/windows-secure-nsg" -> null
+    }
+
+  # azurerm_network_security_group.prodmyapp_nsg_shared will be created
+  + resource "azurerm_network_security_group" "prodmyapp_nsg_shared" {
+      + id                  = (known after apply)
+      + location            = "australiaeast"
+      + name                = "open-security-group"
+      + resource_group_name = "myTFResourceGroup"
+      + security_rule       = [
+          + {
+              + access                                     = "Allow"
+              + destination_address_prefix                 = "*"
+              + destination_address_prefixes               = []
+              + destination_application_security_group_ids = []
+              + destination_port_range                     = "*"
+              + destination_port_ranges                    = []
+              + direction                                  = "Outbound"
+              + name                                       = "AllowAllOutbound"
+              + priority                                   = 200
+              + protocol                                   = "*"
+              + source_address_prefix                      = "*"
+              + source_address_prefixes                    = []
+              + source_application_security_group_ids      = []
+              + source_port_range                          = "*"
+              + source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          + {
+              + access                                     = "Allow"
+              + destination_address_prefix                 = "*"
+              + destination_address_prefixes               = []
+              + destination_application_security_group_ids = []
+              + destination_port_range                     = "22"
+              + destination_port_ranges                    = []
+              + direction                                  = "Inbound"
+              + name                                       = "Allow-SSH"
+              + priority                                   = 100
+              + protocol                                   = "Tcp"
+              + source_address_prefix                      = "*"
+              + source_address_prefixes                    = []
+              + source_application_security_group_ids      = []
+              + source_port_range                          = "*"
+              + source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          + {
+              + access                                     = "Allow"
+              + destination_address_prefix                 = "*"
+              + destination_address_prefixes               = []
+              + destination_application_security_group_ids = []
+              + destination_port_range                     = "3389"
+              + destination_port_ranges                    = []
+              + direction                                  = "Inbound"
+              + name                                       = "Allow-RDP"
+              + priority                                   = 110
+              + protocol                                   = "Tcp"
+              + source_address_prefix                      = "*"
+              + source_address_prefixes                    = []
+              + source_application_security_group_ids      = []
+              + source_port_range                          = "*"
+              + source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          + {
+              + access                                     = "Deny"
+              + destination_address_prefix                 = "10.0.2.0/24"
+              + destination_address_prefixes               = []
+              + destination_application_security_group_ids = []
+              + destination_port_range                     = "*"
+              + destination_port_ranges                    = []
+              + direction                                  = "Inbound"
+              + name                                       = "Deny-Inbound-Private-Subnet"
+              + priority                                   = 120
+              + protocol                                   = "*"
+              + source_address_prefix                      = "Internet"
+              + source_address_prefixes                    = []
+              + source_application_security_group_ids      = []
+              + source_port_range                          = "*"
+              + source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+        ]
+      + tags                = (known after apply)
+    }
+
+  # azurerm_network_security_group.prodmyapp_nsg_windows will be destroyed
+  # (because azurerm_network_security_group.prodmyapp_nsg_windows is not in configuration)
+  - resource "azurerm_network_security_group" "prodmyapp_nsg_windows" {
+      - id                  = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/windows-secure-nsg" -> null
+      - location            = "australiaeast" -> null
+      - name                = "windows-secure-nsg" -> null
+      - resource_group_name = "myTFResourceGroup" -> null
+      - security_rule       = [
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "*"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "3389"
+              - destination_port_ranges                    = []
+              - direction                                  = "Inbound"
+              - name                                       = "Allow-RDP-MyIP"
+              - priority                                   = 100
+              - protocol                                   = "Tcp"
+              - source_address_prefix                      = "*"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          - {
+              - access                                     = "Deny"
+              - destination_address_prefix                 = "*"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "*"
+              - destination_port_ranges                    = []
+              - direction                                  = "Inbound"
+              - name                                       = "Deny-All-Inbound"
+              - priority                                   = 200
+              - protocol                                   = "*"
+              - source_address_prefix                      = "*"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+        ] -> null
+      - tags                = {
+          - "Name"            = "nsg-windows_prodmyapp"
+          - "creation_run_id" = "424"
+          - "creation_time"   = "2026-04-28T11:44:26Z"
+          - "deployment_id"   = "prodmyapp"
+          - "environment"     = "prod"
+          - "managed_by"      = "terraform"
+        } -> null
+    }
+
+  # azurerm_network_security_group.prodmyapp_sg_linux will be destroyed
+  # (because azurerm_network_security_group.prodmyapp_sg_linux is not in configuration)
+  - resource "azurerm_network_security_group" "prodmyapp_sg_linux" {
+      - id                  = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group" -> null
+      - location            = "australiaeast" -> null
+      - name                = "open-security-group" -> null
+      - resource_group_name = "myTFResourceGroup" -> null
+      - security_rule       = [
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "*"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "*"
+              - destination_port_ranges                    = []
+              - direction                                  = "Outbound"
+              - name                                       = "AllowAllOutbound"
+              - priority                                   = 101
+              - protocol                                   = "*"
+              - source_address_prefix                      = "*"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "*"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "22"
+              - destination_port_ranges                    = []
+              - direction                                  = "Inbound"
+              - name                                       = "AllowAllInbound"
+              - priority                                   = 100
+              - protocol                                   = "*"
+              - source_address_prefix                      = "*"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+        ] -> null
+      - tags                = {
+          - "Name"            = "nsg-open_prodmyapp"
+          - "creation_run_id" = "local-2026-04-26T11:11:10Z-default"
+          - "creation_time"   = "2026-04-26T11:11:10Z"
+          - "deployment_id"   = "prodmyapp"
+          - "environment"     = "prod"
+          - "managed_by"      = "terraform"
+        } -> null
+    }
+
+  # azurerm_subnet_network_security_group_association.pub_subnet_nsg must be replaced
+-/+ resource "azurerm_subnet_network_security_group_association" "pub_subnet_nsg" {
+      ~ id                        = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pub_subnet1" -> (known after apply)
+      ~ network_security_group_id = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group" -> (known after apply) # forces replacement
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_subnet_network_security_group_association.pvt_subnet_nsg must be replaced
+-/+ resource "azurerm_subnet_network_security_group_association" "pvt_subnet_nsg" {
+      ~ id                        = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/virtualNetworks/prodmyapp_virtual-network/subnets/prodmyapp_pvt_subnet2" -> (known after apply)
+      ~ network_security_group_id = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Network/networkSecurityGroups/open-security-group" -> (known after apply) # forces replacement
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_windows_virtual_machine.prodmyapp_windows_vm will be updated in-place
+  ~ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
+        id                                                     = "/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/windows_vm_01"
+        name                                                   = "windows_vm_01"
+        tags                                                   = {
+            "Name"            = "vm-windows"
+            "creation_run_id" = "432"
+            "creation_time"   = "2026-05-01T11:18:07Z"
+            "deployment_id"   = "prodmyapp"
+            "environment"     = "prod"
+            "managed_by"      = "terraform"
+        }
+      ~ vm_agent_platform_updates_enabled                      = true -> false
+        # (41 unchanged attributes hidden)
+
+        # (3 unchanged blocks hidden)
+    }
+
+  # local_file.public_key_openssh will be created
+  + resource "local_file" "public_key_openssh" {
+      + content              = <<-EOT
+            ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDAZGwvi81XoRsmmcE79csbUABUyY1reuhZzHhN8fFS0fTMz0ExHtmLvjE0qGsBQ5cKNd3C9V2syv7AdmAJC8OEgPZznE2JNiXbOrD8FPgjJk5fWExdXzlGtnenYghUTjX49CdlMRM2rQljsnUmn2TK/Loowu8bvHvHusTufEfTBmi0fA4fWd3er0EoK//YJQd8YrTOTmpv/rD+8OVJ6VOK1ZJuwdZmbZhn/Pv80DRIklBH1Bt50ABzcxaEtZnPd8NkTy9w789gH3GXkis5v7kjFqZ4aPTQ627FTyp2PIybhb/W4sogDyKEh3F/c5dnpFZr7vyPYltMr91O24gT+qXZib00VskAdC1HWqcqM5jvvlFR8Tz6fHFLKUUZg4Z8PMwVXgyugQOsh9B27RsBnBb/zfsrWgT+drfGHicX7oYRp6bcMS8S60RITPL112bF6iW0u3bNcOPhm+T2v19nyNfjoSMAZ2TjqfzZKCg7oKVWxCZxwCdHLma7lvV5v2gGbDrIstzF7gYtl3QleKuowBI8upHtFFVUydeGBmUy7b4UjgZmocB+HQx+fUKNCVewx/alT7tsNt74ida/QmvvhdyA7XnVuSvTODtNgv1Fvo7164mZgQqh9tF4dutKIsF8TopAgnryu9fHw2dCYRffF/45GqzYh4NbpizBM5Q5L/+giQ==
+        EOT
+      + content_base64sha256 = (known after apply)
+      + content_base64sha512 = (known after apply)
+      + content_md5          = (known after apply)
+      + content_sha1         = (known after apply)
+      + content_sha256       = (known after apply)
+      + content_sha512       = (known after apply)
+      + directory_permission = "0777"
+      + file_permission      = "0644"
+      + filename             = "/home/ec2-user/.ssh/prodmyapp_vm1.pub"
+      + id                   = (known after apply)
+    }
+
+  # local_sensitive_file.private_key_pem will be created
+  + resource "local_sensitive_file" "private_key_pem" {
+      + content              = (sensitive value)
+      + content_base64sha256 = (known after apply)
+      + content_base64sha512 = (known after apply)
+      + content_md5          = (known after apply)
+      + content_sha1         = (known after apply)
+      + content_sha256       = (known after apply)
+      + content_sha512       = (known after apply)
+      + directory_permission = "0700"
+      + file_permission      = "0400"
+      + filename             = "/home/ec2-user/.ssh/prodmyapp_vm1.pem"
+      + id                   = (known after apply)
+    }
+
+Plan: 5 to add, 1 to change, 6 to destroy.
+
+Changes to Outputs:
+  ~ debug_tags       = {
+      ~ creation_run_id = "432" -> "435"
+      ~ creation_time   = "2026-05-01T11:18:07Z" -> (known after apply)
+        # (3 unchanged attributes hidden)
+    }
+
+─────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: tfplan
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "tfplan"
+Releasing state lock. This may take a few moments...
