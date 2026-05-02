@@ -257,8 +257,9 @@ resource "azurerm_storage_account" "prodmyapp" {
   #Disable public blob access
   #allow_blob_public_access = false
 
-  #disable public network access completely (recommended) (but may break if applied in between)
   #public_network_access_enabled = false
+  #disable public network access completely (recommended) 
+  #Only after backend migration is stable - (but may break if applied in between)
 
 
   identity {
@@ -621,17 +622,31 @@ azurerm_network_interface_security_group_association: Links NSGs to network inte
 ## Virtual Network w/ cidr 10.0.0.0/16 and Subnets
 
 # Network Security Group (All allowed for testing)
-resource "azurerm_network_security_group" "prodmyapp_sg_linux" {
+resource "azurerm_network_security_group" "prodmyapp_nsg_shared" {
   name                = "open-security-group"
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
 
+  #Protect PRIVATE subnet
   security_rule {
-    name                   = "AllowAllInbound"
+    name                       = "Deny-Private-Subnet-Inbound"
+    priority                   = 90
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+
+    source_address_prefix      = "*"
+    destination_address_prefix = "10.0.2.0/24"
+  }
+  
+  security_rule {
+    name                   = "Allow-SSH"
     priority               = 100 # ranges 100-4096; lower process first (i.e, 100 before 101)
     direction              = "Inbound"
     access                 = "Allow"
-    protocol               = "*"  # Tcp, Udp, Icmp, Esp, Ah
+    protocol               = "Tcp"  # Tcp, Udp, Icmp, Esp, Ah
     source_port_range      = "*"  # ports ranges 0-65535, `*` equivalent to "0-65535"
     destination_port_range = "22" # `22` for SSH (Only Inbound)
 
@@ -644,8 +659,20 @@ resource "azurerm_network_security_group" "prodmyapp_sg_linux" {
   }
 
   security_rule {
+    name                       = "Allow-RDP"
+    priority                   = 110
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "3389"
+    source_address_prefix      = "*"        #"YOUR_PUBLIC_IP/32"  # strongly recommended
+    destination_address_prefix = "*"
+  }
+  
+  security_rule {
     name                       = "AllowAllOutbound"
-    priority                   = 101 # ranges 100-4096; lower process first (i.e, 100 before 101)
+    priority                   = 200 # ranges 100-4096; lower process first (i.e, 100 before 101)
     direction                  = "Outbound"
     access                     = "Allow"
     protocol                   = "*" # Tcp, Udp, Icmp, Esp, Ah
@@ -818,12 +845,13 @@ resource "azurerm_network_interface" "prodmyapp_nic_linux" {
   }
 }
 
+/*
 # Network Interface & Security Group Association
 resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_linux" {
   network_interface_id      = azurerm_network_interface.prodmyapp_nic_linux.id
   network_security_group_id = azurerm_network_security_group.prodmyapp_sg_linux.id
 }
-
+*/
 
 ###               PHASE-V               ###
 
@@ -1147,8 +1175,8 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
 # to SSH login do - `ssh -i ~/.ssh/prodmyapp_vm1.pem adminuser@20.5.121.162`
 
 
-## Windows VM
-
+## Windows VM ##
+/*
 # Dedicated NSG for Windows
 resource "azurerm_network_security_group" "prodmyapp_nsg_windows" {
   name                = "windows-secure-nsg"
@@ -1193,6 +1221,7 @@ resource "azurerm_network_security_group" "prodmyapp_nsg_windows" {
     ]
   }
 }
+*/
 
 #Separate Public IP
 resource "azurerm_public_ip" "prodmyapp_pub_ip_windows" {
@@ -1216,7 +1245,7 @@ resource "azurerm_public_ip" "prodmyapp_pub_ip_windows" {
 output "win_vm_public_ip" {
   value = azurerm_public_ip.prodmyapp_pub_ip_windows.ip_address
 }
-
+# 20.58.163.30 
 
 # separate NIC for Windows VM
 resource "azurerm_network_interface" "prodmyapp_nic_windows" {
@@ -1243,11 +1272,13 @@ resource "azurerm_network_interface" "prodmyapp_nic_windows" {
   }
 }
 
+/*
 # NSG Association for Windows NIC
 resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_windows" {
   network_interface_id      = azurerm_network_interface.prodmyapp_nic_windows.id
   network_security_group_id = azurerm_network_security_group.prodmyapp_nsg_windows.id
 }
+*/
 
 # Pull admin password from key vault
 /*
@@ -1335,5 +1366,9 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
     ]
   }
 }
+
+# To use on windows cmd terminal do `mstsc` , 
+# then RDP window will appear asking `Computer` name, 
+# enter public ip for windows VM, click `connect`
 
 # Deployment of resources in different regions using loop
