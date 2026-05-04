@@ -49,7 +49,7 @@ Create/push windows password to key vault - prodmyappkv
 az keyvault secret set \
   --vault-name prodmyappkv \
   --name windows-password \
-  --value "YourStrongPassword!"
+  --value "YourStrongPassword123!"
 
 List resources under a resource group in tabled format
 $ az resource list --resource-group myTFResourceGroup -o table

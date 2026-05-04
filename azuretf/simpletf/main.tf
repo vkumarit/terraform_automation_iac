@@ -65,6 +65,7 @@ variable "deployment_id" {
   default = "prodmyapp"
 }
 
+# ! UNCOMMENT & USE WHEN ENV BASED OS SELECTION LOCs FOR VMs NOT IN USE 
 #variable "environment" {
 #  description = "Environment for pipeline"
 #  type        = string
@@ -408,16 +409,7 @@ resource "azurerm_role_assignment" "storage_kv_crypto" {
   principal_id         = azurerm_user_assigned_identity.prodmyapp_sa_identity.principal_id
 }
 
-# Helps with permissions for viewing the keys via dashboard
-/*
-resource "azurerm_role_assignment" "human_kv_crypto_officer" {
-  scope                = azurerm_key_vault.prodmyapp.id
-  role_definition_name = "Key Vault Crypto Officer"
-  principal_id         = "USER_OBJECT_ID_HERE"
-  # Hardcode object IDs of known humans or service accounts. 
-  # Like DevOps lead or security engineer’s object IDs. 
-}
-*/
+
 
 # Create key with explicit rotation policy
 
@@ -559,6 +551,7 @@ resource "azurerm_key_vault_secret" "sp_client_secret" {
 
   depends_on = [azurerm_key_vault.prodmyapp]
 }
+
 
 # Store GitHub Token 
 variable "github_token" {
@@ -734,17 +727,6 @@ resource "azurerm_subnet" "pub_subnet" {
   resource_group_name  = azurerm_resource_group.prodmyapp.name
   virtual_network_name = azurerm_virtual_network.prodmyapp_vnet.name
   address_prefixes     = ["10.0.1.0/28"]
-
-  #tags = merge(local.common_tags, {
-  #Name = "pub_subnet_prodmyapp"
-  #})
-
-  #lifecycle {
-  #  ignore_changes = [
-  #    tags["creation_run_id"],
-  #    tags["creation_time"]
-  #  ]
-  #}
 }
 
 # private subnet (10.0.2.0/24) 
@@ -753,17 +735,6 @@ resource "azurerm_subnet" "pvt_subnet" {
   resource_group_name  = azurerm_resource_group.prodmyapp.name
   virtual_network_name = azurerm_virtual_network.prodmyapp_vnet.name
   address_prefixes     = ["10.0.2.0/24"]
-
-  #tags = merge(local.common_tags, {
-  #  Name = "pvt_subnet_prodmyapp"
-  #})
-
-  #lifecycle {
-  #  ignore_changes = [
-  #    tags["creation_run_id"],
-  #    tags["creation_time"]
-  #  ]
-  #}
 }
 
 # Separate Subnet NSG associations 
@@ -848,13 +819,7 @@ resource "azurerm_network_interface" "prodmyapp_nic_linux" {
   }
 }
 
-/*
-# Network Interface & Security Group Association
-resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_linux" {
-  network_interface_id      = azurerm_network_interface.prodmyapp_nic_linux.id
-  network_security_group_id = azurerm_network_security_group.prodmyapp_sg_linux.id
-}
-*/
+
 
 ###               PHASE-V               ###
 
@@ -916,14 +881,6 @@ variable "environment" {
 variable "size_alias" {
   description = "Logical VM size"
   type        = string
-
-  #validation {
-  #  condition = contains(
-  #    keys(local.vm_sizes[var.environment]),
-  #    var.size_alias
-  #  )
-  #  error_message = "Invalid size_alias for selected environment."
-  #}
 }
 
 # VM size selection
@@ -1094,8 +1051,11 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   computer_name       = "linuxvmdev01"
   location            = azurerm_resource_group.prodmyapp.location
   resource_group_name = azurerm_resource_group.prodmyapp.name
+
   #size                = "Standard_DS1_v2"
   size           = local.selected_vm_size
+  #size = "placeholder" # block updates after, once it's created
+
   admin_username = "adminuser"
 
   admin_ssh_key {
@@ -1179,52 +1139,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
 
 
 ## Windows VM ##
-/*
-# Dedicated NSG for Windows
-resource "azurerm_network_security_group" "prodmyapp_nsg_windows" {
-  name                = "windows-secure-nsg"
-  location            = azurerm_resource_group.prodmyapp.location
-  resource_group_name = azurerm_resource_group.prodmyapp.name
 
-  # Allow RDP ONLY from your IP
-  security_rule {
-    name                   = "Allow-RDP-MyIP"
-    priority               = 100
-    direction              = "Inbound"
-    access                 = "Allow"
-    protocol               = "Tcp"
-    source_port_range      = "*"
-    destination_port_range = "3389"
-
-    source_address_prefix      = "*" # "<OUR_laptop_wifi_PUBLIC_IP>/32"
-    destination_address_prefix = "*"
-  }
-
-  # Deny everything else inbound
-  security_rule {
-    name                       = "Deny-All-Inbound"
-    priority                   = 200
-    direction                  = "Inbound"
-    access                     = "Deny"
-    protocol                   = "*"
-    source_port_range          = "*"
-    destination_port_range     = "*"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  tags = merge(local.common_tags, {
-    Name = "nsg-windows_prodmyapp"
-  })
-
-  lifecycle {
-    ignore_changes = [
-      tags["creation_run_id"],
-      tags["creation_time"]
-    ]
-  }
-}
-*/
 
 #Separate Public IP
 resource "azurerm_public_ip" "prodmyapp_pub_ip_windows" {
@@ -1275,27 +1190,9 @@ resource "azurerm_network_interface" "prodmyapp_nic_windows" {
   }
 }
 
-/*
-# NSG Association for Windows NIC
-resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_windows" {
-  network_interface_id      = azurerm_network_interface.prodmyapp_nic_windows.id
-  network_security_group_id = azurerm_network_security_group.prodmyapp_nsg_windows.id
-}
-*/
 
-# Pull admin password from key vault
-/*
-data "azurerm_key_vault_secret" "win_password" {
-  name         = "windowsvmpassword01"
-  key_vault_id = azurerm_key_vault.prodmyapp.id
 
-  depends_on = [
-    azurerm_role_assignment.tf_kv_admin,
-    time_sleep.wait_for_kv_rbac
-  ]
-  # Terraform reads secret during plan phase, so requires `depends_on`
-}
-*/
+
 
 variable "windows_admin_password" {
   type      = string
@@ -1311,10 +1208,8 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
   location            = azurerm_resource_group.prodmyapp.location
   size                = local.selected_vm_size
   admin_username      = "adminuser"
-  admin_password      = var.windows_admin_password
 
-  #admin_password      = "Adminuser@1234!"
-  #admin_password = data.azurerm_key_vault_secret.win_password.value
+  admin_password      = var.windows_admin_password
   #Plan to move toward Azure AD login (passwordless)
 
   network_interface_ids = [
@@ -1365,13 +1260,15 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
 
     ignore_changes = [
       tags["creation_run_id"],
-      tags["creation_time"]
+      tags["creation_time"],
+      admin_password
     ]
   }
 }
 
 # To use on windows cmd terminal do `mstsc` , 
 # then RDP window will appear asking `Computer` name, 
-# enter public ip for windows VM, click `connect`
+# enter public ip like `20.58.163.xx` for name, click `connect`, then
+# enter password key like `YourStrongPass...d123!` when asked correctly.
 
 # Deployment of resources in different regions using loop

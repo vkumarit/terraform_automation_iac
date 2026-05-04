@@ -3362,14 +3362,129 @@ Use NIC NSG association only when:
 a) One VM needs special access different from subnet
 b) Temporary debugging
 --
+NIC NSG Assn blocks,
 
+/*
+# Network Interface & Security Group Association
+resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_linux" {
+  network_interface_id      = azurerm_network_interface.prodmyapp_nic_linux.id
+  network_security_group_id = azurerm_network_security_group.prodmyapp_sg_linux.id
+}
+*/
+
+/*
+# NSG Association for Windows NIC
+resource "azurerm_network_interface_security_group_association" "nic_nsg_assn_windows" {
+  network_interface_id      = azurerm_network_interface.prodmyapp_nic_windows.id
+  network_security_group_id = azurerm_network_security_group.prodmyapp_nsg_windows.id
+}
+*/
 
 ---------------------------------------------------------------------------------------------------------------
+/*
+# Dedicated NSG for Windows VM
+resource "azurerm_network_security_group" "prodmyapp_nsg_windows" {
+  name                = "windows-secure-nsg"
+  location            = azurerm_resource_group.prodmyapp.location
+  resource_group_name = azurerm_resource_group.prodmyapp.name
 
+  # Allow RDP ONLY from your IP
+  security_rule {
+    name                   = "Allow-RDP-MyIP"
+    priority               = 100
+    direction              = "Inbound"
+    access                 = "Allow"
+    protocol               = "Tcp"
+    source_port_range      = "*"
+    destination_port_range = "3389"
+
+    source_address_prefix      = "*" # "<OUR_laptop_wifi_PUBLIC_IP>/32"
+    destination_address_prefix = "*"
+  }
+
+  # Deny everything else inbound
+  security_rule {
+    name                       = "Deny-All-Inbound"
+    priority                   = 200
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "nsg-windows_prodmyapp"
+  })
+
+  lifecycle {
+    ignore_changes = [
+      tags["creation_run_id"],
+      tags["creation_time"]
+    ]
+  }
+}
+*/
+--
+# Pull admin password from key vault
+/*
+data "azurerm_key_vault_secret" "win_password" {
+  name         = "windowsvmpassword01"
+  key_vault_id = azurerm_key_vault.prodmyapp.id
+
+  depends_on = [
+    azurerm_role_assignment.tf_kv_admin,
+    time_sleep.wait_for_kv_rbac
+  ]
+  # Terraform reads secret during plan phase, so requires `depends_on`
+}
+*/
+
+> Inside windows VM resource block,
+#admin_password      = "Adminuser@1234!" 
+#AVOID hardcoding secrets, instead use variable injection to env and/or use data block
+#admin_password = data.azurerm_key_vault_secret.win_password.value
+#Plan to move toward Azure AD login (passwordless)
+--
 ---------------------------------------------------------------------------------------------------------------
-
+# Helps with permissions for viewing the keys via dashboard ??TRIED DIDN'T WORK
+/*
+resource "azurerm_role_assignment" "human_kv_crypto_officer" {
+  scope                = azurerm_key_vault.prodmyapp.id
+  role_definition_name = "Key Vault Crypto Officer"
+  principal_id         = "USER_OBJECT_ID_HERE"
+  # Hardcode object IDs of known humans or service accounts. 
+  # Like DevOps lead or security engineer’s object IDs. 
+}
+*/
 ---------------------------------------------------------------------------------------------------------------
+Option 1 (most practical): Rotate VM password without updating tfstate via VM Run Command
 
+Use Azure to push a password change into the VM at runtime, while your secret source stays Azure Key Vault.
+
+Flow
+1) Rotate secret in Key Vault
+2) Pipeline fetches new value
+3) Execute Run Command on the VM to update the local admin password
+
+Example (Azure CLI in pipeline)
+--
+
+NEW_PASS=$(az keyvault secret show \
+  --vault-name <kv-name> \
+  --name <secret-name> \
+  --query value -o tsv)
+
+az vm run-command invoke \
+  --resource-group <rg> \
+  --name <vm-name> \
+  --command-id RunPowerShellScript \
+  --scripts "net user <adminuser> '$NEW_PASS'"
+
+--
+👉 This updates the password inside the VM, without Terraform touching anything.
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------
