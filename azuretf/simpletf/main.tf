@@ -8,7 +8,7 @@ terraform {
     # azure resource manager 
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "=4.1.0"
+      version = "=4.70.0"
     }
 
     # Microsoft Entra ID - formerly, Microsoft Azure Active Directory(AD)
