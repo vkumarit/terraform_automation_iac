@@ -530,8 +530,7 @@ variable "arm_client_secret" {
 resource "azurerm_key_vault_secret" "sp_client_secret" {
   name  = "sp-client-secret"
   value = var.arm_client_secret # var when exported ARM_CLIENT_SECRET to EC2/VM env vars
-  #value = "placeholder"
-
+  
   # Secrets as code (version controlled) - Secret rotation 
   # Update ARM_CLIENT_SECRET env var > terraform apply > Key Vault updates automatically.
 
@@ -575,9 +574,9 @@ variable "github_token" {
 
 resource "azurerm_key_vault_secret" "github_token" {
   name = "githubtoken"
-  #value = var.github_token # var when exported TF_VAR_github_token to EC2/VM env vars
+  value = var.github_token # var when exported TF_VAR_github_token to EC2/VM env vars
 
-  value = "placeholder"
+  #value = "placeholder"
   #Used when not managing secret rotation using terraform, az cli used for secret rotation
 
   key_vault_id = azurerm_key_vault.prodmyapp.id

@@ -3460,31 +3460,112 @@ resource "azurerm_role_assignment" "human_kv_crypto_officer" {
 }
 */
 ---------------------------------------------------------------------------------------------------------------
-Option 1 (most practical): Rotate VM password without updating tfstate via VM Run Command
+
+Architecture: Rotate VM password without updating tfstate  (no portal, fully automated)
+---------------------------------------------------------
+
+Terraform: > Creates VM > Configures identity (Managed Identity preferred)
+Pipeline: > Rotates secrets on schedule > Updates Key Vault > Updates VM
+VM: Optionally pulls secrets dynamically from Key Vault using Managed Identity (VM creation)
+
+Or,
+
+Flow: 
+> Rotate secret in Key Vault > Pipeline fetches new value 
+> Execute Command on the VM to update the local admin password
 
 Use Azure to push a password change into the VM at runtime, while your secret source stays Azure Key Vault.
 
-Flow
-1) Rotate secret in Key Vault
-2) Pipeline fetches new value
-3) Execute Run Command on the VM to update the local admin password
+--
+Keep below configs in terraform code VM resource block:
 
-Example (Azure CLI in pipeline)
+  lifecycle {
+    ignore_changes = [
+      admin_password
+    ]
+  }
+
+and
+
+ admin_password = var.initial_password
+
 --
 
+
+Example - Azure CLI in pipeline (minimal)
+--
+# Create dynamically
+NEW_PASS=$(openssl rand -base64 18)
+
+Or, 
+
+# Set secret at keyvault first (Created value manually/dynamically)
+az keyvault secret set \
+        --vault-name <kv-name> \
+        --name <secret-name> \
+        --value "manual_value/$NEW_PASS"
+
+# Retrieve password value already set in key-vault
 NEW_PASS=$(az keyvault secret show \
   --vault-name <kv-name> \
   --name <secret-name> \
   --query value -o tsv)
 
-az vm run-command invoke \
-  --resource-group <rg> \
-  --name <vm-name> \
-  --command-id RunPowerShellScript \
-  --scripts "net user <adminuser> '$NEW_PASS'"
+# Update secret/password to windows VM
+az vm user update \
+        --resource-group <RG> \
+        --name <VM> \
+        --username <USER> \
+        --password "$NEW_PASS"
 
 --
-👉 This updates the password inside the VM, without Terraform touching anything.
+
+# Use it as inline script task for automation/dynamic rotation (End-to-End Rotation).
+
+Script Flow - Generate a new password inside the pipeline > Update the VM with the new password >
+Update Key Vault with the same password > (Optional) invalidate old credentials / notify
+
+steps:
+- task: AzureCLI@2
+  displayName: "Rotate Windows VM Password"
+  inputs:
+    azureSubscription: '<service-connection>'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      # Generate strong password
+      NEW_PASS=$(openssl rand -base64 18)
+
+      echo "##vso[task.setvariable variable=NEW_PASS;issecret=true]$NEW_PASS"
+
+      # Update VM password
+      az vm user update \
+        --resource-group <RG_NAME> \
+        --name <VM_NAME> \
+        --username <USERNAME> \
+        --password "$NEW_PASS"
+
+      # Update Key Vault secret
+      az keyvault secret set \
+        --vault-name <KEYVAULT_NAME> \
+        --name <SECRET_NAME> \
+        --value "$NEW_PASS"
+
+>> This updates the password inside the VM, without Terraform touching anything.    
+
+# Stronger password generation (Windows-compliant)
+NEW_PASS=$(openssl rand -base64 24 | tr -d "=+/" | cut -c1-20)
+
+# Rotating for multiple VMs using shell script
+for VM in vm1 vm2 vm3; do
+  az vm user update \
+    --resource-group <RG> \
+    --name $VM \
+    --username <USER> \
+    --password "$NEW_PASS"
+done    
+
+Note: Eliminate password use/rotation entirely. Use WinRM with certificates, Azure AD login or Managed Identity.
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------
