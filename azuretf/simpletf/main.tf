@@ -847,7 +847,7 @@ resource "tls_private_key" "vm_ssh" {
   algorithm = "RSA"
   rsa_bits  = 4096 # 2048 Min. required, 4096 for better security (production)
 }
-
+/*
 # Writing for SSH purpose
 #> Write the private key to a local file with secure permissions
 resource "local_sensitive_file" "private_key_pem" {
@@ -857,12 +857,14 @@ resource "local_sensitive_file" "private_key_pem" {
   directory_permission = "0700"
 }
 
+
 #> Write the public key to a local file (standard permissions)
 resource "local_file" "public_key_openssh" {
   filename        = pathexpand("~/.ssh/prodmyapp_vm1.pub")
   content         = tls_private_key.vm_ssh.public_key_openssh
   file_permission = "0644" # Owner: read+write (6) Group: read only  (4) Others: read only (4)
 }
+*/
 
 # Define variable for VM selection
 # Scalable approach avoids repeating validation lists
