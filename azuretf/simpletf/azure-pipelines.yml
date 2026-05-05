@@ -183,9 +183,9 @@ stages:
       workingDirectory: azuretf/simpletf
       displayName: "Terraform Format Troubleshoot"
       
-    #- script: terraform init -backend=false -no-color
-    #  workingDirectory: azuretf/simpletf
-    #  displayName: "Terraform Init (Validation Only)"
+    - script: terraform init -backend=false -no-color
+      workingDirectory: azuretf/simpletf
+      displayName: "Terraform Init (Validation Only)"
 
     - script: terraform validate -no-color
       workingDirectory: azuretf/simpletf
