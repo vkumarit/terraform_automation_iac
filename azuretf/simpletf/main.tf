@@ -530,7 +530,7 @@ variable "arm_client_secret" {
 resource "azurerm_key_vault_secret" "sp_client_secret" {
   name  = "sp-client-secret"
   value = var.arm_client_secret # var when exported ARM_CLIENT_SECRET to EC2/VM env vars
-  
+
   # Secrets as code (version controlled) - Secret rotation 
   # Update ARM_CLIENT_SECRET env var > terraform apply > Key Vault updates automatically.
 
@@ -573,7 +573,7 @@ variable "github_token" {
 }
 
 resource "azurerm_key_vault_secret" "github_token" {
-  name = "githubtoken"
+  name  = "githubtoken"
   value = var.github_token # var when exported TF_VAR_github_token to EC2/VM env vars
 
   #value = "placeholder"
@@ -1052,7 +1052,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   resource_group_name = azurerm_resource_group.prodmyapp.name
 
   #size                = "Standard_DS1_v2"
-  size           = local.selected_vm_size
+  size = local.selected_vm_size
   #size = "placeholder" # block updates after, once it's created
 
   admin_username = "adminuser"
@@ -1208,7 +1208,7 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
   size                = local.selected_vm_size
   admin_username      = "adminuser"
 
-  admin_password      = var.windows_admin_password
+  admin_password = var.windows_admin_password
   #Plan to move toward Azure AD login (passwordless)
 
   network_interface_ids = [
