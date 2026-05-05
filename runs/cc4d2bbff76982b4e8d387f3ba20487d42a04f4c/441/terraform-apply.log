@@ -1,0 +1,21 @@
+Acquiring state lock. This may take a few moments...
+local_file.public_key_openssh: Destroying... [id=1ba6347b847919ec833c26c2cdbb61e6a6906f7e]
+local_file.public_key_openssh: Destruction complete after 3s
+azurerm_windows_virtual_machine.prodmyapp_windows_vm: Modifying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/windows_vm_01]
+azurerm_windows_virtual_machine.prodmyapp_windows_vm: Still modifying... [id=/subscriptions/2b2f02f7-dde2-47db-974c-....Compute/virtualMachines/windows_vm_01, 00m10s elapsed]
+azurerm_windows_virtual_machine.prodmyapp_windows_vm: Modifications complete after 19s [id=/subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/resourceGroups/myTFResourceGroup/providers/Microsoft.Compute/virtualMachines/windows_vm_01]
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 0 added, 1 changed, 1 destroyed.
+
+Outputs:
+
+debug_tags = {
+  "creation_run_id" = "441"
+  "creation_time" = "2026-05-05T12:15:48Z"
+  "deployment_id" = "prodmyapp"
+  "environment" = "prod"
+  "managed_by" = "terraform"
+}
+vm_public_ip = "68.218.73.131"
+win_vm_public_ip = "20.58.163.30"
