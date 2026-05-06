@@ -294,7 +294,7 @@ resource "azurerm_storage_account" "prodmyapp" {
 
 resource "azurerm_storage_container" "prodmyapp" {
   name                  = "mytfstate"
-  storage_account_name  = azurerm_storage_account.prodmyapp.name
+  storage_account_id    = azurerm_storage_account.prodmyapp.id
   container_access_type = "private"
   depends_on            = [azurerm_storage_account.prodmyapp] # ensures storage account creates first
 }
@@ -309,7 +309,7 @@ data "azuread_service_principal" "prodmyapp" {
 }
 
 resource "azurerm_role_assignment" "terraform_backend_storage_access" {
-  scope                = azurerm_storage_container.prodmyapp.resource_manager_id
+  scope = azurerm_storage_container.prodmyapp.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = data.azuread_service_principal.prodmyapp.object_id
 
@@ -364,7 +364,7 @@ resource "azurerm_key_vault" "prodmyapp" {
   soft_delete_retention_days = 7
   purge_protection_enabled   = true # for Encryption of storage accounts
 
-  enable_rbac_authorization = true # enabled RBAC (not using access polices)
+  rbac_authorization_enabled = true # enabled RBAC (not using access polices)
 
   sku_name = "standard"
 
