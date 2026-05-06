@@ -414,10 +414,10 @@ resource "azurerm_role_assignment" "storage_kv_crypto" {
 # Create key with explicit rotation policy
 
 resource "azurerm_key_vault_key" "prodmyapp_key" {
-  name             = "my-storage-cmk"
+  name         = "my-storage-cmk"
   key_vault_id = azurerm_key_vault.prodmyapp.id
-  key_type         = "RSA"
-  key_size         = 2048
+  key_type     = "RSA"
+  key_size     = 2048
 
   key_opts = [
     "encrypt",
@@ -454,7 +454,7 @@ resource "azurerm_key_vault_key" "prodmyapp_key" {
 
 resource "azurerm_storage_account_customer_managed_key" "prodmyapp_sa_cmk" {
   storage_account_id = azurerm_storage_account.prodmyapp.id
-  key_vault_key_id   = azurerm_key_vault.prodmyapp.id
+  key_vault_id       = azurerm_key_vault.prodmyapp.id
   key_name           = azurerm_key_vault_key.prodmyapp_key.name
   key_version        = azurerm_key_vault_key.prodmyapp_key.version
 
@@ -486,7 +486,7 @@ resource "azurerm_key_vault_secret" "sp_client_id" {
   #value        = var.arm_client_id             # when exported ARM_CLIENT_ID to env vars
 
   key_vault_id = azurerm_key_vault.prodmyapp.id
-  depends_on       = [azurerm_key_vault.prodmyapp]
+  depends_on   = [azurerm_key_vault.prodmyapp]
 }
 
 # Store Tenant ID (auto-detected)
@@ -495,7 +495,7 @@ resource "azurerm_key_vault_secret" "sp_tenant_id" {
   value = data.azurerm_client_config.current.tenant_id
   #value        = var.arm_tenant_id             # When exported ARM_TENANT_ID to env vars
   key_vault_id = azurerm_key_vault.prodmyapp.id
-  depends_on       = [azurerm_key_vault.prodmyapp]
+  depends_on   = [azurerm_key_vault.prodmyapp]
 }
 
 # Store Subscription ID (auto-detected)  
@@ -507,7 +507,7 @@ resource "azurerm_key_vault_secret" "sp_subscription_id" {
   #When exported ARM_SUBSCRIPTION_ID to env vars both ways - data and var can be used
 
   key_vault_id = azurerm_key_vault.prodmyapp.id
-  depends_on       = [azurerm_key_vault.prodmyapp]
+  depends_on   = [azurerm_key_vault.prodmyapp]
 }
 
 
