@@ -8,7 +8,7 @@ terraform {
     # azure resource manager 
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "=4.70.0"
+      version = "=4.1.0"
     }
 
     # Microsoft Entra ID - formerly, Microsoft Azure Active Directory(AD)
@@ -1212,6 +1212,8 @@ resource "azurerm_windows_virtual_machine" "prodmyapp_windows_vm" {
 
   admin_password = var.windows_admin_password
   #Plan to move toward Azure AD login (passwordless)
+
+  vm_agent_platform_updates_enabled = false
 
   network_interface_ids = [
     azurerm_network_interface.prodmyapp_nic_windows.id,
