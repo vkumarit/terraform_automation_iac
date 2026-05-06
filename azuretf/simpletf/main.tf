@@ -415,7 +415,7 @@ resource "azurerm_role_assignment" "storage_kv_crypto" {
 
 resource "azurerm_key_vault_key" "prodmyapp_key" {
   name             = "my-storage-cmk"
-  key_vault_key_id = azurerm_key_vault.prodmyapp.id
+  key_vault_id = azurerm_key_vault.prodmyapp.id
   key_type         = "RSA"
   key_size         = 2048
 
@@ -485,7 +485,7 @@ resource "azurerm_key_vault_secret" "sp_client_id" {
 
   #value        = var.arm_client_id             # when exported ARM_CLIENT_ID to env vars
 
-  key_vault_key_id = azurerm_key_vault.prodmyapp.id
+  key_vault_id = azurerm_key_vault.prodmyapp.id
   depends_on       = [azurerm_key_vault.prodmyapp]
 }
 
@@ -494,7 +494,7 @@ resource "azurerm_key_vault_secret" "sp_tenant_id" {
   name  = "sp-tenant-id"
   value = data.azurerm_client_config.current.tenant_id
   #value        = var.arm_tenant_id             # When exported ARM_TENANT_ID to env vars
-  key_vault_key_id = azurerm_key_vault.prodmyapp.id
+  key_vault_id = azurerm_key_vault.prodmyapp.id
   depends_on       = [azurerm_key_vault.prodmyapp]
 }
 
@@ -506,7 +506,7 @@ resource "azurerm_key_vault_secret" "sp_subscription_id" {
   #value        = var.arm_subscription_id       
   #When exported ARM_SUBSCRIPTION_ID to env vars both ways - data and var can be used
 
-  key_vault_key_id = azurerm_key_vault.prodmyapp.id
+  key_vault_id = azurerm_key_vault.prodmyapp.id
   depends_on       = [azurerm_key_vault.prodmyapp]
 }
 
@@ -534,7 +534,7 @@ resource "azurerm_key_vault_secret" "sp_client_secret" {
   # Secrets as code (version controlled) - Secret rotation 
   # Update ARM_CLIENT_SECRET env var > terraform apply > Key Vault updates automatically.
 
-  key_vault_key_id = azurerm_key_vault.prodmyapp.id
+  key_vault_id = azurerm_key_vault.prodmyapp.id
 
   lifecycle {
     #ignore_changes = [] # Allow rotation, available value will be taken
@@ -579,7 +579,7 @@ resource "azurerm_key_vault_secret" "github_token" {
   #value = "placeholder"
   #Used when not managing secret rotation using terraform, az cli used for secret rotation
 
-  key_vault_key_id = azurerm_key_vault.prodmyapp.id
+  key_vault_id = azurerm_key_vault.prodmyapp.id
 
   lifecycle {
     #ignore_changes = [] # Allow rotation, available value will be taken
