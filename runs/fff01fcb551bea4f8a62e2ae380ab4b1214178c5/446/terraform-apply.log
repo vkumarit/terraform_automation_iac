@@ -1,0 +1,20 @@
+Acquiring state lock. This may take a few moments...
+local_file.public_key_openssh: Creating...
+local_file.public_key_openssh: Creation complete after 0s [id=1ba6347b847919ec833c26c2cdbb61e6a6906f7e]
+local_sensitive_file.private_key_pem: Creating...
+local_sensitive_file.private_key_pem: Creation complete after 0s [id=111a3808046448c31cdb04f8ac4aeda2e4997d7b]
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+debug_tags = {
+  "creation_run_id" = "446"
+  "creation_time" = "2026-05-07T10:01:07Z"
+  "deployment_id" = "prodmyapp"
+  "environment" = "prod"
+  "managed_by" = "terraform"
+}
+vm_public_ip = "68.218.73.131"
+win_vm_public_ip = "20.58.163.30"
