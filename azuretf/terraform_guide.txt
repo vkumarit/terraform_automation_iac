@@ -1784,7 +1784,8 @@ correctly.
 ---------------------------------------------------------------------------------------------------------------
 Advanced Terraform Pattern To Implement
 
-Goal: Convert the current single VM Terraform design into a scalable multi-VM role-based architecture similar to what is used in production environments.
+Goal: Implement a scalable multi-VM multi-role snd if possible multi zone based architecture similar
+to what is used in production environments.
 
 Currently the infrastructure creates:
 1 VM
@@ -3238,13 +3239,13 @@ $ terraform import azurerm_role_assignment.terraform_backend_storage_access\
 /subscriptions/2b2f02f7-dde2-47db-974c-47d2182721ae/providers/Microsoft.Authorization\
 /roleAssignments/0a47c68df68e820facdddd3054f0b96e
 ---------------------------------------------------------------------------------------------------------------
-Reason to Implement When WSL: 
+Reason to Implement Setup When WSL: 
 
 Simple mental model
 `/mnt/d` > Windows drive > insecure for SSH keys
 `~/.ssh` > Linux filesystem > correct place
 
-WSL SSH login:
+WSL SSH login centOS-8:
 
 vips_devops@D-VoS:/mnt/d/DevOps_Practice/bash_here$ cd ~
 vips_devops@D-VoS:~$ mkdir -p ~/.ssh
@@ -3354,14 +3355,16 @@ VNet
 #Rule of thumb (production):
 --
 *NSG at subnet = default policy
-*NIC NSG = exception only
-
-- NIC-level NSG overrides subnet NSG precedence
+**NIC NSG = exception only, because NIC-level NSG overrides subnet NSG precedence
 
 Use NIC NSG association only when:
 a) One VM needs special access different from subnet
 b) Temporary debugging
 --
+
+Why we removed nic-nsg assn blocks from main code? - because we want to use subnet-nsg association and when we 
+associate `nsg-nic` it overides `subnet-nsg` rules.
+
 NIC NSG Assn blocks,
 
 /*
@@ -3567,6 +3570,1269 @@ done
 
 Note: Eliminate password use/rotation entirely. Use WinRM with certificates, Azure AD login or Managed Identity.
 ---------------------------------------------------------------------------------------------------------------
+========================================================
+SSH KEYS, PASSWORDS, AND VM ACCESS IN REAL PRODUCTION
+========================================================
+
+Your CURRENT Terraform setup uses:
+
+Linux:
+  tls_private_key.vm_ssh
+
+Windows:
+  var.windows_admin_password
+
+This means:
+
+ALL Linux VMs
+  → share same SSH keypair
+
+ALL Windows VMs
+  → share same admin password
+
+--------------------------------------------------------
+What This Means Practically
+--------------------------------------------------------
+
+If you deploy:
+
+3 Linux VMs
+
+Then:
+
+linux-vm-01
+linux-vm-02
+linux-vm-03
+
+ALL use:
+
+~/.ssh/prodmyapp_vm1.pem
+
+for login.
+
+Similarly for Windows:
+
+ALL Windows VMs use:
+
+var.windows_admin_password
+
+Example:
+
+windows_vm_01
+windows_vm_02
+windows_vm_03
+
+ALL share same admin password.
+
+--------------------------------------------------------
+Is This Wrong?
+--------------------------------------------------------
+
+NO.
+
+This is completely acceptable for:
+
+- labs
+- learning
+- demos
+- PoCs
+- small environments
+- temporary infrastructure
+
+Many small companies even run production this way initially.
+
+But large production environments evolve beyond this.
+
+========================================================
+LINUX PRODUCTION SSH APPROACHES
+========================================================
+
+--------------------------------------------------------
+APPROACH 1 — Shared Environment SSH Key
+--------------------------------------------------------
+
+Most common small/medium production setup.
+
+Example:
+
+dev
+  → one SSH key
+
+test
+  → one SSH key
+
+prod
+  → one SSH key
+
+Files:
+
+dev-linux.pem
+test-linux.pem
+prod-linux.pem
+
+All VMs in that environment share same key.
+
+--------------------------------------------------------
+Example
+--------------------------------------------------------
+
+Environment:
+prod
+
+VMs:
+
+prod-linux-01
+prod-linux-02
+prod-linux-03
+
+ALL use:
+
+prod-linux.pem
+
+--------------------------------------------------------
+Why Companies Use This
+--------------------------------------------------------
+
+Because it simplifies operations.
+
+Benefits:
+
+1. Easier automation
+
+Tools like:
+- Ansible
+- Jenkins
+- Azure DevOps
+- Terraform provisioners
+
+can access all servers consistently.
+
+--------------------------------------------------------
+2. Easier CI/CD
+--------------------------------------------------------
+
+Pipelines only need ONE credential.
+
+Example:
+
+Azure DevOps secret:
+PROD_SSH_KEY
+
+instead of:
+100 different VM keys.
+
+--------------------------------------------------------
+3. Easier Emergency Access
+--------------------------------------------------------
+
+During outages:
+
+Ops team can quickly SSH into any VM.
+
+Critical for:
+- incident response
+- debugging
+- hotfixes
+
+--------------------------------------------------------
+4. Easier Break-Glass Access
+--------------------------------------------------------
+
+"Break-glass" means:
+
+emergency administrative access.
+
+Shared environment keys simplify this.
+
+--------------------------------------------------------
+Problem / Risk
+--------------------------------------------------------
+
+If SSH key leaks:
+
+ALL VMs in that environment are compromised.
+
+Example:
+
+prod-linux.pem leaked
+  ↓
+all production Linux VMs vulnerable
+
+This is the biggest drawback.
+
+========================================================
+APPROACH 2 — Per-VM SSH Keys
+========================================================
+
+Each VM gets unique SSH keypair.
+
+Example:
+
+linux-vm-01.pem
+linux-vm-02.pem
+linux-vm-03.pem
+
+Every VM has separate access credential.
+
+--------------------------------------------------------
+Benefits
+--------------------------------------------------------
+
+More secure.
+
+If one key leaks:
+
+ONLY one VM affected.
+
+Blast radius is smaller.
+
+--------------------------------------------------------
+Problems
+--------------------------------------------------------
+
+Operational complexity becomes huge.
+
+Need to manage:
+
+- thousands of keys
+- key rotation
+- expiration
+- access tracking
+- recovery
+- backups
+- permissions
+- distribution
+
+This becomes painful at scale.
+
+--------------------------------------------------------
+Real Enterprise Problem
+--------------------------------------------------------
+
+Imagine:
+
+2000 VMs
+
+Now managing:
+
+2000 SSH keys
+
+This becomes infrastructure chaos.
+
+Most enterprises avoid this model.
+
+========================================================
+APPROACH 3 — SSH CERTIFICATE AUTHORITY (Modern)
+========================================================
+
+Modern enterprises avoid static SSH keys entirely.
+
+Instead they use:
+
+SSH Certificate Authorities (SSH CA)
+
+--------------------------------------------------------
+Examples
+--------------------------------------------------------
+
+- OpenSSH CA
+- HashiCorp Vault SSH CA
+- Teleport
+- Smallstep
+- Boundary
+- Azure AD Login for Linux
+
+========================================================
+How SSH CA Works
+========================================================
+
+OLD MODEL:
+
+Long-lived SSH key.
+
+Example:
+
+prod-linux.pem
+
+valid for:
+- months
+- years
+
+--------------------------------------------------------
+MODERN MODEL
+--------------------------------------------------------
+
+User requests temporary access.
+
+System issues:
+
+temporary SSH certificate
+
+valid for:
+- 15 minutes
+- 1 hour
+- 8 hours
+
+Then automatically expires.
+
+--------------------------------------------------------
+Benefits
+--------------------------------------------------------
+
+1. Short-lived access
+
+Reduces long-term credential risk.
+
+--------------------------------------------------------
+2. Centralized Authentication
+--------------------------------------------------------
+
+Access controlled centrally.
+
+--------------------------------------------------------
+3. MFA Integration
+--------------------------------------------------------
+
+Can require:
+- MFA
+- SSO
+- Conditional Access
+
+--------------------------------------------------------
+4. RBAC
+--------------------------------------------------------
+
+Role-based access control.
+
+Example:
+
+DevOps team:
+  can access dev VMs only
+
+DBA team:
+  can access DB servers only
+
+--------------------------------------------------------
+5. Audit Logging
+--------------------------------------------------------
+
+Every login recorded centrally.
+
+Critical for:
+- compliance
+- forensics
+- security audits
+
+--------------------------------------------------------
+6. No Key Sprawl
+--------------------------------------------------------
+
+No massive SSH key management nightmare.
+
+========================================================
+AZURE PRODUCTION STANDARD
+========================================================
+
+Modern Azure production environments increasingly use:
+
+Azure AD Login for Linux
+
+instead of raw SSH keys.
+
+========================================================
+AZURE AD LOGIN FOR LINUX
+========================================================
+
+Azure VM extension enables login using:
+
+Azure AD identity
+
+instead of SSH keys.
+
+Example commands:
+
+az ssh vm
+
+or standard SSH using Azure identity.
+
+--------------------------------------------------------
+Benefits
+--------------------------------------------------------
+
+1. RBAC controlled
+
+Access managed through Azure roles.
+
+--------------------------------------------------------
+2. MFA Support
+
+Can require multi-factor authentication.
+
+--------------------------------------------------------
+3. No SSH Key Distribution
+
+No .pem files to distribute manually.
+
+--------------------------------------------------------
+4. Centralized Identity
+
+All access tied to enterprise identity provider.
+
+--------------------------------------------------------
+5. Audit Trail
+
+Every login tracked centrally.
+
+========================================================
+WINDOWS PRODUCTION ACCESS
+========================================================
+
+--------------------------------------------------------
+BAD PRACTICE
+--------------------------------------------------------
+
+Same local admin password everywhere.
+
+Example:
+
+Admin123!
+
+on ALL VMs.
+
+Very dangerous.
+
+--------------------------------------------------------
+Why Dangerous
+--------------------------------------------------------
+
+One leaked password:
+
+compromises ALL Windows VMs.
+
+========================================================
+BETTER WINDOWS APPROACHES
+========================================================
+
+--------------------------------------------------------
+APPROACH 1 — Random Password Per VM
+--------------------------------------------------------
+
+Terraform generates:
+
+resource "random_password"
+
+per VM.
+
+Example:
+
+vm01 → random password
+vm02 → random password
+vm03 → random password
+
+Passwords stored securely in:
+
+- Key Vault
+- Secret Manager
+- Vault
+
+--------------------------------------------------------
+Benefits
+--------------------------------------------------------
+
+Compromise of one VM
+  ≠
+compromise of all VMs
+
+========================================================
+APPROACH 2 — DOMAIN JOIN / ENTRA ID LOGIN
+========================================================
+
+Most enterprises DO NOT use local admin accounts.
+
+Instead:
+
+- Active Directory
+- Azure AD / Entra ID
+- LDAP
+- PAM systems
+
+control authentication.
+
+--------------------------------------------------------
+Benefits
+--------------------------------------------------------
+
+1. Centralized identity
+
+2. Easier user management
+
+3. Password policies
+
+4. MFA
+
+5. Audit logging
+
+6. User revocation
+
+========================================================
+REAL PRODUCTION NETWORKING
+========================================================
+
+Your CURRENT setup:
+
+- public IP per VM
+- SSH open to internet
+- RDP open to internet
+
+This is acceptable for:
+- learning
+- labs
+- testing
+
+BUT NOT ideal production security.
+
+========================================================
+REAL PRODUCTION ARCHITECTURE
+========================================================
+
+Typical production architecture:
+
+Internet
+   ↓
+VPN / Bastion
+   ↓
+Jumpbox
+   ↓
+Private Subnet VMs
+
+--------------------------------------------------------
+Meaning
+--------------------------------------------------------
+
+VMs usually DO NOT have public IPs.
+
+Instead:
+
+- Bastion host
+- VPN
+- private networking
+
+are used for access.
+
+========================================================
+LINUX PRODUCTION NETWORKING
+========================================================
+
+Usually:
+
+- no public IP
+- private subnet only
+- SSH via Bastion
+- VPN access only
+
+========================================================
+WINDOWS PRODUCTION NETWORKING
+========================================================
+
+Usually:
+
+- no public IP
+- RDP disabled externally
+- Bastion access
+- JIT (Just-In-Time) access
+
+========================================================
+JUST-IN-TIME (JIT) ACCESS
+========================================================
+
+RDP/SSH ports stay CLOSED normally.
+
+User requests temporary access.
+
+Azure opens port temporarily:
+
+example:
+3389 open for 30 minutes
+
+then automatically closes again.
+
+Huge security improvement.
+
+========================================================
+WHAT SMALL/MEDIUM COMPANIES COMMONLY DO
+========================================================
+
+Linux:
+  one SSH key per environment
+
+Windows:
+  random passwords stored in Key Vault
+
+Access:
+  Bastion or VPN
+
+This is VERY common real-world architecture.
+
+========================================================
+WHAT LARGE ENTERPRISES COMMONLY DO
+========================================================
+
+Identity-based login.
+
+NOT SSH keys.
+
+Examples:
+
+- Azure AD Login
+- Teleport
+- Boundary
+- PAM systems
+- Bastion
+- SSM Session Manager (AWS)
+
+========================================================
+WHAT YOU SHOULD DO NEXT
+========================================================
+
+For your CURRENT learning stage:
+
+--------------------------------------------------------
+Linux
+--------------------------------------------------------
+
+Use:
+
+one SSH key per environment
+
+Example:
+
+dev-linux.pem
+test-linux.pem
+prod-linux.pem
+
+Store in:
+Azure Key Vault
+
+--------------------------------------------------------
+Windows
+--------------------------------------------------------
+
+Generate:
+
+random_password
+
+per VM.
+
+Store passwords in:
+Azure Key Vault
+
+========================================================
+YOUR FUTURE LEARNING PATH
+========================================================
+
+After mastering:
+- multi-VM
+- loops
+- modules
+- environments
+
+move toward:
+
+- Bastion
+- private subnets
+- Azure AD login
+- JIT access
+- identity-based auth
+
+========================================================
+REAL PRODUCTION SECURITY MATURITY PATH
+========================================================
+
+Shared SSH key
+    ↓
+Per-environment SSH keys
+    ↓
+Key Vault integration
+    ↓
+Bastion-only access
+    ↓
+Private subnet access
+    ↓
+Identity-based login
+    ↓
+Short-lived certificates
+    ↓
+Full centralized access management
+
+This is how infrastructure security typically evolves
+in real organizations over time.
+
+---------------------------------------------------------------------------------------------------------------
+#Breakdown: %02d (C-style formatting.)
+
+    Name = format(
+      "linux-vm-%02d",
+      count.index + 1
+    )
+    
+ %	formatting starts
+ 0	pad with zeros
+ 2	minimum width = 2
+ d	decimal integer
+---------------------------------------------------------------------------------------------------------------
+Redundent for NIC block When deploying multiple VMs with `count` method,
+
+  depends_on = [
+    azurerm_public_ip.prodmyapp_pub_ips
+  ]
+
+---------------------------------------------------------------------------------------------------------------
+
+========================================================
+TERRAFORM DEPENDENCY TYPES
+========================================================
+
+Terraform builds a Dependency Graph (DAG - Directed Acyclic Graph)
+before creating infrastructure.
+
+Terraform analyzes:
+
+- which resource depends on which
+- what can run in parallel
+- what must wait
+
+This is one of the MOST important Terraform concepts.
+
+--------------------------------------------------------
+1. IMPLICIT DEPENDENCY (Preferred)
+--------------------------------------------------------
+
+Definition:
+Terraform automatically detects dependency when one resource
+references another resource's attribute.
+
+Example:
+
+resource "azurerm_subnet" "pub_subnet" {
+  name = "public-subnet"
+}
+
+resource "azurerm_network_interface" "nic" {
+
+  ip_configuration {
+    subnet_id = azurerm_subnet.pub_subnet.id
+  }
+}
+
+Here:
+
+subnet_id = azurerm_subnet.pub_subnet.id
+
+creates dependency automatically.
+
+Terraform understands:
+
+Subnet must exist BEFORE NIC.
+
+Terraform internally builds graph like:
+
+Subnet
+   ↓
+NIC
+
+You DO NOT need depends_on here.
+
+This is called:
+
+IMPLICIT DEPENDENCY
+
+because Terraform inferred it automatically.
+
+--------------------------------------------------------
+How Terraform Detects Implicit Dependencies
+--------------------------------------------------------
+
+Terraform scans expressions like:
+
+resource_type.resource_name.attribute
+
+Examples:
+
+azurerm_subnet.pub_subnet.id
+
+azurerm_public_ip.vm_ip.id
+
+azurerm_storage_account.sa.primary_blob_endpoint
+
+Whenever a resource attribute is referenced:
+
+Terraform automatically creates dependency edge.
+
+--------------------------------------------------------
+Another Example
+--------------------------------------------------------
+
+resource "azurerm_public_ip" "vm_ip" {
+  name = "vm-ip"
+}
+
+resource "azurerm_network_interface" "nic" {
+
+  ip_configuration {
+    public_ip_address_id =
+      azurerm_public_ip.vm_ip.id
+  }
+}
+
+Terraform graph:
+
+Public IP
+   ↓
+NIC
+
+Terraform creates Public IP FIRST automatically.
+
+--------------------------------------------------------
+Benefits of Implicit Dependencies
+--------------------------------------------------------
+
+1. Cleaner code
+
+No unnecessary depends_on everywhere.
+
+2. Better parallelism
+
+Terraform creates unrelated resources simultaneously.
+
+3. Faster deployments
+
+Terraform only waits where truly necessary.
+
+4. Easier maintenance
+
+Dependency graph stays natural.
+
+5. Less hidden coupling
+
+Dependencies are visible directly in resource references.
+
+--------------------------------------------------------
+2. EXPLICIT DEPENDENCY (depends_on)
+--------------------------------------------------------
+
+Definition:
+Manually telling Terraform:
+
+"WAIT for this resource before creating this one."
+
+Used when Terraform CANNOT infer dependency automatically.
+
+Syntax:
+
+depends_on = [
+  resource.type.name
+]
+
+Example:
+
+resource "time_sleep" "wait_for_rbac" {
+  create_duration = "60s"
+}
+
+resource "azurerm_linux_virtual_machine" "vm" {
+
+  depends_on = [
+    time_sleep.wait_for_rbac
+  ]
+}
+
+Terraform graph:
+
+time_sleep
+    ↓
+VM
+
+--------------------------------------------------------
+Why Explicit Dependency Is Needed
+--------------------------------------------------------
+
+Because sometimes infrastructure dependency is NOT visible
+through direct attribute references.
+
+Terraform only understands:
+
+attribute references
+
+It DOES NOT understand:
+
+- Azure RBAC propagation delays
+- eventual consistency
+- backend internal synchronization
+- async cloud operations
+- API stabilization delays
+- external scripts side effects
+
+--------------------------------------------------------
+Example: Azure RBAC Propagation
+--------------------------------------------------------
+
+resource "azurerm_role_assignment" "des_kv_crypto" {
+  ...
+}
+
+resource "azurerm_disk_encryption_set" "des" {
+  ...
+}
+
+resource "azurerm_linux_virtual_machine" "vm" {
+
+  os_disk {
+    disk_encryption_set_id =
+      azurerm_disk_encryption_set.des.id
+  }
+}
+
+Problem:
+
+Terraform sees:
+
+VM → DES
+
+BUT Azure internally still needs time for RBAC permissions
+to propagate.
+
+Even though Role Assignment resource finished,
+Azure backend may still reject VM creation temporarily.
+
+Common errors:
+
+- Permission denied
+- Key Vault access forbidden
+- Identity not found
+- DES authorization failed
+
+Terraform cannot detect this propagation delay.
+
+So production code adds:
+
+resource "time_sleep" "wait_for_des_rbac" {
+  create_duration = "180s"
+
+  depends_on = [
+    azurerm_role_assignment.des_kv_crypto
+  ]
+}
+
+resource "azurerm_linux_virtual_machine" "vm" {
+
+  depends_on = [
+    time_sleep.wait_for_des_rbac
+  ]
+}
+
+This forces orchestration:
+
+Role Assignment
+     ↓
+Wait
+     ↓
+VM
+
+--------------------------------------------------------
+EVENTUAL CONSISTENCY
+--------------------------------------------------------
+
+Cloud providers are distributed systems.
+
+Operations are NOT instantly visible everywhere.
+
+This is called:
+
+EVENTUAL CONSISTENCY
+
+Meaning:
+
+resource reports "created"
+BUT backend systems still syncing internally.
+
+Very common in:
+
+Azure:
+- RBAC
+- Key Vault
+- Managed identities
+- DES
+- networking
+
+AWS:
+- IAM
+- Route53
+- EKS
+- security groups
+
+GCP:
+- IAM
+- service accounts
+- organization policies
+
+--------------------------------------------------------
+Production Terraform Rule
+--------------------------------------------------------
+
+PREFER:
+
+Implicit dependencies
+
+OVER:
+
+Manual depends_on
+
+--------------------------------------------------------
+Why Excessive depends_on Is Bad
+--------------------------------------------------------
+
+1. Slows Parallelism
+
+Terraform normally creates independent resources simultaneously.
+
+Example:
+
+VM1
+VM2
+VM3
+
+can all create in parallel.
+
+But excessive depends_on may force:
+
+VM1
+ ↓
+VM2
+ ↓
+VM3
+
+serial creation.
+
+This increases deployment time significantly.
+
+--------------------------------------------------------
+2. Complicates Dependency Graph
+
+Too many manual dependencies create messy infrastructure graph.
+
+Harder to:
+- debug
+- understand
+- maintain
+
+--------------------------------------------------------
+3. Creates Hidden Coupling
+
+Bad example:
+
+depends_on = [
+  azurerm_storage_account.sa
+]
+
+without actually using storage account.
+
+Future engineers won't understand WHY dependency exists.
+
+--------------------------------------------------------
+4. Reduces Terraform Efficiency
+
+Terraform optimizer works best with natural graph.
+
+Too many explicit dependencies reduce concurrency.
+
+Result:
+- slower apply
+- slower destroy
+- slower refresh
+
+--------------------------------------------------------
+GOOD PRODUCTION PRACTICE
+--------------------------------------------------------
+
+Use implicit dependencies whenever possible.
+
+Only use depends_on when:
+
+Terraform cannot naturally infer dependency.
+
+--------------------------------------------------------
+When depends_on IS Truly Needed
+--------------------------------------------------------
+
+--------------------------------------------------------
+1. RBAC Propagation
+--------------------------------------------------------
+
+Most common Azure production case.
+
+Example:
+
+depends_on = [
+  azurerm_role_assignment.des_kv_crypto
+]
+
+Because Azure RBAC permissions may take time to propagate.
+
+--------------------------------------------------------
+2. time_sleep Resources
+--------------------------------------------------------
+
+Always explicit.
+
+Example:
+
+resource "time_sleep" "wait" {
+  create_duration = "60s"
+
+  depends_on = [
+    azurerm_role_assignment.rbac
+  ]
+}
+
+Purpose:
+Wait for backend propagation.
+
+--------------------------------------------------------
+3. null_resource
+--------------------------------------------------------
+
+null_resource has no real infrastructure references.
+
+Often used for:
+- scripts
+- triggers
+- orchestration
+- temporary glue logic
+
+Example:
+
+resource "null_resource" "configure_vm" {
+
+  depends_on = [
+    azurerm_linux_virtual_machine.vm
+  ]
+}
+
+--------------------------------------------------------
+4. local-exec / remote-exec
+--------------------------------------------------------
+
+Provisioners often need explicit sequencing.
+
+Example:
+
+resource "null_resource" "ansible" {
+
+  depends_on = [
+    azurerm_linux_virtual_machine.vm
+  ]
+
+  provisioner "local-exec" {
+    command = "ansible-playbook ..."
+  }
+}
+
+Need to ensure VM exists before script executes.
+
+--------------------------------------------------------
+5. Azure Eventual Consistency Issues
+--------------------------------------------------------
+
+Very common production issue.
+
+Frequently affects:
+
+- Key Vault
+- RBAC
+- Managed Identity
+- Disk Encryption Set
+- private endpoints
+- networking
+- DNS propagation
+
+--------------------------------------------------------
+6. External Systems
+--------------------------------------------------------
+
+Terraform cannot understand external system readiness.
+
+Examples:
+
+- Jenkins
+- Ansible
+- Kubernetes
+- external APIs
+- scripts
+- database migrations
+
+Manual orchestration may be needed.
+
+--------------------------------------------------------
+IMPORTANT TERRAFORM PRINCIPLE
+--------------------------------------------------------
+
+Terraform understands:
+
+RESOURCE REFERENCES
+
+Terraform does NOT understand:
+
+REAL-WORLD INFRASTRUCTURE READINESS
+
+This distinction is CRITICAL.
+
+--------------------------------------------------------
+Example
+--------------------------------------------------------
+
+Terraform sees:
+
+VM references DES ID
+
+So it thinks:
+
+DES ready.
+
+BUT Azure internally may still be propagating:
+
+- RBAC
+- identity
+- permissions
+
+Thus VM creation fails.
+
+Terraform graph correctness != Cloud backend readiness.
+
+--------------------------------------------------------
+Production Mindset
+--------------------------------------------------------
+
+Good Terraform engineers:
+
+1. Prefer implicit dependencies
+2. Minimize depends_on
+3. Understand cloud eventual consistency
+4. Add orchestration only where necessary
+5. Preserve Terraform parallelism
+6. Avoid unnecessary serialization
+
+--------------------------------------------------------
+Simple Rule
+--------------------------------------------------------
+
+If resource references another resource attribute:
+
+DO NOT use depends_on.
+
+If dependency exists ONLY operationally
+(not through attributes):
+
+USE depends_on.
 
 ---------------------------------------------------------------------------------------------------------------
 
@@ -3579,13 +4845,7 @@ Note: Eliminate password use/rotation entirely. Use WinRM with certificates, Azu
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------------------------
-how to centralize this lifecycle block using modules so you don’t repeat it across 20+ resources. 
+ ?????????????how to centralize this lifecycle block using modules so you don’t repeat it across 20+ resources. 
 For tagging new resources, avoid tagging old already tagged resources,
 
 I want to centralize the Terraform lifecycle block 
@@ -3837,8 +5097,9 @@ Prevents state corruption.
 # END OF SUMMARY
 
 --------------------------------------------------------------------------------------------------------------
-Terraform SSH Key Creation and Use with VM afterwards :
 
+***Terraform SSH Key Creation and Use with VM afterwards***
+   .....................................................
 Creation part:
 - With the use of tls provider settings. 
 We create SSH key first with 
@@ -3857,7 +5118,7 @@ resource "local_file" "public_key_openssh" {...} blocks.
 [ Azure VM ]
   ~/.ssh/authorized_keys   (PUBLIC KEY)
 
-How to SSH into the VM after apply from agent server/VM:
+How to SSH into the VM after apply/server creation from agent server/VM:
 $ ssh -i ~/.ssh/prodmyapp-vm.pem adminuser@<PUBLIC_IP>
 
 - We SSH from the az agent server / jump VM into the created Azure VM
@@ -4978,8 +6239,322 @@ Value	    - /.../s/mycustompath
 
 ---------------------------------------------------------------------------------------------------------------
 
----------------------------------------------------------------------------------------------------------------
+***Nightly shutdown / morning Startup for Azure VMs using Scheduled Automation***
+   ...........................................................................
 
+“using cron and blocks” - the cleanest Terraform + cron + resource-block approach is below
+
+-------------------------------------------------------------------------------
+RECOMMENDED TERRAFORM-BASED APPROACH
+-------------------------------------------------------------------------------
+
+Use:
+
+- Terraform
+- azapi_resource_action
+- cron scheduler
+
+Architecture:
+
+cron
+   ->
+terraform apply
+   ->
+azapi_resource_action
+   ->
+Azure ARM API
+   ->
+VM start/deallocate/stop
+
+This is the closest thing to “Terraform-controlled operational scheduling”.
+
+-------------------------------------------------------------------------------
+1. PROVIDER CONFIGURATION
+-------------------------------------------------------------------------------
+
+File: providers.tf
+
+terraform {
+
+  required_providers {
+
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 4.0"
+    }
+
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
+provider "azapi" {
+}
+
+-------------------------------------------------------------------------------
+2. VM STATE VARIABLE
+-------------------------------------------------------------------------------
+
+File: variables.tf
+
+variable "vm_state" {
+  type    = string
+  default = "running"
+}
+
+Allowed values:
+- running
+- stopped
+
+-------------------------------------------------------------------------------
+3. VM RESOURCE
+-------------------------------------------------------------------------------
+
+File: main.tf
+
+resource "azurerm_resource_group" "rg" {
+  name     = "demo-rg"
+  location = "Central India"
+}
+
+resource "azurerm_linux_virtual_machine" "vm" {
+
+  name                = "demo-linux-vm"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+
+  size           = "Standard_B1s"
+  admin_username = "azureuser"
+
+  admin_password = "Password1234!"
+  disable_password_authentication = false
+
+  network_interface_ids = [
+    azurerm_network_interface.nic.id
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+}
+
+-------------------------------------------------------------------------------
+4. START VM RESOURCE BLOCK
+-------------------------------------------------------------------------------
+
+resource "azapi_resource_action" "start_vm" {
+
+  count = var.vm_state == "running" ? 1 : 0
+
+  type        = "Microsoft.Compute/virtualMachines@2023-03-01"
+  resource_id = azurerm_linux_virtual_machine.vm.id
+
+  action = "start"
+  method = "POST"
+}
+
+-------------------------------------------------------------------------------
+5. STOP VM RESOURCE BLOCK
+-------------------------------------------------------------------------------
+
+resource "azapi_resource_action" "stop_vm" {
+
+  count = var.vm_state == "stopped" ? 1 : 0
+
+  type        = "Microsoft.Compute/virtualMachines@2023-03-01"
+  resource_id = azurerm_linux_virtual_machine.vm.id
+
+  action = "deallocate"
+  method = "POST"
+}
+
+-------------------------------------------------------------------------------
+6. START SCRIPT
+-------------------------------------------------------------------------------
+
+File: start-vm.sh
+
+#!/bin/bash
+
+cd /infra
+
+terraform apply \
+  -var="vm_state=running" \
+  -auto-approve
+
+-------------------------------------------------------------------------------
+7. STOP SCRIPT
+-------------------------------------------------------------------------------
+
+File: stop-vm.sh
+
+#!/bin/bash
+
+cd /infra
+
+terraform apply \
+  -var="vm_state=stopped" \
+  -auto-approve
+
+-------------------------------------------------------------------------------
+8. MAKE SCRIPTS EXECUTABLE
+-------------------------------------------------------------------------------
+
+chmod +x start-vm.sh
+chmod +x stop-vm.sh
+
+-------------------------------------------------------------------------------
+9. OPEN CRON
+-------------------------------------------------------------------------------
+
+crontab -e
+
+-------------------------------------------------------------------------------
+10. MORNING STARTUP SCHEDULE
+-------------------------------------------------------------------------------
+
+0 9 * * 1-5 /infra/start-vm.sh >> /var/log/start-vm.log 2>&1
+
+Meaning:
+9:00 AM Monday-Friday
+
+-------------------------------------------------------------------------------
+11. NIGHT SHUTDOWN SCHEDULE
+-------------------------------------------------------------------------------
+
+0 21 * * 1-5 /infra/stop-vm.sh >> /var/log/stop-vm.log 2>&1
+
+Meaning:
+9:00 PM Monday-Friday
+
+-------------------------------------------------------------------------------
+WHAT HAPPENS INTERNALLY
+-------------------------------------------------------------------------------
+
+Morning:
+
+cron
+   ->
+terraform apply
+   ->
+azapi_resource_action
+   ->
+ARM API /start
+   ->
+VM running
+
+Night:
+
+cron
+   ->
+terraform apply
+   ->
+azapi_resource_action
+   ->
+ARM API /deallocate
+   ->
+VM stopped
+
+-------------------------------------------------------------------------------
+WHY THIS IS BETTER THAN DESTROY/RECREATE
+-------------------------------------------------------------------------------
+
+This preserves:
+- VM identity
+- disks
+- IPs
+- OS state
+- installed software
+
+Destroy/recreate does not.
+
+-------------------------------------------------------------------------------
+IMPORTANT PRODUCTION IMPROVEMENTS
+-------------------------------------------------------------------------------
+
+Concern                     Typical Solution
+----------------------------------------------------------------
+State locking               Remote backend
+Secret management           Managed Identity / Vault
+Logging                     Centralized logs
+Monitoring                  Azure Monitor
+Alerts                      Action Groups
+Retry logic                 Automation workflow
+Dependency ordering         Orchestration
+
+-------------------------------------------------------------------------------
+MOST PRODUCTION TEAMS EVENTUALLY EVOLVE TOWARD
+-------------------------------------------------------------------------------
+
+Instead of cron:
+
+Azure Automation
+GitHub Actions
+Jenkins
+Functions
+Kubernetes CronJobs
+
+But cron is still widely used for:
+- small environments
+- internal tooling
+- dev/test automation
+- bootstrap automation
+- lightweight schedulers
+
+-------------------------------------------------------------------------------
+IMPORTANT FINAL INSIGHT
+-------------------------------------------------------------------------------
+
+You are combining 3 different engineering domains here:
+
+Domain         Responsibility
+--------------------------------------------------------
+Terraform      Infrastructure definition
+ARM APIs       Runtime VM operations
+Cron           Time-based scheduling
+
+That combination is a real-world infrastructure automation pattern
+used in many environments. 
+
+**Only for dev/test/small prod teams. Use `Azure automation system` for
+  start stop scheduling - create infra + scheduling.
+  
+---------------------------------------------------------------------------------------------------------------
+Azure automation system:
+
+How to Create and Link a Schedule
+
+You can manage schedules via the Azure portal, Azure CLI, or PowerShell. 
+
+1) Create the Schedule: In your Automation account, go to `Shared Resources` > Schedules > Add a schedule. 
+    Define the name, start time, and recurrence.
+2) Link to a Runbook: Open the specific published runbook, select `Schedules` under resources,
+    and click `Add a schedule`. We can then link the existing schedule or create a new one directly.
+3) Configure Parameters: If the runbook requires input parameters (like a resource group name for 
+   `starting/stopping VMs`), we must provide these values during the linking process. 
+    
+Common Use Cases
+
+1) Cost Optimization: Automatically start and stop VMs or scale databases during off-peak hours
+(e.g., weekends, nights).
+2) Maintenance: Regular cleanup of log files or storage containers to save on costs by running 
+cleanup scripts weekly.
+3) Reporting: Sending monthly cost reports or resource inventory updates.
+4) System Updates: Automating update management for Azure and on-premises VMs.
 ---------------------------------------------------------------------------------------------------------------
 Re-Instate the pipeline:
 
@@ -5033,16 +6608,16 @@ Production Deployment Checklist:
 
 -----------------
 #List only local branches:
-$ git branch
+ $ git branch
 #List only remote branches:
-$ git branch -r
+ $ git branch -r
 #List all branches (local + remote):
-$ git branch -a 
+ $ git branch -a 
 #Show branches with more detail (upstream and latest commit):
-$ git branch -vv
+ $ git branch -vv
 # Go to another branch:
-$ git switch <branch-name> Or,
-$ git checkout <branch-name>
+ $ git switch <branch-name> Or,
+ $ git checkout <branch-name>
 -----------------
 
 ---------------------------------------------------------------------------------------------------------------
