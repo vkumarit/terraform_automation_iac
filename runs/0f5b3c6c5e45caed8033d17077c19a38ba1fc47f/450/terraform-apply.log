@@ -1,0 +1,18 @@
+Acquiring state lock. This may take a few moments...
+local_file.public_key_openssh: Destroying... [id=1ba6347b847919ec833c26c2cdbb61e6a6906f7e]
+local_file.public_key_openssh: Destruction complete after 0s
+tls_private_key.vm_ssh: Destroying... [id=8a72a3cf1152e41fd222a518179fd129a98db199]
+tls_private_key.vm_ssh: Destruction complete after 0s
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 0 added, 0 changed, 2 destroyed.
+
+Outputs:
+
+debug_tags = {
+  "creation_run_id" = "450"
+  "creation_time" = "2026-05-14T11:32:47Z"
+  "deployment_id" = "prodmyapp"
+  "environment" = "prod"
+  "managed_by" = "terraform"
+}
