@@ -874,6 +874,7 @@ Create windows VM resource using all above and other keys and values.
 ## VM - linux (Small scale production-grade) ##
 
 ## SSH Key Generation (tls provider block required)
+# Note: if we do key generation using terraform, key data will be stored in tfstate which is insecure.
 /*
 # Creating Key
 resource "tls_private_key" "vm_ssh" {
@@ -1394,7 +1395,7 @@ resource "azurerm_network_interface" "linux" {
 
 }
 
-/*
+
 # Linux VMs with count
 resource "azurerm_linux_virtual_machine" "linux_vm" {
 
@@ -1461,7 +1462,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   }
 
 }
-*/
+
 
 #Set VM count
 variable "windows_vm_count" {

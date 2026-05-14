@@ -211,14 +211,14 @@ stages:
     # -----------------------------
     # Terraform Runtime User Debug
     # -----------------------------
-    - script: |
-        whoami
-        id
-        echo $HOME
-        pwd
-        ls -ld ~/.ssh
-        ls -l ~/.ssh
-      displayName: Debug Runtime User
+    #- script: |
+    #    whoami
+    #    id
+    #    echo $HOME
+    #    pwd
+    #    ls -ld ~/.ssh
+    #    ls -l ~/.ssh
+    #  displayName: Debug Runtime User
     
     # -----------------------------
     # Terraform Plan
