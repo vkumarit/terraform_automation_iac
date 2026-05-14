@@ -5101,13 +5101,11 @@ Prevents state corruption.
 ***Terraform SSH Key Creation and Use with VM afterwards***
    .....................................................
 Creation part:
-- With the use of tls provider settings. 
-We create SSH key first with 
+- With the use of `tls` provider settings. We create SSH key first with 
 resource "tls_private_key" "vm_ssh" {...} block
 
-- With the use of local provider settings.
-We write private and public files with permissions for use, on agent VM with
-resource "local_sensitive_file" "private_key_pem" {...} and,
+- With the use of `local` provider settings. We write private and public files with permissions for use,
+on agent VM with resource "local_sensitive_file" "private_key_pem" {...} and,
 resource "local_file" "public_key_openssh" {...} blocks.
 
 [ Agent Server ]
@@ -5125,6 +5123,22 @@ $ ssh -i ~/.ssh/prodmyapp-vm.pem adminuser@<PUBLIC_IP>
 - Key files exist only on the agent server
 - The private key is NOT copied to the Azure VM
 - The public key is injected into the VM by Azure during creation
+
+** This method saves key to the tfstate file, which is not considered safe.
+
+Instead, 
+
+- Create and go to `/opt/sshkeys/`,
+- Create ssh keys manually at az agent backend like 
+$ ssh-keygen -t rsa -b 4096
+
+- Terraform consumes public key / Link key to VM ressource block as 
+
+  admin_ssh_key {
+    username   = "adminuser"
+    public_key = file("/opt/sshkeys/prodmyapp_vm1.pub")
+  }
+
 
 ---------------------------------------------------------------------------------------------------------------
 MEMORY ERROR HANDLING/TROUBLESHOOTING
@@ -5261,11 +5275,16 @@ terraform init -no-color -plugin-dir="$TF_PLUGIN_CACHE_DIR" > "$LOG_FILE" 2>&1 |
 ```
 
 2) Add swap - EC2-side fixes (strongly recommended)
+check/verify (before and after),
+$ free -h
+$ swapon --show
 Run on ec2,
 $ sudo fallocate -l 4G /swapfile
-$ sudo chmod 600 /swapfile
+$ sudo chmod 0600 /swapfile
 $ sudo mkswap /swapfile
+
 $ sudo swapon /swapfile
+# to mount swap every next boot
 
 Persist - making swap memory permanent across reboots, 
 $ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab

@@ -874,7 +874,7 @@ Create windows VM resource using all above and other keys and values.
 ## VM - linux (Small scale production-grade) ##
 
 ## SSH Key Generation (tls provider block required)
-
+/*
 # Creating Key
 resource "tls_private_key" "vm_ssh" {
   algorithm = "RSA"
@@ -897,7 +897,7 @@ resource "local_file" "public_key_openssh" {
   content         = tls_private_key.vm_ssh.public_key_openssh
   file_permission = "0644" # Owner: read+write (6) Group: read only  (4) Others: read only (4)
 }
-
+*/
 
 # Define variable for VM selection
 # Scalable approach avoids repeating validation lists
@@ -1394,6 +1394,7 @@ resource "azurerm_network_interface" "linux" {
 
 }
 
+/*
 # Linux VMs with count
 resource "azurerm_linux_virtual_machine" "linux_vm" {
 
@@ -1422,7 +1423,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
 
   admin_ssh_key {
     username   = "adminuser"
-    public_key = tls_private_key.vm_ssh.public_key_openssh
+    public_key = file("/opt/sshkeys/prodmyapp_vm1.pub")
   }
 
   os_disk {
@@ -1460,6 +1461,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   }
 
 }
+*/
 
 #Set VM count
 variable "windows_vm_count" {
