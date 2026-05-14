@@ -5136,7 +5136,7 @@ $ ssh-keygen -t rsa -b 4096
 
   admin_ssh_key {
     username   = "adminuser"
-    public_key = file("/opt/sshkeys/prodmyapp_vm1.pub")
+    public_key = file("/opt/ssh_keys/prodmyapp_vm1.pub")
   }
 
 
