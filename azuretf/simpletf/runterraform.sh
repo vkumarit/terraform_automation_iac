@@ -228,6 +228,9 @@ cleanup() {
     ID=$(terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty')
     [[ -n "$ID" ]] && echo "$ID"
   done | sort -u > /tmp/tf_ids.txt
+  
+  echo "FINAL tf_ids.txt:"
+  cat /tmp/tf_ids.txt || true
 
   if [[ ! -s /tmp/tf_ids.txt ]]; then
     echo "WARNING: No Terraform-managed resources found. Skipping cleanup."
