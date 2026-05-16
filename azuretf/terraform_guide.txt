@@ -4835,9 +4835,298 @@ If dependency exists ONLY operationally
 USE depends_on.
 
 ---------------------------------------------------------------------------------------------------------------
+Retrieve particular resource info from state
+$ terraform state show azurerm_network_interface.linux[1]
+
+Retrieve all resources' state info
+$ terraform show -json 
 
 ---------------------------------------------------------------------------------------------------------------
+Now Full Explanation Of The jq Pipeline
 
+Let's break this down carefully.
+
+Full Command
+
+terraform show -json \
+| jq -r '
+  .. | objects
+  | select(
+      has("mode")
+      and .mode == "managed"
+    )
+  | .values.id?
+  | select(
+      type == "string"
+      and startswith("/subscriptions/")
+    )
+' \
+| sort -u > /tmp/tf_ids.txt
+
+
+========================================================
+Part 1
+========================================================
+
+terraform show -json
+
+This exports the FULL Terraform state as structured JSON.
+
+Equivalent concept:
+
+Terraform state
+→ machine-readable JSON
+
+It includes:
+
+- resources
+- values
+- modules
+- outputs
+- metadata
+
+
+========================================================
+Part 2
+========================================================
+
+| jq -r '
+
+Pipes JSON into jq.
+
+-r means:
+
+raw output
+
+Without quotes.
+
+So instead of:
+
+"/subscriptions/abc"
+
+you get:
+
+/subscriptions/abc
+
+cleanly.
+
+
+========================================================
+Part 3
+========================================================
+
+..
+
+This is recursive descent.
+
+Meaning:
+
+search everywhere in the JSON tree
+
+including:
+
+- root module
+- child modules
+- nested blocks
+- future modules
+
+VERY important for scalable Terraform.
+
+
+========================================================
+Part 4
+========================================================
+
+| objects
+
+From everything recursively visited:
+
+keep ONLY JSON objects.
+
+Ignore:
+
+- arrays
+- strings
+- numbers
+- booleans
+
+Because only objects can contain fields like:
+
+{
+  "mode": "managed"
+}
+
+
+========================================================
+Part 5
+========================================================
+
+| select(
+    has("mode")
+    and .mode == "managed"
+  )
+
+Now we filter only Terraform-managed resources.
+
+
+has("mode")
+
+Checks:
+
+does this object contain a "mode" field?
+
+Example matching object:
+
+{
+  "mode": "managed"
+}
+
+
+.mode == "managed"
+
+Terraform resources can be:
+
+- managed
+
+OR:
+
+- data
+
+You ONLY want real infrastructure resources.
+
+NOT:
+
+data "azurerm_client_config"
+
+because data sources are not deployable Azure resources.
+
+
+========================================================
+Part 6
+========================================================
+
+| .values.id?
+
+Extracts:
+
+.values.id
+
+from the selected resource object.
+
+Example:
+
+{
+  "values": {
+    "id": "/subscriptions/..."
+  }
+}
+
+
+Why ?
+
+This:
+
+.id?
+
+means:
+
+optional lookup
+
+Without ?, jq throws errors if field missing.
+
+With ?:
+
+missing field → ignore safely
+
+Very important for automation safety.
+
+
+========================================================
+Part 7
+========================================================
+
+| select(
+    type == "string"
+
+Ensures extracted value is actually a string.
+
+Prevents weird cases like:
+
+- null
+- arrays
+- objects
+
+
+========================================================
+Part 8
+========================================================
+
+and startswith("/subscriptions/")
+
+Now we ONLY keep:
+
+Azure ARM resource IDs
+
+Example:
+
+/subscriptions/2b2f...
+
+Everything else is excluded.
+
+
+========================================================
+Part 9
+========================================================
+
+| sort -u
+
+Sorts IDs and removes duplicates.
+
+-u means:
+
+unique
+
+Good for:
+
+- stable comparisons
+- grep operations
+- deterministic cleanup
+
+
+========================================================
+Part 10
+========================================================
+
+> /tmp/tf_ids.txt
+
+Writes final cleaned Terraform ARM IDs into:
+
+/tmp/tf_ids.txt
+
+which becomes your authoritative Terraform-managed resource list.
+
+
+========================================================
+Final Mental Model
+========================================================
+
+Your pipeline now becomes:
+
+Terraform State
+    ↓
+Extract ARM IDs
+    ↓
+tf_ids.txt
+    ↓
+Compare with Azure ARM IDs
+    ↓
+Detect:
+  Azure present
+  BUT Terraform absent
+    ↓
+Potential orphans
+
+This is the correct architecture for orphan detection.
 ---------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------------------

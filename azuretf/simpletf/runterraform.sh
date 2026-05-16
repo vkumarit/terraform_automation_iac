@@ -220,14 +220,22 @@ cleanup() {
   echo "--------------------------------"
 
   # ------------------------------------------
-  # 1. Build Terraform state IDs
+  # 1. Build Terraform state IDs list
   # ------------------------------------------
-  terraform state list | while read r; do
-    [[ "$r" == data.* ]] && continue
-
-    ID=$(terraform state show -json "$r" 2>/dev/null | jq -r '.attributes.id // empty')
-    [[ -n "$ID" ]] && echo "$ID"
-  done | sort -u > /tmp/tf_ids.txt
+  terraform show -json \
+  | jq -r '
+    .. | objects
+    | select(
+        has("mode")
+        and .mode == "managed"
+      )
+    | .values.id?
+    | select(
+        type == "string"
+        and startswith("/subscriptions/")
+      )
+  ' \
+  | sort -u > /tmp/tf_ids.txt
   
   echo "FINAL tf_ids.txt:"
   cat /tmp/tf_ids.txt || true
