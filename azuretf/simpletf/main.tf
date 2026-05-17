@@ -1395,7 +1395,7 @@ resource "azurerm_network_interface" "linux" {
 
 }
 
-
+/*
 # Linux VMs with count
 resource "azurerm_linux_virtual_machine" "linux_vm" {
 
@@ -1462,7 +1462,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   }
 
 }
-
+*/
 
 #Set VM count
 variable "windows_vm_count" {

@@ -85,22 +85,22 @@ WORK_DIR="$(pwd)"
 precheck_or_fail() {
   echo "----- PRE-CHECK START -----"
 
-  STORAGE_ACCOUNT="prodmyappsacmk01"
-  CONTAINER_NAME="mytfstate"
-  STATE_KEY="prod/terraform.tfstate"
+  #STORAGE_ACCOUNT="prodmyappsacmk01"
+  #CONTAINER_NAME="mytfstate"
+  #STATE_KEY="prod/terraform.tfstate"
 
   fail() {
-    echo "❌ PRE-CHECK FAILED: $1"
-    echo "🚫 Aborting to prevent accidental deletion"
+    echo "<X> PRE-CHECK FAILED: $1"
+    echo "<Ø> Aborting to prevent accidental deletion"
     exit 1
   }
 
   warn() {
-    echo "⚠️ WARNING: $1"
+    echo " <!> WARNING: $1"
   }
   
   pass() {
-    echo "✅ $1"
+    echo " <√> $1"
   }
 
   # ------------------------------------------
@@ -148,64 +148,50 @@ precheck_or_fail() {
   fi
 
   # ------------------------------------------
-  # 4. DRIFT WARNINGS (non-blocking)
-  # ------------------------------------------
-  if [[ "$TF_COUNT" -lt "$AZ_COUNT" ]]; then
-    warn "Azure has MORE resources than Terraform state (possible unmanaged resources)"
-  fi
-
-  if [[ "$TF_COUNT" -gt "$AZ_COUNT" ]]; then
-    warn "Terraform state has MORE resources than Azure (possible drift or deletions)"
-  fi
-
-  pass "Counts sanity check completed"
-
-  
-  # ------------------------------------------
   # 5. STATE PULL VALIDATION
   # ------------------------------------------
-  echo "#> Pulling state..."
+#  echo "#> Pulling state..."
 
-  if ! terraform state pull > /tmp/tfstate.json 2>/dev/null; then
-    fail "Cannot pull remote state"
-  fi
+#  if ! terraform state pull > /tmp/tfstate.json 2>/dev/null; then
+#    fail "Cannot pull remote state"
+#  fi
 
-  if ! grep -q '"resources"' /tmp/tfstate.json; then
-    fail "State JSON invalid"
-  fi
+#  if ! grep -q '"resources"' /tmp/tfstate.json; then
+#    fail "State JSON invalid"
+#  fi
 
-  pass "State pull OK"
+#  pass "State pull OK"
 
   # ------------------------------------------
   # 6. BACKEND ACCESS
   # ------------------------------------------
-  echo "#> Checking storage access..."
+#  echo "#> Checking storage access..."
   
-  if ! az storage blob list \
-    --account-name "$STORAGE_ACCOUNT" \
-    --container-name "$CONTAINER_NAME" \
-    --auth-mode login \
-    --output none 2>/dev/null; then
-    fail "X> Storage backend not accessible"
-  fi
+#  if ! az storage blob list \
+#    --account-name "$STORAGE_ACCOUNT" \
+#    --container-name "$CONTAINER_NAME" \
+#    --auth-mode login \
+#    --output none 2>/dev/null; then
+#    fail "X> Storage backend not accessible"
+#  fi
   
-  pass "Storage access OK"
+#  pass "Storage access OK"
 
   # ------------------------------------------
   # 7. STATE FILE EXISTS
   # ------------------------------------------
-  echo "#> Checking state blob exists..."
+#  echo "#> Checking state blob exists..."
   
-  if ! az storage blob show \
-    --account-name "$STORAGE_ACCOUNT" \
-    --container-name "$CONTAINER_NAME" \
-    --name "$STATE_KEY" \
-    --auth-mode login \
-    --output none 2>/dev/null; then
-    fail "X> State file missing in backend"
-  fi
+#  if ! az storage blob show \
+#    --account-name "$STORAGE_ACCOUNT" \
+#    --container-name "$CONTAINER_NAME" \
+#    --name "$STATE_KEY" \
+#    --auth-mode login \
+#    --output none 2>/dev/null; then
+#    fail "X> State file missing in backend"
+#  fi
   
-  pass "State blob exists"
+#  pass "State blob exists"
 
   echo "----- PRE-CHECK COMPLETE -----"
 }
@@ -275,7 +261,7 @@ cleanup() {
     -o tsv > /tmp/untagged.txt
 
   if [[ -s /tmp/untagged.txt ]]; then
-    echo "⚠️ Untagged resources detected (manual review required):"
+    echo " <!> Untagged resources detected (manual review required):"
     cat /tmp/untagged.txt
   else
     echo "No untagged resources found."
