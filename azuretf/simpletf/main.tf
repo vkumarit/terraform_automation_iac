@@ -1440,6 +1440,13 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     sku       = local.vm_images[var.environment].linux.sku
     version   = local.vm_images[var.environment].linux.version
   }
+  
+  plan {
+    name      = local.vm_images[var.environment].linux.sku
+    product   = local.vm_images[var.environment].linux.offer
+    publisher = local.vm_images[var.environment].linux.publisher
+  }
+  # Marketplace image or a custom image sourced from a Marketplace image requires Plan information
 
   tags = merge(local.common_tags, {
     Name = format(
