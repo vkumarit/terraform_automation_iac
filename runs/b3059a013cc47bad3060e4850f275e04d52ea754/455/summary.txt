@@ -1,0 +1,9 @@
+=========================================
+Terraform Run Summary
+---------------------
+Commit : b3059a013cc47bad3060e4850f275e04d52ea754
+
+INIT  : SUCCEEDED
+PLAN  : CHANGES_PRESENT
+APPLY : FAILED
+=========================================
