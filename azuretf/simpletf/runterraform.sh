@@ -287,17 +287,64 @@ cleanup() {
   jq -r '.[].id' /tmp/az_resources.json | sort -u > /tmp/az_ids.txt
 
   # ------------------------------------------
-  # 5. Detect TRUE orphans (Azure - TF)
+  # 5. Detect and ignore disks 
   # ------------------------------------------
-  grep -Fxv -f /tmp/tf_ids.txt /tmp/az_ids.txt > /tmp/orphan_ids.txt || true
+  az vm list \
+    --resource-group myTFResourceGroup \
+    --query "[].storageProfile.osDisk.managedDisk.id" \
+    -o tsv | sort -u > /tmp/attached_os_disks.txt
 
-  if [[ ! -s /tmp/orphan_ids.txt ]]; then
+  az vm list \
+    --resource-group myTFResourceGroup \
+    --query "[].storageProfile.dataDisks[].managedDisk.id" \
+    -o tsv | sort -u > /tmp/attached_data_disks.txt
+
+  sort -u \
+  /tmp/attached_os_disks.txt \
+  /tmp/attached_data_disks.txt \
+  > /tmp/attached_disks.txt 2>/dev/null
+
+  #echo "Attached disks detected:"
+  #cat /tmp/attached_disks.txt || true
+  
+  # Detect unattached OS disks
+  az disk list \
+    --resource-group myTFResourceGroup \
+    --query "[?managedBy==null].id" \
+    -o tsv > /tmp/unattached_disks.txt
+    
+  if [[ -s /tmp/unattached_disks.txt ]]; then
+    echo "----------------------------------------------------"
+    echo "Unattached disks detected (possible orphan disks)"
+    echo "----------------------------------------------------"
+
+    cat /tmp/unattached_disks.txt
+  fi
+  
+  # Remove attached disks from Azure IDs list (KEEP all attached disks)
+  grep -Fxv -f /tmp/attached_disks.txt \
+    /tmp/az_ids.txt > /tmp/filtered_az_ids.txt || true
+    
+  # Detect TRUE orphans: Azure resources NOT in Terraform state
+  grep -Fxv -f /tmp/tf_ids.txt \
+    /tmp/filtered_az_ids.txt > /tmp/orphan_ids.txt || true
+
+  # Remove ALL disks from deletion candidates (VM cleanup only)
+  # Keep only NON-disk orphan resources
+  grep -Fv '/providers/Microsoft.Compute/disks/' \
+    /tmp/orphan_ids.txt > /tmp/non_disk_orphans.txt || true
+
+  if [[ ! -s /tmp/non_disk_orphans.txt ]]; then
     echo "No orphan resources found."
     return 0
   fi
 
   echo "Potential orphans:"
-  cat /tmp/orphan_ids.txt
+  cat /tmp/non_disk_orphans.txt
+
+  mv /tmp/non_disk_orphans.txt /tmp/orphan_ids.txt
+
+  
 
   # ------------------------------------------
   # 6. SAFETY: Skip very recent resources
