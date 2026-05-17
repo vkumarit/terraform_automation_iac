@@ -1440,7 +1440,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
     sku       = local.vm_images[var.environment].linux.sku
     version   = local.vm_images[var.environment].linux.version
   }
-  
+
   plan {
     name      = local.vm_images[var.environment].linux.sku
     product   = local.vm_images[var.environment].linux.offer
