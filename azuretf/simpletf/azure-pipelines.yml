@@ -24,7 +24,7 @@ variables:
   value: $(Build.BuildId)
 - name: CLEANUP_MODE
 #  value: dry-run  # alternalte `safe`
-  value: safe`
+  value: safe
   
   
 pool:
